@@ -1,0 +1,20 @@
+#!/bin/bash
+
+compile()
+{
+valac \
+    src/*.gs \
+    --basedir=src \
+    --output=khovsgol \
+    --directory=bin \
+    --thread \
+    --pkg=libsoup-2.4 \
+    --pkg=gee-1.0 \
+    --pkg=json-glib-1.0 \
+    "${@}"
+}
+
+ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
+cd "$ROOT"
+compile --ccode
+compile

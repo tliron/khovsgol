@@ -1,0 +1,48 @@
+[file_prefs]
+final_new_line=true
+ensure_convert_new_lines=false
+strip_trailing_spaces=false
+replace_tabs=true
+
+[indentation]
+indent_width=4
+indent_type=0
+indent_hard_tab_width=8
+detect_indent=false
+detect_indent_width=false
+indent_mode=2
+
+[project]
+name=Khövsgöl
+base_path=/home/emblemparade/Khövsgöl
+description=
+file_patterns=
+
+[long line marker]
+long_line_behaviour=1
+long_line_column=72
+
+[files]
+current_page=1
+FILE_NAME_0=207;Genie;0;16;1;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fsrc%2Finstance.gs;0;4
+FILE_NAME_1=303;Genie;0;16;0;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fsrc%2Fnap.gs;0;4
+FILE_NAME_2=89;Genie;0;16;0;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fsrc%2Fjson.gs;0;4
+FILE_NAME_3=71;Sh;0;16;0;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fbuild;0;4
+FILE_NAME_4=29067;C;0;16;0;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fbin%2Fnap.c;0;4
+
+[VTE]
+last_dir=/home/emblemparade/Khövsgöl
+
+[build-menu]
+NF_02_LB=Make _Object
+NF_02_CM=make %e.o
+NF_02_WD=%d
+NF_00_LB=_Make
+NF_00_CM=make
+NF_00_WD=%d
+NF_03_LB=Build Project
+NF_03_CM=./build
+NF_03_WD=%p
+EX_01_LB=Execute Project
+EX_01_CM=./bin/khovsgol
+EX_01_WD=%p
