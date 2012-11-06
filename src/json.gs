@@ -13,7 +13,7 @@ namespace JSON
             generator.pretty = true
         return generator.to_data(null)
 
-    def from(json: string): Json.Object? raises Error
+    def from(json: string): Json.Object raises Error
         var parser = new Json.Parser()
         try
             if parser.load_from_data(json)
@@ -23,6 +23,6 @@ namespace JSON
                 else
                     raise new Error.PARSING("Not a JSON object")
             else
-                raise new Error.PARSING("No JSON to parse")
+                raise new Error.PARSING("Invalid JSON")
         except e: GLib.Error
             raise new Error.PARSING(e.message)

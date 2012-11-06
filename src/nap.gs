@@ -63,19 +63,31 @@ namespace Nap
 
         def override post(conversation: Conversation)
             var entity = conversation.get_entity()
-            try
-                var obj = JSON.from(entity)
-                if obj is not null
-                    conversation.response_json = post_json(conversation, obj)
-                else
-                    bad_request(conversation, "No entity")
-            except e: JSON.Error
-                bad_request(conversation, e.message)
+            if entity is not null
+                try
+                    conversation.response_json = post_json(conversation, JSON.from(entity))
+                except e: JSON.Error
+                    bad_request(conversation, e.message)
+            else
+                bad_request(conversation, "No entity")
+
+        def override put(conversation: Conversation)
+            var entity = conversation.get_entity()
+            if entity is not null
+                try
+                    conversation.response_json = put_json(conversation, JSON.from(entity))
+                except e: JSON.Error
+                    bad_request(conversation, e.message)
+            else
+                bad_request(conversation, "No entity")
 
         def virtual get_json(conversation: Conversation): Json.Object?
             return new Json.Object()
 
         def virtual post_json(conversation: Conversation, entity: Json.Object): Json.Object?
+            return new Json.Object()
+
+        def virtual put_json(conversation: Conversation, entity: Json.Object): Json.Object?
             return new Json.Object()
         
         def static bad_request(conversation: Conversation, message: string)
