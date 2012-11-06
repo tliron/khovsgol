@@ -1,5 +1,7 @@
 [indent=4]
 
+// apt-get install libgee-dev, valac --pkg gee-1.0
+
 uses
     Soup // apt-get install libsoup-2.4-dev, valac --pkg libsoup-2.4
     Json // apt-get install libjson-glib-dev, valac --pkg json-glib-1.0
@@ -12,6 +14,8 @@ namespace Nap
         def soup_handle(server: Soup.Server, message: Soup.Message, path: string, query: GLib.HashTable?, client: Soup.ClientContext)
             var conversation = new Conversation(server, message, path, query)
             if _thread_pool is null
+                if Server.delay > 0
+                    Thread.usleep(Server.delay)
                 handle(conversation)
                 conversation.commit()
             else
@@ -19,82 +23,6 @@ namespace Nap
                     
         def virtual handle(conversation: Conversation)
             pass
-
-    class Router: Handler
-        construct()
-            _routes = new dict of string, Handler
-
-        prop readonly routes: dict of string, Handler
-        
-        def override handle(conversation: Conversation)
-            var handler = routes[conversation.path]
-            if handler is not null
-                handler.handle(conversation)
-            else
-                conversation.status_code = Soup.KnownStatusCode.NOT_FOUND
-
-    class Resource: Handler
-        def override handle(conversation: Conversation)
-            var method = conversation.get_method()
-            if method == "GET"
-                get(conversation)
-            else if method == "POST"
-                post(conversation)
-            else if method == "PUT"
-                put(conversation)
-            else if method == "DELETE"
-                self.delete(conversation)
-            
-        def virtual new get(conversation: Conversation)
-            conversation.status_code = Soup.KnownStatusCode.METHOD_NOT_ALLOWED
-
-        def virtual post(conversation: Conversation)
-            conversation.status_code = Soup.KnownStatusCode.METHOD_NOT_ALLOWED
-
-        def virtual put(conversation: Conversation)
-            conversation.status_code = Soup.KnownStatusCode.METHOD_NOT_ALLOWED
-
-        def virtual delete(conversation: Conversation)
-            conversation.status_code = Soup.KnownStatusCode.METHOD_NOT_ALLOWED
-    
-    class DocumentResource: Resource
-        def override get(conversation: Conversation)
-            conversation.response_json = get_json(conversation)
-
-        def override post(conversation: Conversation)
-            var entity = conversation.get_entity()
-            if entity is not null
-                try
-                    conversation.response_json = post_json(conversation, JSON.from(entity))
-                except e: JSON.Error
-                    bad_request(conversation, e.message)
-            else
-                bad_request(conversation, "No entity")
-
-        def override put(conversation: Conversation)
-            var entity = conversation.get_entity()
-            if entity is not null
-                try
-                    conversation.response_json = put_json(conversation, JSON.from(entity))
-                except e: JSON.Error
-                    bad_request(conversation, e.message)
-            else
-                bad_request(conversation, "No entity")
-
-        def virtual get_json(conversation: Conversation): Json.Object?
-            return new Json.Object()
-
-        def virtual post_json(conversation: Conversation, entity: Json.Object): Json.Object?
-            return new Json.Object()
-
-        def virtual put_json(conversation: Conversation, entity: Json.Object): Json.Object?
-            return new Json.Object()
-        
-        def static bad_request(conversation: Conversation, message: string)
-            var json = new Json.Object()
-            json.set_string_member("error", message)
-            conversation.response_json = json
-            conversation.status_code = Soup.KnownStatusCode.BAD_REQUEST
 
     class Conversation: GLib.Object
         construct(server: Soup.Server, message: Soup.Message, path: string, query: GLib.HashTable?)
@@ -148,12 +76,13 @@ namespace Nap
 
         _soup_server: Soup.Server
         _soup_message: Soup.Message
-        
+
     class Server: GLib.Object
         construct(port: int, context: MainContext)
             _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
+            _soup_server.request_started.connect(on_request_started)
             
-        prop handler: Handler
+        prop root_handler: Handler
             set
                 add_route(null, value)
         
@@ -162,5 +91,10 @@ namespace Nap
         
         def start()
             _soup_server.run_async()
+        
+        def on_request_started(message: Message, client: ClientContext)
+            pass
+            
+        prop static delay: ulong = 0
 
         _soup_server: Soup.Server

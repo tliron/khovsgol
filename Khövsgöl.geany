@@ -14,7 +14,7 @@ indent_mode=2
 
 [project]
 name=Khövsgöl
-base_path=/home/emblemparade/Khövsgöl
+base_path=/Depot/Projects/Khövsgöl3
 description=
 file_patterns=
 
@@ -23,15 +23,10 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=1
-FILE_NAME_0=207;Genie;0;16;1;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fsrc%2Finstance.gs;0;4
-FILE_NAME_1=303;Genie;0;16;0;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fsrc%2Fnap.gs;0;4
-FILE_NAME_2=89;Genie;0;16;0;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fsrc%2Fjson.gs;0;4
-FILE_NAME_3=71;Sh;0;16;0;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fbuild;0;4
-FILE_NAME_4=29067;C;0;16;0;1;0;%2Fhome%2Femblemparade%2FKhövsgöl%2Fbin%2Fnap.c;0;4
+current_page=0
 
 [VTE]
-last_dir=/home/emblemparade/Khövsgöl
+last_dir=/home/emblemparade
 
 [build-menu]
 NF_02_LB=Make _Object
