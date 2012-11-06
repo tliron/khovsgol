@@ -1,21 +1,26 @@
 #!/bin/bash
 
+# Gee: apt-get install libgee-dev, valac --pkg gee-1.0
+# Soup: apt-get install libsoup-2.4-dev, valac --pkg libsoup-2.4
+# Json: apt-get install libjson-glib-dev, valac --pkg json-glib-1.0
+
 compile()
 {
-valac \
-    src/*.gs src/*.vala \
-    --basedir=src \
-    --output=khovsgol \
-    --directory=bin \
-    --thread \
-    --pkg=libsoup-2.4 \
-    --pkg=gee-1.0 \
-    --pkg=json-glib-1.0 \
-    --pkg=posix \
-    "${@}"
+    find src \( -name '*.gs' -o -name '*.vala' \) -print0 | xargs -r0 \
+    valac \
+        --basedir=src \
+        --output=khovsgold \
+        --directory=bin \
+        --thread \
+        --pkg=libsoup-2.4 \
+        --pkg=gee-1.0 \
+        --pkg=json-glib-1.0 \
+        --pkg=posix \
+        --Xcc=-D"_GNU_SOURCE" \
+        "${@}"
 }
 
 ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
 cd "$ROOT"
-compile --ccode
+#compile --ccode
 compile
