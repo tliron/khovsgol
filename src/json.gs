@@ -12,3 +12,17 @@ namespace JSON
         if human
             generator.pretty = true
         return generator.to_data(null)
+
+    def from(json: string): Json.Object? raises Error
+        var parser = new Json.Parser()
+        try
+            if parser.load_from_data(json)
+                var node = parser.get_root()
+                if node.get_node_type() == Json.NodeType.OBJECT
+                    return node.get_object()
+                else
+                    raise new Error.PARSING("Not a JSON object")
+            else
+                raise new Error.PARSING("No JSON to parse")
+        except e: GLib.Error
+            raise new Error.PARSING(e.message)
