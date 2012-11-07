@@ -1,12 +1,15 @@
 #!/bin/bash
 
-# Gee: apt-get install libgee-dev, valac --pkg gee-1.0
-# Soup: apt-get install libsoup-2.4-dev, valac --pkg libsoup-2.4
-# Json: apt-get install libjson-glib-dev, valac --pkg json-glib-1.0
+# Gee:    apt-get install libgee-dev,       valac --pkg gee-1.0
+# Soup:   apt-get install libsoup-2.4-dev,  valac --pkg libsoup-2.4
+# Json:   apt-get install libjson-glib-dev, valac --pkg json-glib-1.0
+# Sqlite: apt-get install libsqlite3-dev,   valac --pkg sqlite3
+# Posix:                                    valac --pkg posix --Xcc=-D"_GNU_SOURCE"
+# Gtk:    apt-get install libgtk-3-dev,     valac --pkg gtk+-3.0
 
 compile()
 {
-    find src \( -name '*.gs' -o -name '*.vala' \) -print0 | xargs -r0 \
+    find src/server src/lib \( -name '*.gs' -o -name '*.vala' \) -print0 | xargs -r0 \
     valac \
         --basedir=src \
         --output=khovsgold \
@@ -15,8 +18,23 @@ compile()
         --pkg=libsoup-2.4 \
         --pkg=gee-1.0 \
         --pkg=json-glib-1.0 \
-        --pkg=posix \
-        --Xcc=-D"_GNU_SOURCE" \
+        --pkg=posix --Xcc=-D"_GNU_SOURCE" \
+        --pkg=sqlite3 \
+        --pkg=gtk+-3.0 \
+        "${@}"
+
+    find src/client src/lib \( -name '*.gs' -o -name '*.vala' \) -print0 | xargs -r0 \
+    valac \
+        --basedir=src \
+        --output=khovsgolc \
+        --directory=bin \
+        --thread \
+        --pkg=libsoup-2.4 \
+        --pkg=gee-1.0 \
+        --pkg=json-glib-1.0 \
+        --pkg=posix --Xcc=-D"_GNU_SOURCE" \
+        --pkg=sqlite3 \
+        --pkg=gtk+-3.0 \
         "${@}"
 }
 

@@ -6,7 +6,7 @@ uses
     
 namespace Khovsgol
             
-    class Instance: GLib.Object
+    class ServerInstance: GLib.Object
         construct(args: array of string)
             if !parse_arguments(args)
                 exit(-1)
@@ -36,6 +36,8 @@ namespace Khovsgol
             _server = new Server(_port, context)
             _server.root_handler = router
             
+            _db = new DB()
+            
         def start()
             printf("Starting Khövsgöl server at port %d, %d threads\n", _port, _threads)
             _server.start()
@@ -61,6 +63,7 @@ namespace Khovsgol
             return true
         
         _server: Server
+        _db: DB
         _mainLoop: MainLoop
         _port: int = 8080
         _threads: int = 0
@@ -101,14 +104,14 @@ namespace Khovsgol
         prop readonly albumResource4: Nap.Resource
         
         construct()
-            _albumResource2 = new DelegatedResource(get_album2, null, null, null)
+            _albumResource2 = new DelegatedResource.raw(get_album2, null, null, null)
 
-            var _get_album3 = new GetString(get_album3)
-            _albumResource4 = new DelegatedResource(_get_album3.delegated, null, null, null, _get_album3)
+            var _get_album3 = new GetStringHandler(get_album3)
+            _albumResource4 = new DelegatedResource(_get_album3, null, null, null)
 
-            var _get_album4 = new GetJsonArgs(get_album4)
-            var _set_album4 = new SetJson(set_album4)
-            _albumResource4 = new DelegatedResource(_get_album4.delegated, _set_album4.delegated, null, null, _get_album4, _set_album4)
+            var _get_album4 = new GetJsonArgsHandler(get_album4)
+            var _set_album4 = new SetJsonHandler(set_album4)
+            _albumResource4 = new DelegatedResource(_get_album4, _set_album4, null, null)
             
 init
-    new Khovsgol.Instance(args).start()
+    new Khovsgol.ServerInstance(args).start()
