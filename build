@@ -41,4 +41,4 @@ compile()
 ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
 cd "$ROOT"
 #compile --ccode
-compile
+compile --Xcc=-w

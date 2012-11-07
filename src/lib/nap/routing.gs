@@ -6,21 +6,37 @@ uses
 
 namespace Nap
 
-    class Router: Handler
+    class Routes: GLib.Object
         construct()
-            _routes = new dict of string, Handler
+            _exact = new dict of string, Handler
+            _prefix = new dict of string, Handler
+    
+        def add(route: string, handler: Handler)
+            if route.has_suffix("*")
+                var prefix = route.slice(0, route.length - 1)
+                _prefix.set(prefix, handler)
+            else
+                _exact.set(route, handler)
 
-        prop readonly routes: dict of string, Handler
-        
-        def override handle(conversation: Conversation)
-            var handler = routes[conversation.path]
+        def new get(route: string): Handler?
+            var handler = _exact[route]
             if handler is null
-                for route in ((AbstractMap of string, Handler) routes).keys
-                    if route.has_suffix("*")
-                        var prefix = route.slice(0, route.length - 1)
-                        if conversation.path.has_prefix(prefix)
-                            handler = routes[route]
-                            break
+                for prefix in ((AbstractMap of string, Handler) _prefix).keys
+                    if route.has_prefix(prefix)
+                        return _prefix[prefix]
+            return handler
+
+        _exact: dict of string, Handler
+        _prefix: dict of string, Handler
+
+    class Router: GLib.Object implements Handler
+        construct()
+            _routes = new Routes
+
+        prop readonly routes: Routes
+        
+        def handle(conversation: Conversation)
+            var handler = routes.get(conversation.path)
             if handler is not null
                 handler.handle(conversation)
             else

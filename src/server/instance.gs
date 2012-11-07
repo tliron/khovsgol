@@ -15,26 +15,27 @@ namespace Khovsgol
 
             var router = new Router()
             
-            router.routes["/1"] = new AlbumResource1()
-            router.routes["/2"] = api.albumResource2
-            router.routes["/3"] = api.albumResource3
-            router.routes["/4*"] = api.albumResource4
+            router.routes.add("/1", new AlbumResource1())
+            router.routes.add("/2", api.albumResource2)
+            router.routes.add("/3", api.albumResource3)
+            router.routes.add("/4*", api.albumResource4)
 
-            Server.delay = _delay * 1000
+            SoupServer.delay = _delay * 1000
+
+            var context = new MainContext()
+
+            _server = new SoupServer(_port, context)
+            _server.handler = router
+
             if _threads < 0
                 _threads = System.get_n_cpus()
             if _threads > 0
                 try
-                    router.thread_pool = new Nap.ThreadPool(_threads)
+                    _server.thread_pool = new Nap.ThreadPool(_threads)
                 except e: ThreadError
                     print e.message
 
-            var context = new MainContext()
-
             _mainLoop = new MainLoop(context, false)
-            
-            _server = new Server(_port, context)
-            _server.root_handler = router
             
             _db = new DB()
             
@@ -107,7 +108,7 @@ namespace Khovsgol
             _albumResource2 = new DelegatedResource.raw(get_album2, null, null, null)
 
             var _get_album3 = new GetStringHandler(get_album3)
-            _albumResource4 = new DelegatedResource(_get_album3, null, null, null)
+            _albumResource3 = new DelegatedResource(_get_album3, null, null, null)
 
             var _get_album4 = new GetJsonArgsHandler(get_album4)
             var _set_album4 = new SetJsonHandler(set_album4)

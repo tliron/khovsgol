@@ -10,8 +10,8 @@ namespace Nap
      * Base class for RESTful resources. Enables separate handlers for all
      * HTTP methods.
      */
-    class Resource: Handler
-        def override handle(conversation: Conversation)
+    class Resource: GLib.Object implements Handler
+        def handle(conversation: Conversation)
             var method = conversation.get_method()
             if method == "GET"
                 get(conversation)

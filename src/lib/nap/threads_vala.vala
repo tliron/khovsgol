@@ -19,8 +19,8 @@ namespace Nap {
         private GLib.ThreadPool<Context> _thread_pool;
         
         private static void _handle(Context context) {
-            if (Server.delay > 0) {
-                Thread.usleep(Server.delay);
+            if (SoupServer.delay > 0) {
+                Thread.usleep(SoupServer.delay);
             }
             context.handler.handle(context.conversation);
             context.conversation.commit();

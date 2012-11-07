@@ -24,33 +24,33 @@ namespace Nap
                 
         _list: list of GLib.Object
         
-    class GetStringHandler: Handler
+    class GetStringHandler: GLib.Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def override handle(conversation: Conversation)
+        def handle(conversation: Conversation)
             conversation.response_text = _delegated()
         
         delegate Delegate(): string
         
         _delegated: unowned Delegate
     
-    class GetStringArgsHandler: Handler
+    class GetStringArgsHandler: GLib.Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def override handle(conversation: Conversation)
+        def handle(conversation: Conversation)
             conversation.response_text = _delegated(conversation.query)
         
         delegate Delegate(args: dict of string, string): string
         
         _delegated: unowned Delegate
 
-    class SetStringHandler: Handler
+    class SetStringHandler: GLib.Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def override handle(conversation: Conversation)
+        def handle(conversation: Conversation)
             var entity = conversation.get_entity()
             conversation.response_text = _delegated(entity)
         
@@ -58,11 +58,11 @@ namespace Nap
         
         _delegated: unowned Delegate
 
-    class SetStringArgsHandler: Handler
+    class SetStringArgsHandler: GLib.Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def override handle(conversation: Conversation)
+        def handle(conversation: Conversation)
             var entity = conversation.get_entity()
             conversation.response_text = _delegated(entity, conversation.query)
         
@@ -70,33 +70,33 @@ namespace Nap
         
         _delegated: unowned Delegate
 
-    class GetJsonHandler: Handler
+    class GetJsonHandler: GLib.Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def override handle(conversation: Conversation)
+        def handle(conversation: Conversation)
             conversation.response_json = _delegated()
         
         delegate Delegate(): Json.Object?
         
         _delegated: unowned Delegate
 
-    class GetJsonArgsHandler: Handler
+    class GetJsonArgsHandler: GLib.Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def override handle(conversation: Conversation)
+        def handle(conversation: Conversation)
             conversation.response_json = _delegated(conversation.query)
         
         delegate Delegate(args: dict of string, string): Json.Object?
         
         _delegated: unowned Delegate
 
-    class SetJsonHandler: Handler
+    class SetJsonHandler: GLib.Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def override handle(conversation: Conversation)
+        def handle(conversation: Conversation)
             var entity = conversation.get_entity()
             if entity is not null
                 try
@@ -110,11 +110,11 @@ namespace Nap
         
         _delegated: unowned Delegate
     
-    class SetJsonArgsHandler: Handler
+    class SetJsonArgsHandler: GLib.Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def override handle(conversation: Conversation)
+        def handle(conversation: Conversation)
             var entity = conversation.get_entity()
             if entity is not null
                 try
