@@ -24,15 +24,23 @@ namespace Daemonize
 
     def get_pid_file(): string
         var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
-        Daemon.log(Daemon.LogPriority.INFO, "PID file: %s", pid_file)
+        //Daemon.log(Daemon.LogPriority.INFO, "PID file: %s", pid_file)
         return pid_file
         
-    def handle(name: string, start_daemon: bool, stop_daemon: bool, main_loop: MainLoop? = null)
-        if !start_daemon && !stop_daemon
-            return
-
+    def handle(name: string, start: bool, stop: bool, main_loop: MainLoop? = null)
         // See: http://0pointer.de/lennart/projects/libdaemon/reference/html/testd_8c-example.html
-            
+
+        Daemon.pid_file_ident = Daemon.log_ident = _name = name
+        set_daemon_pid_file_proc((Func) get_pid_file) // Daemon.pid_file_proc = get_pid_file
+        
+        if !start && !stop
+            var pid = Daemon.pid_file_is_running()
+            if pid >= 0
+                print "Daemon is running (PID %d)", pid
+            else
+                print "Daemon is not running"
+            Posix.exit(0)
+
         if Daemon.reset_sigs(-1) < 0
             Daemon.log(Daemon.LogPriority.ERR, "Failed to reset all daemon signal handlers: %s", strerror(errno))
             Posix.exit(1)
@@ -41,10 +49,7 @@ namespace Daemonize
             Daemon.log(Daemon.LogPriority.ERR, "Failed to unblock all daemon signals: %s", strerror(errno))
             Posix.exit(1)
             
-        Daemon.pid_file_ident = Daemon.log_ident = _name = name
-        set_daemon_pid_file_proc((Func) get_pid_file) // Daemon.pid_file_proc = get_pid_file
-        
-        if stop_daemon
+        if stop
             print "Stopping %s daemon", name
             
             var r = Daemon.pid_file_kill_wait(Daemon.Sig.TERM, 5)
@@ -53,7 +58,7 @@ namespace Daemonize
                 
             Posix.exit(r < 0 ? 1 : 0)
             
-        if start_daemon
+        if start
             print "Starting %s daemon", name
             
             var pid = Daemon.pid_file_is_running()

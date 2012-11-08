@@ -12,7 +12,9 @@ namespace Khovsgol
 
             var context = new MainContext()
             _main_loop = new MainLoop(context, false)
-            Daemonize.handle("khovsgol", _start_daemon, _stop_daemon, _main_loop)
+            
+            if _start_daemon || _stop_daemon || _status_daemon
+                Daemonize.handle("khovsgol", _start_daemon, _stop_daemon, _main_loop)
 
             var api = new API()
 
