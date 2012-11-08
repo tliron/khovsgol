@@ -1,6 +1,11 @@
 [indent=4]
 
+//daemon_pid_file_proc: extern void **
+
 namespace Daemonize
+
+    //def set_daemon_pid_file_proc(func: Func)
+        //daemon_pid_file_proc = (void *) func
 
     def poll(fds: array of PollFD, timeout: int): int
         for fd in fds

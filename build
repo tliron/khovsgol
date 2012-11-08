@@ -25,9 +25,7 @@ compile()
         --pkg=posix --Xcc=-D"_GNU_SOURCE" \
         --pkg=sqlite3 \
         --pkg=gtk+-3.0 \
-        --pkg=libdaemon
-        
-        # --ccode
+        --pkg=libdaemon 
 }
 
 ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
