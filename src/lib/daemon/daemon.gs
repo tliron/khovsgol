@@ -2,10 +2,6 @@
 
 namespace Daemonize
 
-    _poll: PollFunc
-    _daemon_fd: PollFD
-    _main_loop: MainLoop
-            
     def poll(fds: array of PollFD, timeout: int): int
         for fd in fds
             if fd.fd == _daemon_fd.fd
@@ -23,15 +19,19 @@ namespace Daemonize
                     exit()
                     
                  break
+
         return _poll(fds, timeout)
 
     def get_pid_file(): string
-        return "/tmp/khovsgol.pid"
+        var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
+        Daemon.log(Daemon.LogPriority.INFO, "PID file: %s", pid_file)
+        return pid_file
         
-    // See: http://0pointer.de/lennart/projects/libdaemon/reference/html/testd_8c-example.html
     def handle(name: string, start_daemon: bool, stop_daemon: bool, main_loop: MainLoop? = null)
         if !start_daemon && !stop_daemon
             return
+
+        // See: http://0pointer.de/lennart/projects/libdaemon/reference/html/testd_8c-example.html
             
         if Daemon.reset_sigs(-1) < 0
             Daemon.log(Daemon.LogPriority.ERR, "Failed to reset all daemon signal handlers: %s", strerror(errno))
@@ -41,11 +41,11 @@ namespace Daemonize
             Daemon.log(Daemon.LogPriority.ERR, "Failed to unblock all daemon signals: %s", strerror(errno))
             Posix.exit(1)
             
-        Daemon.pid_file_ident = Daemon.log_ident = name
+        Daemon.pid_file_ident = Daemon.log_ident = _name = name
         set_daemon_pid_file_proc((Func) get_pid_file) // Daemon.pid_file_proc = get_pid_file
         
         if stop_daemon
-            print "Stopping daemon"
+            print "Stopping %s daemon", name
             
             var r = Daemon.pid_file_kill_wait(Daemon.Sig.TERM, 5)
             if r < 0
@@ -54,7 +54,7 @@ namespace Daemonize
             Posix.exit(r < 0 ? 1 : 0)
             
         if start_daemon
-            print "Starting daemon"
+            print "Starting %s daemon", name
             
             var pid = Daemon.pid_file_is_running()
             if pid >= 0
@@ -121,3 +121,8 @@ namespace Daemonize
         Daemon.signal_done()
         Daemon.pid_file_remove()
         Posix.exit(0)
+
+    _name: string
+    _poll: PollFunc
+    _daemon_fd: PollFD
+    _main_loop: MainLoop
