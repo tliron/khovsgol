@@ -2,11 +2,10 @@
 
 uses
     Soup
-    Json
 
 namespace Nap
 
-    class SoupHandler: GLib.Object
+    class SoupHandler: Object
         construct(handler: Handler)
             _handler = handler
 
@@ -23,7 +22,7 @@ namespace Nap
             else
                 _thread_pool.handle(_handler, conversation)
     
-    class SoupConversation: GLib.Object implements Conversation
+    class SoupConversation: Object implements Conversation
         construct(server: Soup.Server, message: Message, path: string, query: HashTable?)
             _soup_server = server
             _soup_message = message
@@ -51,20 +50,10 @@ namespace Nap
             return (string) _soup_message.request_body.data // warning: "assignment discards `const' qualifer"
         
         def commit()
-            // Status code
+            json_to_text(self)
+
             _soup_message.set_status(_status_code)
             
-            // Special handling for JSON
-            if _response_json is not null
-                var jsonp = _query["jsonp"]
-                var human = jsonp is null && _query["human"] == "true"
-                _response_text = JSON.to(_response_json, human)
-                if jsonp is not null
-                    _response_text = "%s(%s)".printf(jsonp, _response_text)
-                if _media_type is null
-                    _media_type = "application/json"
-                    
-            // Textual response
             if _response_text is not null
                 if _media_type is null
                     _media_type = "text/plain"
@@ -82,7 +71,7 @@ namespace Nap
     /*
      * An HTTP server. Accepts conversations coming in through a specified port.
      */
-    class SoupServer: GLib.Object implements Server
+    class SoupServer: Object implements Server
         construct(port: int, context: MainContext)
             _soup_server = new Soup.Server(SERVER_PORT, port, SERVER_ASYNC_CONTEXT, context)
             _soup_server.request_started.connect(on_request_started)

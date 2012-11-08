@@ -1,30 +1,41 @@
 [indent=4]
 
-uses
-    Soup
-    Json
-    Gee
-
 namespace Nap
+
+    def bad_request_json(conversation: Conversation, message: string)
+        var json = new Json.Object()
+        json.set_string_member("error", message)
+        conversation.response_json = json
+        conversation.status_code = StatusCode.BAD_REQUEST
+
+    def json_to_text(conversation: Conversation)
+        if conversation.response_json is not null
+            var jsonp = conversation.query["jsonp"]
+            var human = jsonp is null && conversation.query["human"] == "true"
+            conversation.response_text = JSON.to(conversation.response_json, human)
+            if jsonp is not null
+                conversation.response_text = "%s(%s)".printf(jsonp, conversation.response_text)
+            if conversation.media_type is null
+                conversation.media_type = "application/json"
 
     /*
      * Keeps references for a list of objects.
      */
-    class Ownerships: GLib.Object
+    class Ownerships: Object
         construct()
-            _list = new list of GLib.Object
+            _list = new list of Object
     
-        def add(ownership: GLib.Object): bool
+        def add(ownership: Object): bool
             return _list.add(ownership)
     
         final
-            for ownership in (AbstractCollection of GLib.Object) _list
+            for ownership in (Gee.AbstractCollection of Object) _list
                 ownership.ref()
                 ownership.unref()
                 
-        _list: list of GLib.Object
+        _list: list of Object
         
-    class GetStringHandler: GLib.Object implements Handler
+    class GetStringHandler: Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -35,7 +46,7 @@ namespace Nap
         
         _delegated: unowned Delegate
     
-    class GetStringArgsHandler: GLib.Object implements Handler
+    class GetStringArgsHandler: Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -46,7 +57,7 @@ namespace Nap
         
         _delegated: unowned Delegate
 
-    class SetStringHandler: GLib.Object implements Handler
+    class SetStringHandler: Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -58,7 +69,7 @@ namespace Nap
         
         _delegated: unowned Delegate
 
-    class SetStringArgsHandler: GLib.Object implements Handler
+    class SetStringArgsHandler: Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -70,7 +81,7 @@ namespace Nap
         
         _delegated: unowned Delegate
 
-    class GetJsonHandler: GLib.Object implements Handler
+    class GetJsonHandler: Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -81,7 +92,7 @@ namespace Nap
         
         _delegated: unowned Delegate
 
-    class GetJsonArgsHandler: GLib.Object implements Handler
+    class GetJsonArgsHandler: Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -92,7 +103,7 @@ namespace Nap
         
         _delegated: unowned Delegate
 
-    class SetJsonHandler: GLib.Object implements Handler
+    class SetJsonHandler: Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -110,7 +121,7 @@ namespace Nap
         
         _delegated: unowned Delegate
     
-    class SetJsonArgsHandler: GLib.Object implements Handler
+    class SetJsonArgsHandler: Object implements Handler
         construct(delegated: Delegate)
             _delegated = delegated
         

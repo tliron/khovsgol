@@ -1,38 +1,34 @@
 [indent=4]
 
-uses
-    Soup
-    Json
-
 namespace Nap
 
     /*
      * Base class for RESTful resources. Enables separate handlers for all
      * HTTP methods.
      */
-    class Resource: GLib.Object implements Handler
+    class Resource: Object implements Handler
         def handle(conversation: Conversation)
             var method = conversation.get_method()
-            if method == "GET"
+            if method == Method.GET
                 get(conversation)
-            else if method == "POST"
+            else if method == Method.POST
                 post(conversation)
-            else if method == "PUT"
+            else if method == Method.PUT
                 put(conversation)
-            else if method == "DELETE"
+            else if method == Method.DELETE
                 self.delete(conversation)
             
         def virtual new get(conversation: Conversation)
-            conversation.status_code = KnownStatusCode.METHOD_NOT_ALLOWED
+            conversation.status_code = StatusCode.METHOD_NOT_ALLOWED
 
         def virtual post(conversation: Conversation)
-            conversation.status_code = KnownStatusCode.METHOD_NOT_ALLOWED
+            conversation.status_code = StatusCode.METHOD_NOT_ALLOWED
 
         def virtual put(conversation: Conversation)
-            conversation.status_code = KnownStatusCode.METHOD_NOT_ALLOWED
+            conversation.status_code = StatusCode.METHOD_NOT_ALLOWED
 
         def virtual delete(conversation: Conversation)
-            conversation.status_code = KnownStatusCode.METHOD_NOT_ALLOWED
+            conversation.status_code = StatusCode.METHOD_NOT_ALLOWED
 
     /*
      * A RESTful resource that lets you use delegates in addition to
@@ -66,7 +62,7 @@ namespace Nap
             _ownerships = new Ownerships
 
             var args = va_list()
-            ownership: GLib.Object? = args.arg()
+            ownership: Object? = args.arg()
             while ownership is not null
                 _ownerships.add(ownership)
                 ownership = args.arg()
@@ -135,12 +131,6 @@ namespace Nap
         def virtual put_json(conversation: Conversation, entity: Json.Object): Json.Object?
             return new Json.Object()
         
-    def bad_request_json(conversation: Conversation, message: string)
-        var json = new Json.Object()
-        json.set_string_member("error", message)
-        conversation.response_json = json
-        conversation.status_code = KnownStatusCode.BAD_REQUEST
-
     class DelegatedDocumentResource: DocumentResource
         construct(get_json: json_delegate?, post_json: json_entity_delegate?)
             _get_json = get_json

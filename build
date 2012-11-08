@@ -1,44 +1,37 @@
 #!/bin/bash
 
-# Gee:    apt-get install libgee-dev,       valac --pkg gee-1.0
-# Soup:   apt-get install libsoup-2.4-dev,  valac --pkg libsoup-2.4
-# Json:   apt-get install libjson-glib-dev, valac --pkg json-glib-1.0
-# Sqlite: apt-get install libsqlite3-dev,   valac --pkg sqlite3
-# Posix:                                    valac --pkg posix --Xcc=-D"_GNU_SOURCE"
-# Gtk:    apt-get install libgtk-3-dev,     valac --pkg gtk+-3.0
+# Gee:    apt-get install libgee-dev,       valac --pkg=gee-1.0
+# Soup:   apt-get install libsoup-2.4-dev,  valac --pkg=libsoup-2.4
+# Json:   apt-get install libjson-glib-dev, valac --pkg=json-glib-1.0
+# Sqlite: apt-get install libsqlite3-dev,   valac --pkg=sqlite3
+# Posix:                                    valac --pkg=posix --Xcc=-D"_GNU_SOURCE"
+# Gtk:    apt-get install libgtk-3-dev,     valac --pkg=gtk+-3.0
+# Daemon: apt-get install libdaemon-dev,    valac --pkg=libdaemon
 
 compile()
 {
-    find src/server src/lib \( -name '*.gs' -o -name '*.vala' \) -print0 | xargs -r0 \
+    find "${@:2}" \( -name '*.gs' -o -name '*.vala' \) -print0 | xargs -r0 \
     valac \
         --basedir=src \
-        --output=khovsgold \
+        --output=$1 \
         --directory=bin \
+        \
         --thread \
+        --Xcc=-w \
+        \
         --pkg=libsoup-2.4 \
         --pkg=gee-1.0 \
         --pkg=json-glib-1.0 \
         --pkg=posix --Xcc=-D"_GNU_SOURCE" \
         --pkg=sqlite3 \
         --pkg=gtk+-3.0 \
-        "${@}"
-
-    find src/client src/lib \( -name '*.gs' -o -name '*.vala' \) -print0 | xargs -r0 \
-    valac \
-        --basedir=src \
-        --output=khovsgolc \
-        --directory=bin \
-        --thread \
-        --pkg=libsoup-2.4 \
-        --pkg=gee-1.0 \
-        --pkg=json-glib-1.0 \
-        --pkg=posix --Xcc=-D"_GNU_SOURCE" \
-        --pkg=sqlite3 \
-        --pkg=gtk+-3.0 \
-        "${@}"
+        --pkg=libdaemon
+        
+        # --ccode
 }
 
 ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
 cd "$ROOT"
-#compile --ccode
-compile --Xcc=-w
+
+compile khovsgold src/server src/lib
+compile khovsgolc src/client src/lib

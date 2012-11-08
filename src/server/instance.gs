@@ -2,14 +2,17 @@
 
 uses
     Nap
-    Posix
     
 namespace Khovsgol
-            
-    class ServerInstance: GLib.Object
+
+    class ServerInstance: Object
         construct(args: array of string)
             if !parse_arguments(args)
-                exit(-1)
+                Posix.exit(1)
+
+            var context = new MainContext()
+            _main_loop = new MainLoop(context, false)
+            Daemonize.handle("khovsgol", _start_daemon, _stop_daemon, _main_loop)
 
             var api = new API()
 
@@ -22,8 +25,6 @@ namespace Khovsgol
 
             SoupServer.delay = _delay * 1000
 
-            var context = new MainContext()
-
             _server = new SoupServer(_port, context)
             _server.handler = router
 
@@ -35,40 +36,52 @@ namespace Khovsgol
                 except e: ThreadError
                     print e.message
 
-            _mainLoop = new MainLoop(context, false)
-            
             _db = new DB()
             
         def start()
-            printf("Starting Khövsgöl server at port %d, %d threads\n", _port, _threads)
+            stdout.printf("Starting Khövsgöl server at port %d, %d threads\n", _port, _threads)
             _server.start()
-            _mainLoop.run()
+            _main_loop.run()
 
         def parse_arguments(args: array of string): bool
             try
-                var options = new array of OptionEntry[4]
+                restart_daemon: bool = false
+                var options = new array of OptionEntry[8]
                 options[0] = {"port", 0, 0, OptionArg.INT, ref _port, "Web server TCP port (defaults to 8080)", "number"}
                 options[1] = {"threads", 0, 0, OptionArg.INT, ref _threads, "Non-zero number of threads to enable multithreaded web server, -1 to use all CPU cores (defaults to 0)", "number"}
                 options[2] = {"delay", 0, 0, OptionArg.INT64, ref _delay, "Delay all web responses (defaults to 0)", "milliseconds"}
-                options[3] = {null}
+                options[3] = {"start", 0, 0, OptionArg.NONE, ref _start_daemon, "Start as daemon", null}
+                options[4] = {"stop", 0, 0, OptionArg.NONE, ref _stop_daemon, "Stop daemon", null}
+                options[5] = {"restart", 0, 0, OptionArg.NONE, ref restart_daemon, "Restart daemon", null}
+                options[6] = {"status", 0, 0, OptionArg.NONE, ref _status_daemon, "Show daemon status", null}
+                options[7] = {null}
                 
-                var context = new OptionContext("- Khovsgol Daemon")
-                context.set_summary("Music player daemon")
+                var context = new OptionContext("- Khovsgol Server")
+                context.set_summary("Music player server")
                 context.set_help_enabled(true)
                 context.add_main_entries(options, null)
                 context.parse(ref args)
+                
+                if restart_daemon
+                    _stop_daemon = true
+                    _start_daemon = true
             except e: OptionError
-                printf("%s\n", e.message)
-                printf("Use '%s --help' to see a full list of available command line options.\n", args[0])
+                stderr.printf("%s\n", e.message)
+                stdout.printf("Use '%s --help' to see a full list of available command line options.\n", args[0])
                 return false
             return true
         
-        _server: Server
-        _db: DB
-        _mainLoop: MainLoop
         _port: int = 8080
         _threads: int = 0
         _delay: int = 0
+        
+        _start_daemon: bool
+        _stop_daemon: bool
+        _status_daemon: bool
+
+        _server: Server
+        _db: DB
+        _main_loop: MainLoop
 
     class AlbumResource1: DocumentResource
         def override get_json(conversation: Conversation): Json.Object?
@@ -81,7 +94,7 @@ namespace Khovsgol
             json.set_object_member("entity", entity)
             return json
        
-    class API: GLib.Object
+    class API: Object
         def get_album2(conversation: Conversation)
             conversation.response_text = "Disintegration"
 
@@ -113,6 +126,6 @@ namespace Khovsgol
             var _get_album4 = new GetJsonArgsHandler(get_album4)
             var _set_album4 = new SetJsonHandler(set_album4)
             _albumResource4 = new DelegatedResource(_get_album4, _set_album4, null, null)
-            
+
 init
     new Khovsgol.ServerInstance(args).start()

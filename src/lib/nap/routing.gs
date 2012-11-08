@@ -1,9 +1,5 @@
 [indent=4]
 
-uses
-    Soup
-    Gee
-
 namespace Nap
 
     class Routes: GLib.Object
@@ -21,7 +17,7 @@ namespace Nap
         def new get(route: string): Handler?
             var handler = _exact[route]
             if handler is null
-                for prefix in ((AbstractMap of string, Handler) _prefix).keys
+                for prefix in ((Gee.AbstractMap of string, Handler) _prefix).keys
                     if route.has_prefix(prefix)
                         return _prefix[prefix]
             return handler
@@ -40,5 +36,5 @@ namespace Nap
             if handler is not null
                 handler.handle(conversation)
             else
-                conversation.status_code = KnownStatusCode.NOT_FOUND
+                conversation.status_code = StatusCode.NOT_FOUND
 
