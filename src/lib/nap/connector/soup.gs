@@ -1,29 +1,26 @@
 [indent=4]
 
-uses
-    Soup
+namespace Nap.Connector._Soup
 
-namespace Nap
-
-    class SoupHandler: Object
-        construct(handler: Handler)
+    class Handler: Object
+        construct(handler: Nap.Handler)
             _handler = handler
 
-        prop readonly handler: Handler
-        prop thread_pool: ThreadPool
+        prop readonly handler: Nap.Handler
+        prop thread_pool: Nap.ThreadPool
     
-        def soup_handle(server: Soup.Server, message: Message, path: string, query: HashTable?, client: ClientContext)
-            var conversation = new SoupConversation(server, message, path, query)
+        def handle(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?, client: Soup.ClientContext)
+            var conversation = new Conversation(server, message, path, query)
             if _thread_pool is null
-                if SoupServer.delay > 0
-                    Thread.usleep(SoupServer.delay)
+                if Server.delay > 0
+                    Thread.usleep(Server.delay)
                 _handler.handle(conversation)
                 conversation.commit()
             else
                 _thread_pool.handle(_handler, conversation)
     
-    class SoupConversation: Object implements Conversation
-        construct(server: Soup.Server, message: Message, path: string, query: HashTable?)
+    class Conversation: Object implements Nap.Conversation
+        construct(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?)
             _soup_server = server
             _soup_message = message
             _path = path
@@ -37,7 +34,7 @@ namespace Nap
         prop readonly path: string
         prop readonly query: dict of string, string
         prop readonly variables: dict of string, string
-        prop status_code: int = KnownStatusCode.OK
+        prop status_code: int = StatusCode.OK
         prop media_type: string?
         prop response_text: string?
         prop response_json: Json.Object?
@@ -59,7 +56,7 @@ namespace Nap
             if _response_text is not null
                 if _media_type is null
                     _media_type = "text/plain"
-                _soup_message.set_response(_media_type, MemoryUse.COPY, _response_text.data)
+                _soup_message.set_response(_media_type, Soup.MemoryUse.COPY, _response_text.data)
                 
         def pause()
             _soup_server.pause_message(_soup_message)
@@ -71,24 +68,26 @@ namespace Nap
         _soup_message: Soup.Message
 
     /**
-     * An HTTP server base on SOup. Accepts conversations coming in
+     * An HTTP server base on Soup. Accepts conversations coming in
      * through a specified port.
      */
-    class SoupServer: Object implements Server
+    class Server: Object implements Nap.Server
         prop static delay: ulong = 0
 
-        construct(port: int, context: MainContext)
-            _soup_server = new Soup.Server(SERVER_PORT, port, SERVER_ASYNC_CONTEXT, context)
+        construct(port: int, context: MainContext) raises Nap.Error
+            _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
+            if _soup_server is null
+                raise new Nap.Error.CONNECTOR("Could not create Soup server, is the port already in use?")
             _soup_server.request_started.connect(on_request_started)
             
-        prop handler: Handler
+        prop handler: Nap.Handler
             get
                 return _handler
             set
                 _handler = value
                 if value is not null
-                    _soup_handler = new SoupHandler(value)
-                    _soup_server.add_handler(null, _soup_handler.soup_handle)
+                    _soup_handler = new Handler(value)
+                    _soup_server.add_handler(null, _soup_handler.handle)
         
         prop thread_pool: ThreadPool
             get
@@ -99,10 +98,9 @@ namespace Nap
         def start()
             _soup_server.run_async()
         
-        def private on_request_started(message: Message, client: ClientContext)
+        def private static on_request_started(message: Soup.Message, client: Soup.ClientContext)
             pass
             
-        _handler: Handler
+        _handler: Nap.Handler
         _soup_server: Soup.Server
-        _soup_handler: SoupHandler
-
+        _soup_handler: Handler

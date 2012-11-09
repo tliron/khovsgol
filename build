@@ -20,6 +20,7 @@ compile()
         \
         --thread \
         --Xcc=-w \
+        --debug \
         \
         --pkg=libsoup-2.4 \
         --pkg=gee-1.0 \
@@ -104,7 +105,7 @@ ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
 cd "$ROOT"
 
 compile khovsgold src/server src/lib
-compile khovsgolc src/client src/lib
+#compile khovsgolc src/client src/lib
 
 #ccode src/server src/lib
 #doc

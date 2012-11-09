@@ -3,9 +3,9 @@
 uses
     Nap
     
-namespace Khovsgol
+namespace Khovsgol.Server
 
-    class ServerArguments: Object
+    class Arguments: Object
         construct(args: array of string)
             restart_daemon: bool = false
             
@@ -47,9 +47,9 @@ namespace Khovsgol
         prop readonly stop_daemon: bool
         prop readonly status_daemon: bool
 
-    class ServerInstance: Object
-        construct(args: array of string)
-            _arguments = new ServerArguments(args)
+    class Instance: Object
+        construct(args: array of string) raises Nap.Error
+            _arguments = new Arguments(args)
 
             var context = new MainContext()
             _main_loop = new MainLoop(context, false)
@@ -67,9 +67,9 @@ namespace Khovsgol
             router.map.add("/4*", api.albumResource4)
             router.map.add("/test/{first}/hello/{second}/", api.albumResource2)
 
-            SoupServer.delay = _arguments.delay * 1000
+            Connector._Soup.Server.delay = _arguments.delay * 1000
 
-            _server = new SoupServer(_arguments.port, context)
+            _server = new Connector._Soup.Server(_arguments.port, context)
             _server.handler = router
 
             if _arguments.threads > 0
@@ -85,8 +85,8 @@ namespace Khovsgol
             _server.start()
             _main_loop.run()
 
-        _arguments: ServerArguments
-        _server: Server
+        _arguments: Arguments
+        _server: Nap.Server
         _db: DB
         _main_loop: MainLoop
 
@@ -137,4 +137,7 @@ namespace Khovsgol
             _albumResource4 = new DelegatedResource(_get_album4, _set_album4, null, null)
 
 init
-    new Khovsgol.ServerInstance(args).start()
+    try
+        new Khovsgol.Server.Instance(args).start()
+    except e: Nap.Error
+        stdout.printf("%s\n", e.message)

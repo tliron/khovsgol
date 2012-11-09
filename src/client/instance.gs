@@ -2,10 +2,11 @@
 
 uses
     Gtk
+    Khovsgol
 
-namespace Khovsgol
+namespace Khovsgol.Client
 
-    class ClientInstance: GLib.Object
+    class Instance: GLib.Object
         construct()
             _window = new Window()
             
@@ -17,4 +18,4 @@ namespace Khovsgol
 
 init
     Gtk.init(ref args)
-    new Khovsgol.ClientInstance().start()
+    new Khovsgol.Client.Instance().start()
