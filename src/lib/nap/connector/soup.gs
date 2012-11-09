@@ -28,6 +28,7 @@ namespace Nap
             _soup_message = message
             _path = path
             _query = new dict of string, string
+            _variables = new dict of string, string
             if query is not null
                 var query_ss = (HashTable of string, string) query
                 for key in query_ss.get_keys()
@@ -35,6 +36,7 @@ namespace Nap
             
         prop readonly path: string
         prop readonly query: dict of string, string
+        prop readonly variables: dict of string, string
         prop status_code: int = KnownStatusCode.OK
         prop media_type: string?
         prop response_text: string?
@@ -73,12 +75,12 @@ namespace Nap
      * through a specified port.
      */
     class SoupServer: Object implements Server
+        prop static delay: ulong = 0
+
         construct(port: int, context: MainContext)
             _soup_server = new Soup.Server(SERVER_PORT, port, SERVER_ASYNC_CONTEXT, context)
             _soup_server.request_started.connect(on_request_started)
             
-        prop static delay: ulong = 0
-
         prop handler: Handler
             get
                 return _handler
@@ -97,7 +99,7 @@ namespace Nap
         def start()
             _soup_server.run_async()
         
-        def on_request_started(message: Message, client: ClientContext)
+        def private on_request_started(message: Message, client: ClientContext)
             pass
             
         _handler: Handler

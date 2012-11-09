@@ -37,6 +37,7 @@ namespace Nap
     interface Conversation: Object
         prop abstract readonly path: string
         prop abstract readonly query: dict of string, string
+        prop abstract readonly variables: dict of string, string
         prop abstract status_code: int = StatusCode.OK
         prop abstract media_type: string?
         prop abstract response_text: string?

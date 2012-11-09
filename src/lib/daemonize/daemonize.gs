@@ -116,7 +116,16 @@ namespace Daemonize
         else
             Posix.exit(0)
 
-    def exit()
+    /*
+     * The default daemon pid_file location is /var/run/, but that would
+     * require the daemon to run with root privileges.
+     */
+    def get_pid_file(): string
+        var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
+        //Daemon.log(Daemon.LogPriority.INFO, "PID file: %s", pid_file)
+        return pid_file
+
+    def private exit()
         if _main_loop is not null
             // Wait for GLib main loop to quit
             _main_loop.quit()
@@ -133,7 +142,7 @@ namespace Daemonize
      * Our wrapping GLib poll callback, with added support for handling
      * daemon signals.
      */
-    def poll(fds: array of PollFD, timeout: int): int
+    def private poll(fds: array of PollFD, timeout: int): int
         for fd in fds
             if fd.fd == _daemon_fd.fd
                  var signal = Daemon.signal_next()
@@ -152,15 +161,6 @@ namespace Daemonize
                  break
 
         return _poll(fds, timeout)
-
-    /*
-     * The default daemon pid_file location is /var/run/, but that would
-     * require the daemon to run with root privileges.
-     */
-    def get_pid_file(): string
-        var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
-        //Daemon.log(Daemon.LogPriority.INFO, "PID file: %s", pid_file)
-        return pid_file
 
     _name: string
     _poll: PollFunc

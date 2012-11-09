@@ -7,7 +7,8 @@ namespace Khovsgol
 
     class DB
         construct()
-            Database.open_v2("/home/emblemparade/.khovsgol/khovsgol.db", out _db, OPEN_READWRITE|OPEN_CREATE)
+            var db_file = "%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir())
+            Database.open_v2(db_file, out _db, OPEN_READWRITE|OPEN_CREATE)
             test()
             
         def test()
