@@ -2,12 +2,18 @@
 
 namespace Nap
 
+    /*
+     * HTTP status codes.
+     */
     namespace StatusCode
         const OK: int = 200
         const BAD_REQUEST: int = 400
         const NOT_FOUND: int = 404
         const METHOD_NOT_ALLOWED: int = 405
     
+    /*
+     * HTTP methods.
+     */
     namespace Method
         const GET: string = "GET"
         const PUT: string = "PUT"
@@ -15,11 +21,14 @@ namespace Nap
         const DELETE: string = "DELETE"
 
     /*
-     * The base class for all RESTful conversation handlers.
+     * Interface for RESTful conversation handlers.
      */
     interface Handler: Object
         def abstract handle(conversation: Conversation)
 
+    /*
+     * Delegate for RESTful conversation handlers.
+     */
     delegate HandlerDelegate(conversation: Conversation)
     
     /*

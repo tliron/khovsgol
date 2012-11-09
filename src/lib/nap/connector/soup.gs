@@ -68,8 +68,9 @@ namespace Nap
         _soup_server: Soup.Server
         _soup_message: Soup.Message
 
-    /*
-     * An HTTP server. Accepts conversations coming in through a specified port.
+    /**
+     * An HTTP server base on SOup. Accepts conversations coming in
+     * through a specified port.
      */
     class SoupServer: Object implements Server
         construct(port: int, context: MainContext)

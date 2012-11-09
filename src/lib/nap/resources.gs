@@ -3,8 +3,8 @@
 namespace Nap
 
     /*
-     * Base class for RESTful resources. Enables separate handlers for all
-     * HTTP methods.
+     * Base class for RESTful resources. Enables separate handlers for
+     * all HTTP methods.
      */
     class Resource: Object implements Handler
         def handle(conversation: Conversation)

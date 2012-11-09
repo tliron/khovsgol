@@ -1,7 +1,5 @@
 [indent=4]
 
-//daemon_pid_file_proc: extern void **
-
 namespace Daemonize
 
     /*
@@ -17,22 +15,22 @@ namespace Daemonize
      * 
      * The daemon process is expected to have a GLib main loop, which
      * will be hooked to properly handle incoming signals. The exit
-     * signals (TERM, QUIT and INT) will cause it to cleanly quit the
-     * main loop, facilitating an orderly shutdown.
+     * signals (TERM, QUIT and INT) will cause it to quit the main loop,
+     * blocking until it is properly shut down.
      */
     def handle(name: string, start: bool, stop: bool, main_loop: MainLoop? = null)
         // See: http://0pointer.de/lennart/projects/libdaemon/reference/html/testd_8c-example.html
 
         Daemon.pid_file_ident = Daemon.log_ident = _name = name
-        set_daemon_pid_file_proc((Func) _get_pid_file) // Ideally: Daemon.pid_file_proc = get_pid_file
+        set_daemon_pid_file_proc((Func) get_pid_file) // Ideally: Daemon.pid_file_proc = get_pid_file
         
         if !start && !stop
             // Show status
             var pid = Daemon.pid_file_is_running()
             if pid >= 0
-                print "Daemon is running (PID %d)", pid
+                print "Daemon %s is running (PID %d)", name, pid
             else
-                print "Daemon is not running"
+                print "Daemon %s is not running", name
             Posix.exit(0)
 
         if Daemon.reset_sigs(-1) < 0
@@ -44,21 +42,25 @@ namespace Daemonize
             Posix.exit(1)
             
         if stop
-            print "Stopping %s daemon", name
+            var pid = Daemon.pid_file_is_running()
+            if pid < 0
+                print "Daemon %s is not running", name
+            else
+                print "Stopping daemon %s (PID %d)", name, pid
             
-            var r = Daemon.pid_file_kill_wait(Daemon.Sig.TERM, 5)
-            if r < 0
-                Daemon.log(Daemon.LogPriority.ERR, "Failed to kill daemon: %s", strerror(errno))
-                Posix.exit(1)
+                var r = Daemon.pid_file_kill_wait(Daemon.Sig.TERM, 5)
+                if r < 0
+                    Daemon.log(Daemon.LogPriority.ERR, "Failed to kill daemon: %s", strerror(errno))
+                    Posix.exit(1)
             
         if start
-            print "Starting %s daemon", name
-            
             var pid = Daemon.pid_file_is_running()
             if pid >= 0
-                Daemon.log(Daemon.LogPriority.ERR, "Daemon already running on PID file %u", pid)
+                Daemon.log(Daemon.LogPriority.ERR, "Daemon %s is already running (PID %u)", name, pid)
                 Posix.exit(1)
                 
+            print "Starting daemon %s (%s)", name, get_pid_file()
+            
             if Daemon.retval_init() < 0
                 Daemon.log(Daemon.LogPriority.ERR, "Failed to create daemon pipe: %s", strerror(errno))
                 Posix.exit(1)
@@ -128,8 +130,8 @@ namespace Daemonize
         Posix.exit(0)
 
     /*
-     * Our new GLib poll callback, with added support for handling daemon
-     * signals.
+     * Our wrapping GLib poll callback, with added support for handling
+     * daemon signals.
      */
     def poll(fds: array of PollFD, timeout: int): int
         for fd in fds
@@ -155,7 +157,7 @@ namespace Daemonize
      * The default daemon pid_file location is /var/run/, but that would
      * require the daemon to run with root privileges.
      */
-    def _get_pid_file(): string
+    def get_pid_file(): string
         var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
         //Daemon.log(Daemon.LogPriority.INFO, "PID file: %s", pid_file)
         return pid_file

@@ -2,17 +2,22 @@
 
 namespace Nap
 
-    class Routes: GLib.Object
+    /*
+     * Maps route patterns to handlers.
+     * 
+     * Patterns ending with a "*" will match any routes with that prefix.
+     */
+    class Map: GLib.Object
         construct()
             _exact = new dict of string, Handler
             _prefix = new dict of string, Handler
     
-        def add(route: string, handler: Handler)
-            if route.has_suffix("*")
-                var prefix = route.slice(0, route.length - 1)
+        def add(pattern: string, handler: Handler)
+            if pattern.has_suffix("*")
+                var prefix = pattern.slice(0, pattern.length - 1)
                 _prefix.set(prefix, handler)
             else
-                _exact.set(route, handler)
+                _exact.set(pattern, handler)
 
         def new get(route: string): Handler?
             var handler = _exact[route]
@@ -25,16 +30,19 @@ namespace Nap
         _exact: dict of string, Handler
         _prefix: dict of string, Handler
 
+    /*
+     * A RESTful handler that forwards to other handlers according to
+     * a routing map.
+     */
     class Router: GLib.Object implements Handler
         construct()
-            _routes = new Routes
+            _map = new Map
 
-        prop readonly routes: Routes
+        prop readonly map: Map
         
         def handle(conversation: Conversation)
-            var handler = routes.get(conversation.path)
+            var handler = _map.get(conversation.path)
             if handler is not null
                 handler.handle(conversation)
             else
                 conversation.status_code = StatusCode.NOT_FOUND
-

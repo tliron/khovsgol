@@ -20,10 +20,10 @@ namespace Khovsgol
 
             var router = new Router()
             
-            router.routes.add("/1", new AlbumResource1())
-            router.routes.add("/2", api.albumResource2)
-            router.routes.add("/3", api.albumResource3)
-            router.routes.add("/4*", api.albumResource4)
+            router.map.add("/1", new AlbumResource1())
+            router.map.add("/2", api.albumResource2)
+            router.map.add("/3", api.albumResource3)
+            router.map.add("/4*", api.albumResource4)
 
             SoupServer.delay = _delay * 1000
 

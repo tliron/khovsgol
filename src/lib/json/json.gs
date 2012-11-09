@@ -4,6 +4,7 @@ uses
     Json
 
 namespace JSON
+
     def to(obj: Json.Object, human: bool = false): string
         var root = new Json.Node(NodeType.OBJECT)
         root.set_object(obj)
