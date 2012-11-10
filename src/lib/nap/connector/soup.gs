@@ -78,7 +78,8 @@ namespace Nap.Connector._Soup
             _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
             if _soup_server is null
                 raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %d, is the port already in use?".printf(port))
-            _soup_server.request_started.connect(on_request_started)
+                
+            _soup_server.request_read.connect(on_request_read)
             
         prop handler: Nap.Handler
             get
@@ -98,8 +99,8 @@ namespace Nap.Connector._Soup
         def start()
             _soup_server.run_async()
         
-        def private static on_request_started(message: Soup.Message, client: Soup.ClientContext)
-            pass
+        def private static on_request_read(message: Soup.Message, client: Soup.ClientContext)
+            Logging.get_logger("nap.web").info("%s %s", message.method, message.uri.to_string(false))
             
         _handler: Nap.Handler
         _soup_server: Soup.Server

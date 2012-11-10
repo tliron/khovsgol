@@ -61,9 +61,12 @@ namespace Khovsgol.Server
                 Logging.get_logger().set_file_handler(LogLevelFlags.LEVEL_INFO, "%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
             except e: GLib.Error
                 raise new Nap.Error.SYSTEM(e.message)
+            try
+                Logging.get_logger("nap.web").set_file_handler(LogLevelFlags.LEVEL_INFO, "%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
+            except e: GLib.Error
+                raise new Nap.Error.SYSTEM(e.message)
 
             _logger = Logging.get_logger("khovsgol.server")
-            _logger.info("Welcome!")
 
             var api = new API()
 
@@ -90,6 +93,7 @@ namespace Khovsgol.Server
             
         def start()
             stdout.printf("Starting Khövsgöl server at port %d, %d threads\n", _arguments.port, _arguments.threads)
+            _logger.info("Starting Khövsgöl server at port %d, %d threads", _arguments.port, _arguments.threads)
             _server.start()
             _main_loop.run()
 

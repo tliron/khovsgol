@@ -81,11 +81,17 @@ namespace Logging
         final
             if _handle > 0
                 Log.remove_handler(_domain, _handle)
-            if _stream is not null
-                _stream.flush()
-                _stream.close()
+            if _stream_lock is not null
+                _stream_lock.lock()
+                try
+                    if _stream is not null
+                        _stream.flush()
+                        _stream.close()
+                finally
+                    if _stream_lock is not null
+                        _stream_lock.unlock()
         
-        prop readonly domain: string?
+        prop readonly domain: string
         prop format: string
         prop date_time_format: string
         
@@ -117,18 +123,15 @@ namespace Logging
         def debug(message: string, ...)
             logv(_domain, LogLevelFlags.LEVEL_DEBUG, message, va_list())
 
-        def set_parent_handler()
-            if _handle > 0
-                Log.remove_handler(_domain, _handle)
-            _handler = _parent_handler
-            _handle = Log.set_handler(_domain, LogLevelFlags.FLAG_RECURSION|LogLevelFlags.FLAG_FATAL|LogLevelFlags.LEVEL_MASK, _parent_handler)
-        
         def set_handler(deepest_level: LogLevelFlags, handler: LogFunc)
-            var levels = get_deepest_log_level_flags(deepest_level)
+            _levels = get_deepest_log_level_flags(deepest_level)
             if _handle > 0
                 Log.remove_handler(_domain, _handle)
             _handler = handler
-            _handle = Log.set_handler(_domain, levels, handler)
+            _handle = Log.set_handler(_domain, _levels, handler)
+        
+        def set_parent_handler()
+            set_handler(LogLevelFlags.LEVEL_DEBUG, _parent_handler)
         
         def set_stream_handler(deepest_level: LogLevelFlags, stream: FileOutputStream, thread_safe: bool = true)
             _stream = stream
@@ -147,7 +150,7 @@ namespace Logging
             // Note: GLib does not allow us to call log functions from within handlers,
             // so we must call the parent handler directly
             var parent = get_parent()
-            if parent._handler is not null
+            if (parent._handler is not null) && ((parent._levels & levels) != 0)
                 parent._handler(domain, levels, message)
     
         def private _stream_handler(domain: string?, levels: LogLevelFlags, message: string)
@@ -163,6 +166,7 @@ namespace Logging
                     _stream_lock.unlock()
 
         _handle: uint = 0
-        _handler: LogFunc?
-        _stream: FileOutputStream?
-        _stream_lock: Mutex?
+        _handler: LogFunc
+        _levels: LogLevelFlags
+        _stream: FileOutputStream
+        _stream_lock: Mutex
