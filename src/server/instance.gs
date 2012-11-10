@@ -57,17 +57,8 @@ namespace Khovsgol.Server
             if _arguments.start_daemon || _arguments.stop_daemon || _arguments.status_daemon
                 Daemonize.handle("khovsgol", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
             
-            try
-                Logging.get_logger().set_file_handler(LogLevelFlags.LEVEL_INFO, File.new_for_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir())))
-            except e: GLib.Error
-                raise new Nap.Error.SYSTEM(e.message)
-            try
-                Logging.get_logger("nap.web").set_file_handler(LogLevelFlags.LEVEL_INFO, File.new_for_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir())))
-            except e: GLib.Error
-                raise new Nap.Error.SYSTEM(e.message)
+            initialize_logging()
 
-            _logger = Logging.get_logger("khovsgol.server")
-            
             Logging.get_logger("nap.web").info("test")
 
             var api = new API()
@@ -92,6 +83,22 @@ namespace Khovsgol.Server
                     print e.message
 
             _db = new DB()
+        
+        def initialize_logging() raises Nap.Error
+            try
+                var appender = new Logging.FileAppender()
+                appender.deepest_level = LogLevelFlags.LEVEL_INFO
+                appender.set_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
+                Logging.get_logger().appender = appender
+                
+                appender = new Logging.FileAppender()
+                appender.deepest_level = LogLevelFlags.LEVEL_INFO
+                appender.set_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
+                Logging.get_logger("nap.web").appender = appender
+
+                _logger = Logging.get_logger("khovsgol.server")
+            except e: GLib.Error
+                raise new Nap.Error.SYSTEM(e.message)
             
         def start()
             stdout.printf("Starting Khövsgöl server at port %d, %d threads\n", _arguments.port, _arguments.threads)
@@ -155,4 +162,4 @@ init
     try
         new Khovsgol.Server.Instance(args).start()
     except e: Nap.Error
-        stdout.printf("%s\n", e.message)
+        stderr.printf("%s\n", e.message)
