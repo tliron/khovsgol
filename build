@@ -19,7 +19,7 @@ compile()
         --directory=bin \
         \
         --thread \
-        --enable-deprecated \
+        --target-glib=2.32 \
         --Xcc=-w \
         --debug \
         \
@@ -31,7 +31,7 @@ compile()
         --pkg=gtk+-3.0 \
         --pkg=libdaemon
 
-        #--target-glib=2.32 \
+        #--enable-deprecated \
 }
 
 ccode()

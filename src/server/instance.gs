@@ -58,15 +58,17 @@ namespace Khovsgol.Server
                 Daemonize.handle("khovsgol", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
             
             try
-                Logging.get_logger().set_file_handler(LogLevelFlags.LEVEL_INFO, "%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
+                Logging.get_logger().set_file_handler(LogLevelFlags.LEVEL_INFO, File.new_for_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir())))
             except e: GLib.Error
                 raise new Nap.Error.SYSTEM(e.message)
             try
-                Logging.get_logger("nap.web").set_file_handler(LogLevelFlags.LEVEL_INFO, "%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
+                Logging.get_logger("nap.web").set_file_handler(LogLevelFlags.LEVEL_INFO, File.new_for_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir())))
             except e: GLib.Error
                 raise new Nap.Error.SYSTEM(e.message)
 
             _logger = Logging.get_logger("khovsgol.server")
+            
+            Logging.get_logger("nap.web").info("test")
 
             var api = new API()
 

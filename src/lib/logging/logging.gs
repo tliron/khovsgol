@@ -81,15 +81,15 @@ namespace Logging
         final
             if _handle > 0
                 Log.remove_handler(_domain, _handle)
-            if _stream_lock is not null
+            if _thread_safe
                 _stream_lock.lock()
-                try
-                    if _stream is not null
-                        _stream.flush()
-                        _stream.close()
-                finally
-                    if _stream_lock is not null
-                        _stream_lock.unlock()
+            try
+                if _stream is not null
+                    _stream.flush()
+                    _stream.close()
+            finally
+                if _thread_safe
+                    _stream_lock.unlock()
         
         prop readonly domain: string
         prop format: string
@@ -135,12 +135,12 @@ namespace Logging
         
         def set_stream_handler(deepest_level: LogLevelFlags, stream: FileOutputStream, thread_safe: bool = true)
             _stream = stream
-            if thread_safe
-                _stream_lock = new Mutex()
+            _thread_safe = thread_safe
             set_handler(deepest_level, _stream_handler)
 
-        def set_file_handler(deepest_level: LogLevelFlags, path: string, thread_safe: bool = true) raises Error
-            set_stream_handler(deepest_level, File.new_for_path(path).append_to(FileCreateFlags.NONE), thread_safe)
+        def set_file_handler(deepest_level: LogLevelFlags, file: File, thread_safe: bool = true) raises Error
+            _file = file
+            set_stream_handler(deepest_level, _file.append_to(FileCreateFlags.NONE), thread_safe)
         
         def render(domain: string?, levels: LogLevelFlags, message: string): string
             var now = new DateTime.now_local()
@@ -154,19 +154,100 @@ namespace Logging
                 parent._handler(domain, levels, message)
     
         def private _stream_handler(domain: string?, levels: LogLevelFlags, message: string)
-            if _stream_lock is not null
+            if _thread_safe
                 _stream_lock.lock()
             try
                 _stream.write(render(domain, levels, message).data)
                 _stream.flush()
+                if _file is not null
+                    roll_file()
             except e: Error
                 pass
             finally
-                if _stream_lock is not null
+                if _thread_safe
                     _stream_lock.unlock()
+        
+        def private roll_file()
+            enumerator: FileEnumerator = null
+            try
+                var info = _file.query_info(FileAttribute.STANDARD_SIZE + "," + FileAttribute.STANDARD_NAME, FileQueryInfoFlags.NONE)
+                
+                // Is our file too big?
+                var size = info.get_size()
+                if size > _max_file_size
+                    // Enumerate the current ordinal files
+                    var prefix = info.get_name() + "."
+                    var directory = _file.get_parent()
+                    if directory is not null
+                        enumerator = directory.enumerate_children(FileAttribute.STANDARD_NAME, FileQueryInfoFlags.NONE)
+                        info = enumerator.next_file()
+                        var ordinals = new list of int
+                        while info is not null
+                            var name = info.get_name()
+                            if (name.length != prefix.length) && name.has_prefix(prefix)
+                                var suffix = name.slice(prefix.length, name.length)
+                                var ordinal = int.parse(suffix)
+                                // Make sure that our file follows the rules
+                                if ordinal > 0 && (name == prefix + ordinal.to_string())
+                                    ordinals.add(ordinal)
+                            info = enumerator.next_file()
+                        
+                        new_ordinal: int = 1
+                        
+                        if !ordinals.is_empty
+                            ordinals.sort()
+                            start: int = 0
+                            
+                            // Too many ordinals?
+                            if ordinals.size > _max_files - 1
+                                // Delete first ordinal
+                                var file = directory.get_child(prefix + ordinals.first().to_string())
+                                file.delete()
+                                start = 1
+
+                                // Delete the extra ordinals
+                                for var p = _max_files to (ordinals.size - 1)
+                                    var ordinal = ordinals[p]
+                                    file = directory.get_child(prefix + ordinal.to_string())
+                                    file.delete()
+                            
+                            // Rename the ordinals in order
+                            position: int = 1
+                            for var p = start to min(_max_files - 1, ordinals.size - 1)
+                                var ordinal = ordinals[p]
+                                if ordinal != position
+                                    var file = directory.get_child(prefix + ordinal.to_string())
+                                    var new_file = directory.get_child(prefix + position.to_string())
+                                    file.move(new_file, FileCopyFlags.OVERWRITE)
+                                position++
+                                
+                            new_ordinal = position
+                            
+                        // Move current file to new ordinal position
+                        _stream.flush()
+                        _stream.close()
+                        var new_file = directory.get_child(prefix + new_ordinal.to_string())
+                        _file.move(new_file, FileCopyFlags.NONE)
+                        
+                        // Re-open stream
+                        _stream = _file.append_to(FileCreateFlags.NONE)
+            except e: Error
+                print e.message
+                if enumerator is not null
+                    try
+                        enumerator.close()
+                    except e: Error
+                        pass
+                        
+        def private static min(a: int, b: int): int
+            return a < b ? a : b
 
         _handle: uint = 0
-        _handler: LogFunc
+        _handler: unowned LogFunc
         _levels: LogLevelFlags
+        _thread_safe: bool = false
         _stream: FileOutputStream
-        _stream_lock: Mutex
+        _stream_lock: Mutex = Mutex()
+        _file: File
+        _max_file_size: int = 1000
+        _max_files: int = 10
