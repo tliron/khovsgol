@@ -56,16 +56,24 @@ namespace Khovsgol.Server
             
             if _arguments.start_daemon || _arguments.stop_daemon || _arguments.status_daemon
                 Daemonize.handle("khovsgol", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
+            
+            try
+                Logging.get_logger().set_file_handler(LogLevelFlags.LEVEL_INFO, "%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
+            except e: GLib.Error
+                raise new Nap.Error.SYSTEM(e.message)
+
+            _logger = Logging.get_logger("khovsgol.server")
+            _logger.info("Welcome!")
 
             var api = new API()
 
             var router = new Router()
             
-            router.map.add("/1", new AlbumResource1())
-            router.map.add("/2", api.albumResource2)
-            router.map.add("/3", api.albumResource3)
-            router.map.add("/4*", api.albumResource4)
-            router.map.add("/test/{first}/hello/{second}/", api.albumResource2)
+            router.add("/1", new AlbumResource1())
+            router.add("/2", api.albumResource2)
+            router.add("/3", api.albumResource3)
+            router.add("/4*", api.albumResource4)
+            router.add("/test/{first}/hello/{second}/", api.albumResource2)
 
             Connector._Soup.Server.delay = _arguments.delay * 1000
 
@@ -89,6 +97,7 @@ namespace Khovsgol.Server
         _server: Nap.Server
         _db: DB
         _main_loop: MainLoop
+        _logger: Logging.Logger
 
 
 

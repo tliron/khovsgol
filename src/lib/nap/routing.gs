@@ -3,78 +3,93 @@
 namespace Nap
 
     /*
-     * Maps route patterns to handlers.
-     * 
-     * Patterns ending with a "*" will match any routes with that prefix.
+     * A RESTful handler that forwards to other handlers by matching
+     * the conversation path against templates.
      */
-    class Map: GLib.Object
+    class Router: GLib.Object implements Handler
         construct()
-            _exact = new dict of string, Handler
-            _template = new dict of Template, Handler
+            _trivials = new dict of string, Handler
+            _routes = new list of Route
     
-        def add(pattern: string, handler: Handler)
-            if needs_regex(pattern)
-                try
-                    _template.set(new Template(pattern), handler)
-                except e: RegexError
-                    pass
+        def handle(conversation: Conversation)
+            var handler = _trivials[conversation.path]
+            if handler is null
+                for route in _routes
+                    if route.template.matches(conversation)
+                        handler = route.handler
+                        break
+            if handler is not null
+                handler.handle(conversation)
             else
-                _exact.set(pattern, handler)
+                conversation.status_code = StatusCode.NOT_FOUND
+
+        def add(pattern: string, handler: Handler)
+            if Template.is_trivial(pattern)
+                _trivials.set(pattern, handler)
+            else
+                try
+                    _routes.add(new Route(new Template(pattern), handler))
+                except e: RegexError
+                    // This should never happen!
+                    _trivials.set(pattern, handler)
                 
         def add_regex(regex: Regex, handler: Handler) raises RegexError
-            _template.set(new Template.raw(regex), handler)
+            _routes.add(new Route(new Template.raw(regex), handler))
         
-        def get_route(path: string, out handler: Handler, out variables: dict of string, string?)
-            handler = _exact[path]
-            variables = null
-            if handler is null
-                for template in ((Gee.AbstractMap of Template, Handler) _template).keys
-                    info: MatchInfo
-                    if template.regex.match(path, 0, out info)
-                        variables = new dict of string, string
-                        for variable in template.variables
-                            variables[variable] = info.fetch_named(variable)
-                        handler = _template[template]
-                        break
+        _trivials: dict of string, Handler
+        _routes: list of Route
+        
+        class static private Route
+            construct(template: Template, handler: Handler)
+                _template = template
+                _handler = handler
+        
+            prop readonly template: Template
+            prop readonly handler: Handler
 
-        _exact: dict of string, Handler
-        _template: dict of Template, Handler
-
-        def private static needs_regex(pattern: string): bool
-            return pattern.has_suffix("*") || ((pattern.index_of_char('{') >= 0) && (pattern.index_of_char('}') >= 0))
-    
+    /*
+     * Simplified implementation of URI templates:
+     * 
+     * http://tools.ietf.org/html/rfc6570
+     * 
+     * Variables can be specified by the "{name}" notation. Patterns
+     * ending in a "*" will match any suffix.
+     */
     class Template
-        construct(original: string) raises RegexError
+        def static is_trivial(pattern: string): bool
+            return !pattern.has_suffix("*") && (pattern.index_of_char('{') < 0)
+
+        construct(pattern: string) raises RegexError
             _variables = new list of string
         
-            var pattern = original
+            var p = pattern
             var regex = new StringBuilder("^")
             
             wildcard: bool = false
-            if pattern.has_suffix("*")
-                pattern = pattern.slice(0, pattern.length - 1)
+            if p.has_suffix("*")
+                p = p.slice(0, pattern.length - 1)
                 wildcard = true
                 
-            var start = pattern.index_of_char('{')
+            var start = p.index_of_char('{')
             if start < 0
-                regex.append(Regex.escape_string(pattern))
+                regex.append(Regex.escape_string(p))
             else
                 var last = 0
                 while start >= 0
-                    var end = pattern.index_of_char('}', start + 1)
+                    var end = p.index_of_char('}', start + 1)
                     if end >= 0
-                        regex.append(Regex.escape_string(pattern.slice(last, start)))
+                        regex.append(Regex.escape_string(p.slice(last, start)))
                         regex.append("(?<")
-                        var variable = pattern.slice(start + 1, end)
+                        var variable = p.slice(start + 1, end)
                         _variables.add(variable)
                         regex.append(variable)
                         regex.append(">[^/]*)")
                         last = end + 1
-                        start = pattern.index_of_char('{', last)
+                        start = p.index_of_char('{', last)
                     else
                         break
-                if last < pattern.length
-                    regex.append(Regex.escape_string(pattern.slice(last, pattern.length)))
+                if last < p.length
+                    regex.append(Regex.escape_string(p.slice(last, p.length)))
             
             if !wildcard
                 regex.append("$")
@@ -90,24 +105,17 @@ namespace Nap
     
         prop readonly regex: Regex
         prop readonly variables: list of string
-
-    /*
-     * A RESTful handler that forwards to other handlers according to
-     * a routing map.
-     */
-    class Router: GLib.Object implements Handler
-        construct()
-            _map = new Map
-
-        prop readonly map: Map
         
-        def handle(conversation: Conversation)
-            handler: Handler
-            variables: dict of string, string
-            _map.get_route(conversation.path, out handler, out variables)
-            if variables is not null
-                conversation.variables.set_all(variables)
-            if handler is not null
-                handler.handle(conversation)
+        /*
+         * Checks if the conversation path matches the template. Note
+         * that if template has variables, they will be extracted into
+         * the conversation.
+         */
+        def matches(conversation: Conversation): bool
+            info: MatchInfo
+            if _regex.match(conversation.path, 0, out info)
+                for variable in _variables
+                    conversation.variables[variable] = info.fetch_named(variable)
+                return true
             else
-                conversation.status_code = StatusCode.NOT_FOUND
+                return false

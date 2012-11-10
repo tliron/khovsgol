@@ -77,7 +77,7 @@ namespace Nap.Connector._Soup
         construct(port: int, context: MainContext) raises Nap.Error
             _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
             if _soup_server is null
-                raise new Nap.Error.CONNECTOR("Could not create Soup server, is the port already in use?")
+                raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %d, is the port already in use?".printf(port))
             _soup_server.request_started.connect(on_request_started)
             
         prop handler: Nap.Handler

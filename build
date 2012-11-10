@@ -19,6 +19,7 @@ compile()
         --directory=bin \
         \
         --thread \
+        --enable-deprecated \
         --Xcc=-w \
         --debug \
         \
@@ -29,6 +30,8 @@ compile()
         --pkg=sqlite3 \
         --pkg=gtk+-3.0 \
         --pkg=libdaemon
+
+        #--target-glib=2.32 \
 }
 
 ccode()
