@@ -106,33 +106,42 @@ namespace Logging
                     _stream.write(render(domain, levels, message).data)
                     _stream.flush()
             except e: Error
-                stderr.printf("%s\n", e.message)
+                stderr.printf("Error writing log message to stream: %s\n", e.message)
     
     /*
      * A file stream appender that handles automatic rolling of log
      * files.
      */
     class FileAppender: StreamAppender
-        prop max_file_size: int = 1000
+        prop max_file_size: int = 1000000 // 1MB
         prop max_older_files: int = 10
         prop readonly file: File
 
         def set_file(file: File?) raises Error
             _file = file
+            stream = null
             if _file is not null
                 stream = _file.append_to(FileCreateFlags.NONE)
-            else
-                stream = null
         
         def set_path(path: string) raises Error
             set_file(File.new_for_path(path))
 
         def override handle(domain: string?, levels: LogLevelFlags, message: string)
+            // If the file has moved away, make sure to reopen the
+            // stream
+            if (_file is not null) && !_file.query_exists()
+                try
+                    set_file(_file)
+                except e: Error
+                    stderr.printf("Error reopening log file: %s\n", e.message)
+                    
             super.handle(domain, levels, message)
+            
             try
-                roll()
+                if _file is not null
+                    roll()
             except e: Error
-                stderr.printf("%s\n", e.message)
+                stderr.printf("Error rolling log file: %s\n", e.message)
 
         def roll() raises Error
             var info = _file.query_info(FileAttribute.STANDARD_SIZE + "," + FileAttribute.STANDARD_NAME, FileQueryInfoFlags.NONE)
