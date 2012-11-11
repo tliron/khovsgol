@@ -17,8 +17,6 @@ namespace Khovsgol.Server
             
             initialize_logging()
 
-            Logging.get_logger("nap.web").info("test")
-
             _api = new API()
             
             Connector._Soup.Server.delay = _arguments.delay * 1000
@@ -42,8 +40,6 @@ namespace Khovsgol.Server
             appender.deepest_level = LogLevelFlags.LEVEL_INFO
             appender.set_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
             Logging.get_logger("nap.web").appender = appender
-
-            _logger = Logging.get_logger("khovsgol.server")
             
         def start()
             stdout.printf("Starting Khövsgöl server at port %d, %d threads\n", _arguments.port, _arguments.threads)
@@ -54,12 +50,12 @@ namespace Khovsgol.Server
         _arguments: Arguments
         _server: Nap.Server
         _main_loop: MainLoop
-        _logger: Logging.Logger
+        _logger: Logging.Logger = Logging.get_logger("khovsgol.server")
         _api: API
         
     class API
-        construct() raises Khovsgol.Error
-            _db = new DB()
+        construct() raises GLib.Error
+            _libraries = new Database.Libraries()
             
             _router = new Router()
             router.add_node("/album/{path}/", new DelegatedResource(new GetJsonArgsHandler(get_album), null, null, null))
@@ -70,7 +66,7 @@ namespace Khovsgol.Server
         def get_album(arguments: Nap.Arguments): Json.Object? raises GLib.Error
             var path = arguments.variables["path"]
             try
-                var album = _db.get_album(path)
+                var album = _libraries.get_album(path)
                 if album is not null
                     return album.to_json()
             except e: Khovsgol.Error
@@ -80,14 +76,14 @@ namespace Khovsgol.Server
         def get_track(arguments: Nap.Arguments): Json.Object? raises GLib.Error
             var path = arguments.variables["path"]
             try
-                var track = _db.get_track(path)
+                var track = _libraries.get_track(path)
                 if track is not null
                     return track.to_json()
             except e: Khovsgol.Error
                 pass
             return null
         
-        _db: DB
+        _libraries: Libraries
 
     class Arguments: Object
         construct(args: array of string)

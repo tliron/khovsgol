@@ -7,11 +7,6 @@ namespace Nap
      * the conversation path against templates.
      */
     class Router: GLib.Object implements Node
-        construct()
-            _trivial_routes = new dict of string, TrivialRoute
-            _template_routes = new list of TemplateRoute
-            _ownerships = new Ownerships
-    
         def handle(conversation: Conversation) raises GLib.Error
             handler: unowned Handler = null
             var trivial_route = _trivial_routes[conversation.path]
@@ -48,9 +43,9 @@ namespace Nap
         def add_regex_handler(regex: Regex, handler: Handler) raises RegexError
             _template_routes.add(new TemplateRoute(new Template.raw(regex), handler))
         
-        _trivial_routes: dict of string, TrivialRoute
-        _template_routes: list of TemplateRoute
-        _ownerships: Ownerships
+        _trivial_routes: dict of string, TrivialRoute = new dict of string, TrivialRoute
+        _template_routes: list of TemplateRoute = new list of TemplateRoute
+        _ownerships: Ownerships = new Ownerships
 
         class static private TrivialRoute
             construct(handler: Handler)
@@ -79,8 +74,6 @@ namespace Nap
             return !pattern.has_suffix("*") && (pattern.index_of_char('{') < 0)
 
         construct(pattern: string) raises RegexError
-            _variables = new list of string
-        
             var p = pattern
             var regex = new StringBuilder("^")
             
@@ -117,10 +110,9 @@ namespace Nap
 
         construct raw(regex: Regex)
             _regex = regex
-            _variables = new list of string
     
         prop readonly regex: Regex
-        prop readonly variables: list of string
+        prop readonly variables: list of string = new list of string
         
         /*
          * Checks if the conversation path matches the template. Note

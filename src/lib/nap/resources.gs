@@ -42,14 +42,6 @@ namespace Nap
             _put = put.handle
             _delete = delete.handle
 
-            _ownerships = new Ownerships
-
-            var args = va_list()
-            ownership: Object? = args.arg()
-            while ownership is not null
-                _ownerships.add(ownership)
-                ownership = args.arg()
-
             if get is not null
                 _ownerships.add(get)
             if post is not null
@@ -58,23 +50,25 @@ namespace Nap
                 _ownerships.add(put)
             if delete is not null
                 _ownerships.add(delete)
+                
+            add_ownerships(va_list())
 
         construct delegates(get: Handler?, post: Handler?, put: Handler?, delete: Handler?, ...)
             _get = get
             _post = post
             _put = put
             _delete = delete
-
-            _ownerships = new Ownerships
-
-            var args = va_list()
+            
+            add_ownerships(va_list())
+        
+        def add_ownerships(args: va_list)
             ownership: Object? = args.arg()
             while ownership is not null
                 _ownerships.add(ownership)
                 ownership = args.arg()
         
-        prop readonly ownerships: Ownerships
-
+        prop readonly ownerships: Ownerships = new Ownerships()
+        
         def override get(conversation: Conversation) raises GLib.Error
             if _get is not null
                 _get(conversation)

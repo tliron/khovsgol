@@ -25,18 +25,13 @@ namespace Nap
     /*
      * Keeps references for a list of objects.
      */
-    class Ownerships: Object
+    class Ownerships
         construct()
             _list = new list of Object
     
         def add(ownership: Object): bool
             return _list.add(ownership)
     
-        /*final
-            for ownership in (Gee.AbstractCollection of Object) _list
-                ownership.ref()
-                ownership.unref()*/
-                
         _list: list of Object
         
     class Arguments
