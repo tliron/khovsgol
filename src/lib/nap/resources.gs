@@ -6,8 +6,8 @@ namespace Nap
      * Base class for RESTful resources. Enables separate handlers for
      * all HTTP methods.
      */
-    class Resource: Object implements Handler
-        def handle(conversation: Conversation)
+    class Resource: Object implements Node
+        def handle(conversation: Conversation) raises GLib.Error
             var method = conversation.get_method()
             if method == Method.GET
                 get(conversation)
@@ -18,16 +18,16 @@ namespace Nap
             else if method == Method.DELETE
                 self.delete(conversation)
             
-        def virtual new get(conversation: Conversation)
+        def virtual new get(conversation: Conversation) raises GLib.Error
             conversation.status_code = StatusCode.METHOD_NOT_ALLOWED
 
-        def virtual post(conversation: Conversation)
+        def virtual post(conversation: Conversation) raises GLib.Error
             conversation.status_code = StatusCode.METHOD_NOT_ALLOWED
 
-        def virtual put(conversation: Conversation)
+        def virtual put(conversation: Conversation) raises GLib.Error
             conversation.status_code = StatusCode.METHOD_NOT_ALLOWED
 
-        def virtual delete(conversation: Conversation)
+        def virtual delete(conversation: Conversation) raises GLib.Error
             conversation.status_code = StatusCode.METHOD_NOT_ALLOWED
 
     /*
@@ -36,13 +36,19 @@ namespace Nap
      * resource.
      */
     class DelegatedResource: Resource
-        construct(get: Handler?, post: Handler?, put: Handler?, delete: Handler?)
+        construct(get: Node?, post: Node?, put: Node?, delete: Node?, ...)
             _get = get.handle
             _post = post.handle
             _put = put.handle
             _delete = delete.handle
 
             _ownerships = new Ownerships
+
+            var args = va_list()
+            ownership: Object? = args.arg()
+            while ownership is not null
+                _ownerships.add(ownership)
+                ownership = args.arg()
 
             if get is not null
                 _ownerships.add(get)
@@ -53,7 +59,7 @@ namespace Nap
             if delete is not null
                 _ownerships.add(delete)
 
-        construct raw(get: HandlerDelegate?, post: HandlerDelegate?, put: HandlerDelegate?, delete: HandlerDelegate?, ...)
+        construct delegates(get: Handler?, post: Handler?, put: Handler?, delete: Handler?, ...)
             _get = get
             _post = post
             _put = put
@@ -69,34 +75,34 @@ namespace Nap
         
         prop readonly ownerships: Ownerships
 
-        def override get(conversation: Conversation)
+        def override get(conversation: Conversation) raises GLib.Error
             if _get is not null
                 _get(conversation)
             else
                 super.get(conversation)
 
-        def override post(conversation: Conversation)
+        def override post(conversation: Conversation) raises GLib.Error
             if _post is not null
                 _post(conversation)
             else
                 super.post(conversation)
 
-        def override put(conversation: Conversation)
+        def override put(conversation: Conversation) raises GLib.Error
             if _put is not null
                 _put(conversation)
             else
                 super.put(conversation)
 
-        def override delete(conversation: Conversation)
+        def override delete(conversation: Conversation) raises GLib.Error
             if _delete is not null
                 _delete(conversation)
             else
                 super.delete(conversation)
 
-        _get: unowned HandlerDelegate?
-        _post: unowned HandlerDelegate?
-        _put: unowned HandlerDelegate?
-        _delete: unowned HandlerDelegate?
+        _get: unowned Handler?
+        _post: unowned Handler?
+        _put: unowned Handler?
+        _delete: unowned Handler?
 
     class DocumentResource: Resource
         def override get(conversation: Conversation)

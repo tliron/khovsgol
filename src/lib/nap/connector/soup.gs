@@ -2,23 +2,9 @@
 
 namespace Nap.Connector._Soup
 
-    class Handler: Object
-        construct(handler: Nap.Handler)
-            _handler = handler
-
-        prop readonly handler: Nap.Handler
-        prop thread_pool: Nap.ThreadPool
-    
-        def handle(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?, client: Soup.ClientContext)
-            var conversation = new Conversation(server, message, path, query)
-            if _thread_pool is null
-                if Server.delay > 0
-                    Thread.usleep(Server.delay)
-                _handler.handle(conversation)
-                conversation.commit()
-            else
-                _thread_pool.handle(_handler, conversation)
-    
+    /*
+     * Soup implementation of a Nap conversation.
+     */
     class Conversation: Object implements Nap.Conversation
         construct(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?)
             _soup_server = server
@@ -67,7 +53,7 @@ namespace Nap.Connector._Soup
         _soup_server: Soup.Server
         _soup_message: Soup.Message
 
-    /**
+    /*
      * An HTTP server base on Soup. Accepts conversations coming in
      * through a specified port.
      */
@@ -78,30 +64,45 @@ namespace Nap.Connector._Soup
             _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
             if _soup_server is null
                 raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %d, is the port already in use?".printf(port))
-                
+            
+            _soup_server.add_handler(null, _handle)
             _soup_server.request_read.connect(on_request_read)
             
-        prop handler: Nap.Handler
-            get
-                return _handler
-            set
-                _handler = value
-                if value is not null
-                    _soup_handler = new Handler(value)
-                    _soup_server.add_handler(null, _soup_handler.handle)
+        prop thread_pool: ThreadPool?
+
+        def get_handler(): unowned Handler?
+            return _handler
+            
+        def set_handler(handler: Handler?)
+            _handler = handler
         
-        prop thread_pool: ThreadPool
-            get
-                return _soup_handler.thread_pool
-            set
-                _soup_handler.thread_pool = value
-        
+        def get_error_handler(): unowned ErrorHandler?
+            return _error_handler
+            
+        def set_error_handler(handler: ErrorHandler?)
+            _error_handler = handler
+
         def start()
             _soup_server.run_async()
         
+        def _handle(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?, client: Soup.ClientContext)
+            if _handler is not null
+                var conversation = new Conversation(server, message, path, query)
+                if _thread_pool is not null
+                    _thread_pool.submit(_handler, _error_handler, conversation)
+                else
+                    if delay > 0
+                        Thread.usleep(delay)
+                    try
+                        _handler(conversation)
+                    except e: GLib.Error
+                        if _error_handler is not null
+                            _error_handler(conversation, e)
+                    conversation.commit()
+        
         def private static on_request_read(message: Soup.Message, client: Soup.ClientContext)
             Logging.get_logger("nap.web").info("%s %s", message.method, message.uri.to_string(false))
-            
-        _handler: Nap.Handler
+
         _soup_server: Soup.Server
-        _soup_handler: Handler
+        _handler: unowned Handler?
+        _error_handler: unowned ErrorHandler? = default_error_handler

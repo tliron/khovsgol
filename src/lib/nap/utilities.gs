@@ -18,6 +18,10 @@ namespace Nap
             if conversation.media_type is null
                 conversation.media_type = "application/json"
 
+    def default_error_handler(conversation: Conversation, error: GLib.Error)
+        conversation.status_code = StatusCode.INTERNAL_SERVER_ERROR
+        Logging.get_logger("nap").warning("%s (%s %s)", error.message, conversation.get_method(), conversation.path)
+
     /*
      * Keeps references for a list of objects.
      */
@@ -28,86 +32,94 @@ namespace Nap
         def add(ownership: Object): bool
             return _list.add(ownership)
     
-        final
+        /*final
             for ownership in (Gee.AbstractCollection of Object) _list
                 ownership.ref()
-                ownership.unref()
+                ownership.unref()*/
                 
         _list: list of Object
         
-    class GetStringHandler: Object implements Handler
+    class Arguments
+        construct(conversation: Conversation)
+            _query = conversation.query
+            _variables = conversation.variables
+    
+        prop readonly query: dict of string, string
+        prop readonly variables: dict of string, string
+    
+    class GetStringHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def handle(conversation: Conversation)
+        def handle(conversation: Conversation) raises GLib.Error
             conversation.response_text = _delegated()
         
-        delegate Delegate(): string
+        delegate Delegate(): string raises GLib.Error
         
         _delegated: unowned Delegate
     
-    class GetStringArgsHandler: Object implements Handler
+    class GetStringArgsHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def handle(conversation: Conversation)
-            conversation.response_text = _delegated(conversation.query)
+        def handle(conversation: Conversation) raises GLib.Error
+            conversation.response_text = _delegated(new Arguments(conversation))
         
-        delegate Delegate(args: dict of string, string): string
+        delegate Delegate(arguments: Arguments): string raises GLib.Error
         
         _delegated: unowned Delegate
 
-    class SetStringHandler: Object implements Handler
+    class SetStringHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def handle(conversation: Conversation)
+        def handle(conversation: Conversation) raises GLib.Error
             var entity = conversation.get_entity()
             conversation.response_text = _delegated(entity)
         
-        delegate Delegate(entity: string): string
+        delegate Delegate(entity: string): string raises GLib.Error
         
         _delegated: unowned Delegate
 
-    class SetStringArgsHandler: Object implements Handler
+    class SetStringArgsHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def handle(conversation: Conversation)
+        def handle(conversation: Conversation) raises GLib.Error
             var entity = conversation.get_entity()
-            conversation.response_text = _delegated(entity, conversation.query)
+            conversation.response_text = _delegated(entity, new Arguments(conversation))
         
-        delegate Delegate(entity: string, args: dict of string, string): string
+        delegate Delegate(entity: string, arguments: Arguments): string raises GLib.Error
         
         _delegated: unowned Delegate
 
-    class GetJsonHandler: Object implements Handler
+    class GetJsonHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def handle(conversation: Conversation)
+        def handle(conversation: Conversation) raises GLib.Error
             conversation.response_json = _delegated()
         
-        delegate Delegate(): Json.Object?
+        delegate Delegate(): Json.Object? raises GLib.Error
         
         _delegated: unowned Delegate
 
-    class GetJsonArgsHandler: Object implements Handler
+    class GetJsonArgsHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def handle(conversation: Conversation)
-            conversation.response_json = _delegated(conversation.query)
+        def handle(conversation: Conversation) raises GLib.Error
+            conversation.response_json = _delegated(new Arguments(conversation))
         
-        delegate Delegate(args: dict of string, string): Json.Object?
+        delegate Delegate(arguments: Arguments): Json.Object? raises GLib.Error
         
         _delegated: unowned Delegate
 
-    class SetJsonHandler: Object implements Handler
+    class SetJsonHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def handle(conversation: Conversation)
+        def handle(conversation: Conversation) raises GLib.Error
             var entity = conversation.get_entity()
             if entity is not null
                 try
@@ -117,24 +129,24 @@ namespace Nap
             else
                 bad_request_json(conversation, "No entity")
         
-        delegate Delegate(entity: Json.Object): Json.Object?
+        delegate Delegate(entity: Json.Object): Json.Object? raises GLib.Error
         
         _delegated: unowned Delegate
     
-    class SetJsonArgsHandler: Object implements Handler
+    class SetJsonArgsHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
-        def handle(conversation: Conversation)
+        def handle(conversation: Conversation) raises GLib.Error
             var entity = conversation.get_entity()
             if entity is not null
                 try
-                    conversation.response_json = _delegated(JSON.from(entity), conversation.query)
+                    conversation.response_json = _delegated(JSON.from(entity), new Arguments(conversation))
                 except e: JSON.Error
                     bad_request_json(conversation, e.message)
             else
                 bad_request_json(conversation, "No entity")
         
-        delegate Delegate(entity: Json.Object, args: dict of string, string): Json.Object?
+        delegate Delegate(entity: Json.Object, arguments: Arguments): Json.Object? raises GLib.Error
         
         _delegated: unowned Delegate

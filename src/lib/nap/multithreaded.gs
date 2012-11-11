@@ -11,24 +11,30 @@ namespace Nap
             get
                 return _thread_pool.get_max_threads()
 
-        def handle(handler: Handler, conversation: Conversation)
+        def submit(handler: Handler, error_handler: ErrorHandler?, conversation: Conversation)
             try
                 conversation.pause()
-                _thread_pool.add(new Context(handler, conversation))
+                _thread_pool.add(new Context(handler, error_handler, conversation))
             except e: ThreadError
                 print e.message
     
         _thread_pool: GLib.ThreadPool of Context
 
-        def static _handle(context: Context)
-            context.handler.handle(context.conversation)
-            context.conversation.commit()
-            context.conversation.unpause()
+        def private static _handle(context: Context)
+            try
+                context.handler(context.conversation)
+                context.conversation.commit()
+                context.conversation.unpause()
+            except e: GLib.Error
+                if context.error_handler is not null
+                    context.error_handler(context.conversation, e)
 
         class private static Context: GLib.Object
-            construct(handler: Handler, conversation: Conversation)
+            construct(handler: Handler, error_handler: ErrorHandler?, conversation: Conversation)
                 _handler = handler
+                _error_handler = error_handler
                 _conversation = conversation
 
-            prop readonly handler: Handler
+            prop readonly handler: unowned Handler
+            prop readonly error_handler: unowned ErrorHandler?
             prop readonly conversation: Conversation

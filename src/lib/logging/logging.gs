@@ -71,7 +71,7 @@ namespace Logging
             pass
     
     /*
-     * The singleton delegates to the parent logger's appender.
+     * Delegates to the parent logger's appender.
      */
     class DefaultAppender: Appender
         construct(logger: Logger)
@@ -213,10 +213,11 @@ namespace Logging
             return a < b ? a : b
     
     /*
-     * Friendly hierarchical logger implementation. The hierarchy is
-     * defined by "." in the domain names.
+     * Friendly hierarchical logger implementation based on and
+     * compatible with standard GLib logging. The hierarchy is defined
+     * by "." in the domain names.
      * 
-     * If an appender is not defined, will default to delegating to the
+     * If an appender is not set, will default to delegating to the
      * appender of the parent logger.
      * 
      * You should *not* construct logger instances directly; use

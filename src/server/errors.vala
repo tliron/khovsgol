@@ -1,6 +1,6 @@
 
-namespace Nap {
+namespace Khovsgol {
     public errordomain Error {
-        CONNECTOR
+        DATABASE
     }
 }

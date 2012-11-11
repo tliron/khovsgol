@@ -10,6 +10,7 @@ namespace Nap
         const BAD_REQUEST: int = 400
         const NOT_FOUND: int = 404
         const METHOD_NOT_ALLOWED: int = 405
+        const INTERNAL_SERVER_ERROR: int = 500
     
     /*
      * HTTP methods.
@@ -20,17 +21,6 @@ namespace Nap
         const POST: string = "POST"
         const DELETE: string = "DELETE"
 
-    /*
-     * Interface for RESTful conversation handlers.
-     */
-    interface Handler: Object
-        def abstract handle(conversation: Conversation)
-
-    /*
-     * Delegate for RESTful conversation handlers.
-     */
-    delegate HandlerDelegate(conversation: Conversation)
-    
     /*
      * A RESTful conversation.
      */
@@ -49,7 +39,30 @@ namespace Nap
         def abstract pause()
         def abstract unpause()
                     
+    /*
+     * A RESTful conversation handler.
+     */
+    delegate Handler(conversation: Conversation) raises GLib.Error
+
+    /*
+     * A RESTful error handler.
+     */
+    delegate ErrorHandler(conversation: Conversation, error: GLib.Error)
+    
+    /*
+     * A RESTful conversation node.
+     */
+    interface Node: Object
+        def abstract handle(conversation: Conversation) raises GLib.Error
+
+    /*
+     * A RESTful server.
+     */
     interface Server: Object
-        prop abstract handler: Handler
-        prop abstract thread_pool: ThreadPool
+        prop abstract thread_pool: ThreadPool?
+        def abstract get_handler(): unowned Handler?
+        def abstract set_handler(handler: Handler?)
+        def abstract get_error_handler(): unowned ErrorHandler?
+        def abstract set_error_handler(ErrorHandler: Handler?)
+
         def abstract start()

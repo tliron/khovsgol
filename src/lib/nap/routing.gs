@@ -6,46 +6,65 @@ namespace Nap
      * A RESTful handler that forwards to other handlers by matching
      * the conversation path against templates.
      */
-    class Router: GLib.Object implements Handler
+    class Router: GLib.Object implements Node
         construct()
-            _trivials = new dict of string, Handler
-            _routes = new list of Route
+            _trivial_routes = new dict of string, TrivialRoute
+            _template_routes = new list of TemplateRoute
+            _ownerships = new Ownerships
     
-        def handle(conversation: Conversation)
-            var handler = _trivials[conversation.path]
-            if handler is null
-                for route in _routes
-                    if route.template.matches(conversation)
-                        handler = route.handler
+        def handle(conversation: Conversation) raises GLib.Error
+            handler: unowned Handler = null
+            var trivial_route = _trivial_routes[conversation.path]
+            if trivial_route is not null
+                handler = trivial_route.handler
+            else
+                for template_route in _template_routes
+                    if template_route.template.matches(conversation)
+                        handler = template_route.handler
                         break
             if handler is not null
-                handler.handle(conversation)
+                handler(conversation)
             else
                 conversation.status_code = StatusCode.NOT_FOUND
 
-        def add(pattern: string, handler: Handler)
+        def add_node(pattern: string, node: Node)
+            _ownerships.add(node)
+            add_handler(pattern, node.handle)
+
+        def add_handler(pattern: string, handler: Handler)
             if Template.is_trivial(pattern)
-                _trivials.set(pattern, handler)
+                _trivial_routes.set(pattern, new TrivialRoute(handler))
             else
                 try
-                    _routes.add(new Route(new Template(pattern), handler))
+                    _template_routes.add(new TemplateRoute(new Template(pattern), handler))
                 except e: RegexError
                     // This should never happen!
-                    _trivials.set(pattern, handler)
+                    _trivial_routes.set(pattern, new TrivialRoute(handler))
                 
-        def add_regex(regex: Regex, handler: Handler) raises RegexError
-            _routes.add(new Route(new Template.raw(regex), handler))
+        def add_regex_node(regex: Regex, node: Node) raises RegexError
+            _ownerships.add(node)
+            add_regex_handler(regex, node.handle)
+
+        def add_regex_handler(regex: Regex, handler: Handler) raises RegexError
+            _template_routes.add(new TemplateRoute(new Template.raw(regex), handler))
         
-        _trivials: dict of string, Handler
-        _routes: list of Route
+        _trivial_routes: dict of string, TrivialRoute
+        _template_routes: list of TemplateRoute
+        _ownerships: Ownerships
+
+        class static private TrivialRoute
+            construct(handler: Handler)
+                _handler = handler
         
-        class static private Route
+            prop readonly handler: unowned Handler
+        
+        class static private TemplateRoute
             construct(template: Template, handler: Handler)
                 _template = template
                 _handler = handler
         
             prop readonly template: Template
-            prop readonly handler: Handler
+            prop readonly handler: unowned Handler
 
     /*
      * Simplified implementation of URI templates:
@@ -93,9 +112,6 @@ namespace Nap
             
             if !wildcard
                 regex.append("$")
-            
-            //print original
-            //print regex.str
                 
             _regex = new Regex(regex.str)
 
@@ -109,13 +125,13 @@ namespace Nap
         /*
          * Checks if the conversation path matches the template. Note
          * that if template has variables, they will be extracted into
-         * the conversation.
+         * the conversation (and URI-decoded).
          */
         def matches(conversation: Conversation): bool
             info: MatchInfo
             if _regex.match(conversation.path, 0, out info)
                 for variable in _variables
-                    conversation.variables[variable] = info.fetch_named(variable)
+                    conversation.variables[variable] = Soup.URI.decode(info.fetch_named(variable))
                 return true
             else
                 return false

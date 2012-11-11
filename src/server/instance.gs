@@ -5,6 +5,90 @@ uses
     
 namespace Khovsgol.Server
 
+    class Instance: Object
+        construct(args: array of string) raises GLib.Error
+            _arguments = new Arguments(args)
+
+            var context = new MainContext()
+            _main_loop = new MainLoop(context, false)
+            
+            if _arguments.start_daemon || _arguments.stop_daemon || _arguments.status_daemon
+                Daemonize.handle("khovsgol", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
+            
+            initialize_logging()
+
+            Logging.get_logger("nap.web").info("test")
+
+            _api = new API()
+            
+            Connector._Soup.Server.delay = _arguments.delay * 1000
+
+            _server = new Connector._Soup.Server(_arguments.port, context)
+            _server.set_handler(_api.router.handle)
+
+            if _arguments.threads > 0
+                try
+                    _server.thread_pool = new Nap.ThreadPool(_arguments.threads)
+                except e: ThreadError
+                    print e.message
+        
+        def initialize_logging() raises GLib.Error
+            var appender = new Logging.FileAppender()
+            appender.deepest_level = LogLevelFlags.LEVEL_INFO
+            appender.set_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
+            Logging.get_logger().appender = appender
+            
+            appender = new Logging.FileAppender()
+            appender.deepest_level = LogLevelFlags.LEVEL_INFO
+            appender.set_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
+            Logging.get_logger("nap.web").appender = appender
+
+            _logger = Logging.get_logger("khovsgol.server")
+            
+        def start()
+            stdout.printf("Starting Khövsgöl server at port %d, %d threads\n", _arguments.port, _arguments.threads)
+            _logger.info("Starting Khövsgöl server at port %d, %d threads", _arguments.port, _arguments.threads)
+            _server.start()
+            _main_loop.run()
+
+        _arguments: Arguments
+        _server: Nap.Server
+        _main_loop: MainLoop
+        _logger: Logging.Logger
+        _api: API
+        
+    class API
+        construct() raises Khovsgol.Error
+            _db = new DB()
+            
+            _router = new Router()
+            router.add_node("/album/{path}/", new DelegatedResource(new GetJsonArgsHandler(get_album), null, null, null))
+            router.add_node("/track/{path}/", new DelegatedResource(new GetJsonArgsHandler(get_track), null, null, null))
+        
+        prop readonly router: Router
+        
+        def get_album(arguments: Nap.Arguments): Json.Object? raises GLib.Error
+            var path = arguments.variables["path"]
+            try
+                var album = _db.get_album(path)
+                if album is not null
+                    return album.to_json()
+            except e: Khovsgol.Error
+                pass
+            return null
+
+        def get_track(arguments: Nap.Arguments): Json.Object? raises GLib.Error
+            var path = arguments.variables["path"]
+            try
+                var track = _db.get_track(path)
+                if track is not null
+                    return track.to_json()
+            except e: Khovsgol.Error
+                pass
+            return null
+        
+        _db: DB
+
     class Arguments: Object
         construct(args: array of string)
             restart_daemon: bool = false
@@ -47,73 +131,6 @@ namespace Khovsgol.Server
         prop readonly stop_daemon: bool
         prop readonly status_daemon: bool
 
-    class Instance: Object
-        construct(args: array of string) raises Nap.Error
-            _arguments = new Arguments(args)
-
-            var context = new MainContext()
-            _main_loop = new MainLoop(context, false)
-            
-            if _arguments.start_daemon || _arguments.stop_daemon || _arguments.status_daemon
-                Daemonize.handle("khovsgol", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
-            
-            initialize_logging()
-
-            Logging.get_logger("nap.web").info("test")
-
-            var api = new API()
-
-            var router = new Router()
-            
-            router.add("/1", new AlbumResource1())
-            router.add("/2", api.albumResource2)
-            router.add("/3", api.albumResource3)
-            router.add("/4*", api.albumResource4)
-            router.add("/test/{first}/hello/{second}/", api.albumResource2)
-
-            Connector._Soup.Server.delay = _arguments.delay * 1000
-
-            _server = new Connector._Soup.Server(_arguments.port, context)
-            _server.handler = router
-
-            if _arguments.threads > 0
-                try
-                    _server.thread_pool = new Nap.ThreadPool(_arguments.threads)
-                except e: ThreadError
-                    print e.message
-
-            _db = new DB()
-        
-        def initialize_logging() raises Nap.Error
-            try
-                var appender = new Logging.FileAppender()
-                appender.deepest_level = LogLevelFlags.LEVEL_INFO
-                appender.set_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
-                Logging.get_logger().appender = appender
-                
-                appender = new Logging.FileAppender()
-                appender.deepest_level = LogLevelFlags.LEVEL_INFO
-                appender.set_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
-                Logging.get_logger("nap.web").appender = appender
-
-                _logger = Logging.get_logger("khovsgol.server")
-            except e: GLib.Error
-                raise new Nap.Error.SYSTEM(e.message)
-            
-        def start()
-            stdout.printf("Starting Khövsgöl server at port %d, %d threads\n", _arguments.port, _arguments.threads)
-            _logger.info("Starting Khövsgöl server at port %d, %d threads", _arguments.port, _arguments.threads)
-            _server.start()
-            _main_loop.run()
-
-        _arguments: Arguments
-        _server: Nap.Server
-        _db: DB
-        _main_loop: MainLoop
-        _logger: Logging.Logger
-
-
-
     class AlbumResource1: DocumentResource
         def override get_json(conversation: Conversation): Json.Object?
             var json = new Json.Object()
@@ -125,7 +142,7 @@ namespace Khovsgol.Server
             json.set_object_member("entity", entity)
             return json
        
-    class API: Object
+    /*class TAPI: Object
         def get_album2(conversation: Conversation)
             conversation.response_text = "Disintegration %s %s".printf(conversation.variables["first"], conversation.variables["second"])
 
@@ -156,10 +173,10 @@ namespace Khovsgol.Server
 
             var _get_album4 = new GetJsonArgsHandler(get_album4)
             var _set_album4 = new SetJsonHandler(set_album4)
-            _albumResource4 = new DelegatedResource(_get_album4, _set_album4, null, null)
+            _albumResource4 = new DelegatedResource(_get_album4, _set_album4, null, null)*/
 
 init
     try
         new Khovsgol.Server.Instance(args).start()
-    except e: Nap.Error
+    except e: GLib.Error
         stderr.printf("%s\n", e.message)
