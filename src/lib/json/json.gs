@@ -5,6 +5,14 @@ uses
 
 namespace JSON
 
+    def set_string_not_null(obj: Json.Object, key: string, value: string?)
+        if value is not null
+            obj.set_string_member(key, value)
+        
+    def array_add_all(destination: Json.Array, source: Json.Array)
+        for var e in source.get_elements()
+            destination.add_element(e)
+
     def object_to(obj: Json.Object, human: bool = false): string
         var root = new Json.Node(NodeType.OBJECT)
         root.set_object(obj)

@@ -42,7 +42,14 @@ namespace Khovsgol
         def abstract iterate_albums_at(args: IterateForDateArgs): Khovsgol.AlbumIterator raises GLib.Error
         
         // Iterate artists
-        def abstract iterate_artists(args: IterateArtistsArgs): Khovsgol.ArtistIterator raises GLib.Error
+        def abstract iterate_artists(args: IterateByAlbumsOrTracksArgs): Khovsgol.ArtistIterator raises GLib.Error
+
+        // Iterate dates
+        def abstract iterate_dates(args: IterateByAlbumsOrTracksArgs): Khovsgol.IntIterator raises GLib.Error
+        
+        // Timestamps
+        def abstract get_timestamp(path: string): double raises GLib.Error
+        def abstract set_timestamp(path: string, timestamp: double) raises GLib.Error
         
         _libraries: dict of string, Library = new dict of string, Library
     
@@ -57,7 +64,7 @@ namespace Khovsgol
         _directories: dict of string, Directory = new dict of string, Directory
 
     class IterateForDateArgs
-        prop date: int
+        prop date: int = -1
         prop like: bool = false
         prop libraries: list of string = new list of string
         prop sort: list of string = new list of string
@@ -84,7 +91,7 @@ namespace Khovsgol
         prop libraries: list of string = new list of string
         prop sort: list of string = new list of string
 
-    class IterateArtistsArgs
+    class IterateByAlbumsOrTracksArgs
         prop album_artist: bool = true
         prop libraries: list of string = new list of string
         prop sort: list of string = new list of string

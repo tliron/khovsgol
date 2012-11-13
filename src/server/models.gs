@@ -2,6 +2,8 @@
 
 namespace Khovsgol
 
+    const SEPARATOR: string = "/"
+
     class Track: Object
         prop path: string
         prop library: string
@@ -18,31 +20,39 @@ namespace Khovsgol
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            json.set_string_member("path", _path)
-            json.set_string_member("library", _library)
-            json.set_string_member("title", _title)
-            json.set_string_member("title_sort", _title_sort)
-            json.set_string_member("artist", _artist)
-            json.set_string_member("artist_sort", _artist_sort)
-            json.set_string_member("album", _album)
-            json.set_string_member("album_sort", _album_sort)
+            JSON.set_string_not_null(json, "path", _path)
+            JSON.set_string_not_null(json, "library", _library)
+            JSON.set_string_not_null(json, "title", _title)
+            JSON.set_string_not_null(json, "title_sort", _title_sort)
+            JSON.set_string_not_null(json, "artist", _artist)
+            JSON.set_string_not_null(json, "artist_sort", _artist_sort)
+            JSON.set_string_not_null(json, "album", _album)
+            JSON.set_string_not_null(json, "album_sort", _album_sort)
             json.set_int_member("position", _position)
             json.set_double_member("duration", _duration)
             json.set_int_member("date", _date)
-            json.set_string_member("type", _file_type)
+            JSON.set_string_not_null(json, "type", _file_type)
             return json
     
     class abstract TrackIterator
         def abstract has_next(): bool
         def abstract next(): bool
         def abstract get(): Track
-
+        
+        prop get_album_path: unowned GetAlbumPath?
+        
         def to_json(): Json.Array
             var json = new Json.Array()
             while has_next()
-                json.add_object_element(get().to_json())
+                var track = get()
+                var obj = track.to_json()
+                if get_album_path is not null
+                    JSON.set_string_not_null(obj, "album_path", _get_album_path(track))
+                json.add_object_element(obj)
                 next()
             return json
+
+        delegate GetAlbumPath(track: Track): string
 
     class TrackPointer: Object
         prop path: string
@@ -51,9 +61,9 @@ namespace Khovsgol
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            json.set_string_member("path", _path)
+            JSON.set_string_not_null(json, "path", _path)
             json.set_int_member("position", _position)
-            json.set_string_member("album", _album)
+            JSON.set_string_not_null(json, "album", _album)
             return json
 
     class abstract TrackPointerIterator
@@ -81,15 +91,15 @@ namespace Khovsgol
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            json.set_string_member("path", _path)
-            json.set_string_member("library", _library)
-            json.set_string_member("title", _title)
-            json.set_string_member("title_sort", _title_sort)
-            json.set_string_member("artist", _artist)
-            json.set_string_member("artist_sort", _artist_sort)
+            JSON.set_string_not_null(json, "path", _path)
+            JSON.set_string_not_null(json, "library", _library)
+            JSON.set_string_not_null(json, "title", _title)
+            JSON.set_string_not_null(json, "title_sort", _title_sort)
+            JSON.set_string_not_null(json, "artist", _artist)
+            JSON.set_string_not_null(json, "artist_sort", _artist_sort)
             json.set_int_member("date", _date)
             json.set_boolean_member("compilation", _compilation)
-            json.set_string_member("type", _file_type)
+            JSON.set_string_not_null(json, "type", _file_type)
             return json
 
     class abstract AlbumIterator
@@ -135,5 +145,17 @@ namespace Khovsgol
             var json = new Json.Array()
             while has_next()
                 json.add_string_element(get())
+                next()
+            return json
+
+    class abstract IntIterator
+        def abstract has_next(): bool
+        def abstract next(): bool
+        def abstract get(): int
+
+        def to_json(): Json.Array
+            var json = new Json.Array()
+            while has_next()
+                json.add_int_element(get())
                 next()
             return json
