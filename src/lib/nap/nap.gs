@@ -31,7 +31,8 @@ namespace Nap
         prop abstract status_code: int = StatusCode.OK
         prop abstract media_type: string?
         prop abstract response_text: string?
-        prop abstract response_json: Json.Object?
+        prop abstract response_json_object: Json.Object?
+        prop abstract response_json_array: Json.Array?
         
         def abstract get_method(): string
         def abstract get_entity(): string

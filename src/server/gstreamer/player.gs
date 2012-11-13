@@ -13,7 +13,7 @@ namespace Khovsgol.GStreamer
             _pipeline.on_eos = on_eos
             _pipeline.on_tag = on_tag
             _pipeline.on_error = on_error
-            start()
+            //start()
     
         def start()
             

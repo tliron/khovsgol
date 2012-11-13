@@ -55,7 +55,7 @@ namespace Khovsgol.Sqlite
                 
             print "-"
             
-            var args2 = new IterateTracksInAlbumArgs()
+            var args2 = new IterateForAlbumArgs()
             args2.album = "/Depot/Music/Rush/Signals"
             args2.sort.add("position")
             tracks = iterate_tracks_in_album(args2)
@@ -66,7 +66,7 @@ namespace Khovsgol.Sqlite
 
             print "-"
             
-            var args3 = new IterateTracksByArtistArgs()
+            var args3 = new IterateForArtistArgs()
             args3.artist = "Rush"
             tracks = iterate_tracks_by_artist(args3)
             while tracks.has_next()
@@ -77,7 +77,7 @@ namespace Khovsgol.Sqlite
             //dump_table("track")
         
         //
-        // Track
+        // Tracks
         //
         
         def override get_track(path: string): Track? raises GLib.Error
@@ -124,7 +124,7 @@ namespace Khovsgol.Sqlite
             _db.assert_done(statement.step())
             
         //
-        // TrackPointer
+        // Track pointers
         //
         
         def override get_track_pointer(album: string, position: int): TrackPointer? raises GLib.Error
@@ -176,7 +176,7 @@ namespace Khovsgol.Sqlite
             _db.assert_done(statement.step())
 
         //
-        // Album
+        // Albums
         //
         
         def override get_album(path: string): Album? raises GLib.Error
@@ -230,7 +230,7 @@ namespace Khovsgol.Sqlite
             _db.assert_done(statement.step())
         
         //
-        // Iterators
+        // Iterate tracks
         //
         
         def override iterate_tracks(args: IterateTracksArgs): Khovsgol.TrackIterator raises GLib.Error
@@ -262,7 +262,7 @@ namespace Khovsgol.Sqlite
 
             return new TrackIterator(q.execute(_db))
 
-        def override iterate_tracks_in_album(args: IterateTracksInAlbumArgs): Khovsgol.TrackIterator raises GLib.Error
+        def override iterate_tracks_in_album(args: IterateForAlbumArgs): Khovsgol.TrackIterator raises GLib.Error
             var q = new Query()
             q.table = "track"
             q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album", "album_sort", "position", "duration", "date", "type")
@@ -272,7 +272,7 @@ namespace Khovsgol.Sqlite
 
             return new TrackIterator(q.execute(_db))
         
-        def override iterate_tracks_by_artist(args: IterateTracksByArtistArgs): Khovsgol.TrackIterator raises GLib.Error
+        def override iterate_tracks_by_artist(args: IterateForArtistArgs): Khovsgol.TrackIterator raises GLib.Error
             var q = new Query()
             q.table = "track"
             q.sort.add_all(args.sort)
@@ -296,23 +296,245 @@ namespace Khovsgol.Sqlite
 
             return new TrackIterator(q.execute(_db))
         
+        def override iterate_track_paths(path: string): Khovsgol.StringIterator raises GLib.Error
+            var q = new Query()
+            q.table = "track"
+            q.fields.add("path")
+            q.requirements.add("path LIKE ? ESCAPE \"\\\"")
+            q.bindings.add(escape_like(path + SEPARATOR) + "%")
+            return new StringIterator(q.execute(_db), "path")
+        
+        //
+        // Iterate track pointers
+        //
+        
+        def override iterate_raw_track_pointers_in_album(args: IterateForAlbumArgs): Khovsgol.TrackPointerIterator raises GLib.Error
+            var q = new Query()
+            q.table = "track_pointer"
+            q.add_fields("path", "position")
+            q.sort.add_all(args.sort)
+            q.requirements.add("album=?")
+            q.bindings.add(args.album)
+            q.constants["album"] = args.album
+            return new TrackPointerIterator(q.execute(_db))
+
+        def override iterate_track_pointers_in_album(args: IterateForAlbumArgs): Khovsgol.TrackIterator raises GLib.Error
+            var q = new Query()
+            q.table = "track_pointer LEFT JOIN track ON track_pointer.path=track.path INNER JOIN album ON track_pointer.album=album.path"
+            q.add_fields("track.path", "track.library", "track.title", "track.title_sort", "track.artist", "track.artist_sort", "album.title AS album", "album.title_sort AS album_sort", "track_pointer.position", "track.duration", "track.date", "track.type")
+            q.requirements.add("track_pointer.album=?")
+            q.bindings.add(args.album)
+            
+            // Fix sort
+            var fixed_sort = new list of string
+            for s in args.sort
+                if s == "position"
+                    s = "track_pointer.position"
+                else if s == "album"
+                    s = "track_pointer.album"
+                fixed_sort.add(s)
+            q.sort.add_all(fixed_sort)
+            
+            return new TrackIterator(q.execute(_db))
+
+        def override iterate_track_pointers(args: IterateTracksArgs): Khovsgol.TrackIterator raises GLib.Error
+            var q = new Query()
+            q.table = "track_pointer LEFT JOIN track ON track_pointer.path=track.path INNER JOIN album ON track_pointer.album=album.path"
+            q.add_fields("track.path", "track.library", "track.title", "track.title_sort", "track.artist", "track.artist_sort", "album.title AS album", "album.title_sort AS album_sort", "track_pointer.position", "track.duration", "track.date", "track.type", "track_pointer.album AS album_path")
+            q.sort.add_all(args.sort)
+
+            // Libraries
+            if !args.libraries.is_empty
+                q.requirements.add("track.library IN (%s)".printf(join_same(",", "?", args.libraries.size)))
+                q.bindings.add_all(args.libraries)
+            else
+                q.requirements.add("track.library IS NOT NULL")
+
+            // All the LIKE requirements are OR-ed
+            var likes = new list of string
+            if args.title_like is not null
+                likes.add("track.title LIKE ? ESCAPE \"\\\"")
+                q.bindings.add(args.title_like)
+            if args.artist_like is not null
+                likes.add("track.artist LIKE ? ESCAPE \"\\\"")
+                q.bindings.add(args.artist_like)
+            if args.album_like is not null
+                likes.add("track_pointer.album LIKE ? ESCAPE \"\\\"")
+                q.bindings.add(args.album_like)
+            if !likes.is_empty
+                q.requirements.add("(" + join(" OR ", likes) + ")")
+
+            // Fix sort
+            var fixed_sort = new list of string
+            for s in args.sort
+                if s == "position"
+                    s = "track_pointer.position"
+                else
+                    s = "track." + s
+                fixed_sort.add(s)
+            q.sort.add_all(fixed_sort)
+
+            // TODO: album_path?
+            return new TrackIterator(q.execute(_db))
+        
+        //
+        // Iterate albums
+        //
+        
+        def override iterate_albums(args: IterateAlbumsArgs): Khovsgol.AlbumIterator raises GLib.Error
+            var q = new Query()
+            q.table = "album"
+            q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "compilation", "type")
+            q.sort.add_all(args.sort)
+
+            // Libraries
+            if !args.libraries.is_empty
+                q.requirements.add("library IN (%s)".printf(join_same(",", "?", args.libraries.size)))
+                q.bindings.add_all(args.libraries)
+            else
+                q.requirements.add("library IS NOT NULL")
+            
+            // Compilation type
+            if args.compilation_type > -1
+                q.requirements.add("compilation=?")
+                q.bindings.add(args.compilation_type.to_string())
+                
+            return new AlbumIterator(q.execute(_db))
+
+        def override iterate_album_paths(path: string): Khovsgol.StringIterator raises GLib.Error
+            var q = new Query()
+            q.table = "album"
+            q.fields.add("path")
+            q.requirements.add("path LIKE ? ESCAPE \"\\\"")
+            q.bindings.add(escape_like(path + SEPARATOR) + "%")
+            return new StringIterator(q.execute(_db), "path")
+        
+        def override iterate_albums_with_artist(args: IterateForArtistArgs): Khovsgol.AlbumIterator raises GLib.Error
+            var q = new Query()
+            q.table = "album INNER JOIN track ON album.title=track.album"
+            q.add_fields("album.path", "album.library", "album.title", "album.title_sort", "album.artist", "album.artist_sort", "album.date", "album.compilation", "album.type")
+            q.sort.add_all(args.sort)
+            q.constraint = "DISTINCT"
+
+            // Libraries
+            if !args.libraries.is_empty
+                q.requirements.add("album.library IN (%s)".printf(join_same(",", "?", args.libraries.size)))
+                q.bindings.add_all(args.libraries)
+            else
+                q.requirements.add("album.library IS NOT NULL")
+            
+            if args.like
+                q.requirements.add("track.artist LIKE ? ESCAPE \"\\\"")
+            else
+                q.requirements.add("track.artist=?")
+            q.bindings.add(args.artist)
+
+            return new AlbumIterator(q.execute(_db))
+
+        def override iterate_albums_by_artist(args: IterateForArtistArgs): Khovsgol.AlbumIterator raises GLib.Error
+            var q = new Query()
+            q.table = "album"
+            q.sort.add_all(args.sort)
+
+            // Libraries
+            if !args.libraries.is_empty
+                q.requirements.add("library IN (%s)".printf(join_same(",", "?", args.libraries.size)))
+                q.bindings.add_all(args.libraries)
+            else
+                q.requirements.add("library IS NOT NULL")
+            
+            if args.like
+                q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "compilation", "type")
+                q.requirements.add("artist LIKE ? ESCAPE \"\\\"")
+            else
+                // Optimized handling using a constant in case of strict equality
+                q.add_fields("path", "library", "title", "title_sort", "artist_sort", "date", "compilation", "type")
+                q.requirements.add("artist=?")
+                q.constants["artist"] = args.artist
+            q.bindings.add(args.artist)
+            
+            return new AlbumIterator(q.execute(_db))
+        
+        def override iterate_albums_at(args: IterateForDateArgs): Khovsgol.AlbumIterator raises GLib.Error
+            var q = new Query()
+            q.table = "album"
+            q.sort.add_all(args.sort)
+
+            // Libraries
+            if !args.libraries.is_empty
+                q.requirements.add("library IN (%s)".printf(join_same(",", "?", args.libraries.size)))
+                q.bindings.add_all(args.libraries)
+            else
+                q.requirements.add("library IS NOT NULL")
+            
+            if args.like
+                q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "compilation", "type")
+                q.requirements.add("date LIKE ? ESCAPE \"\\\"")
+            else
+                // Optimized handling using a constant in case of strict equality
+                q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "compilation", "type")
+                q.requirements.add("date=?")
+                q.constants["date"] = args.date.to_string()
+            q.bindings.add(args.date.to_string())
+
+            return new AlbumIterator(q.execute(_db))
+        
+        //
+        // Iterate artists
+        //
+        
+        def override iterate_artists(args: IterateArtistsArgs): Khovsgol.ArtistIterator raises GLib.Error
+            var q = new Query()
+            q.table = args.album_artist ? "album" : "track"
+            q.add_fields("artist", "artist_sort")
+            q.sort.add_all(args.sort)
+            q.requirements.add("artist IS NOT NULL")
+            q.constraint = "DISTINCT"
+
+            // Libraries
+            if !args.libraries.is_empty
+                q.requirements.add("library IN (%s)".printf(join_same(",", "?", args.libraries.size)))
+                q.bindings.add_all(args.libraries)
+            else
+                q.requirements.add("library IS NOT NULL")
+
+            return new ArtistIterator(q.execute(_db))
+
         //
         // Private
         //
     
         _db: SqliteUtilities.Database
 
-        class private TrackIterator: Object implements Khovsgol.TrackIterator
+        class private StringIterator: Khovsgol.StringIterator
+            construct(iterator: Iterator, name: string)
+                _iterator = iterator
+                _name = name
+        
+            def override has_next(): bool
+                return _iterator.has_next()
+                
+            def override next(): bool
+                return _iterator.next()
+                
+            def override get(): string
+                var row = _iterator.get()
+                return row.get_text(_name)
+                
+            _iterator: Iterator
+            _name: string
+
+        class private TrackIterator: Khovsgol.TrackIterator
             construct(iterator: Iterator)
                 _iterator = iterator
         
-            def has_next(): bool
+            def override has_next(): bool
                 return _iterator.has_next()
                 
-            def next(): bool
+            def override next(): bool
                 return _iterator.next()
                 
-            def new get(): Track
+            def override get(): Track
                 var row = _iterator.get()
                 var track = new Track()
                 track.path = row.get_text("path")
@@ -328,5 +550,70 @@ namespace Khovsgol.Sqlite
                 track.date = row.get_int("date")
                 track.file_type = row.get_text("type")
                 return track
+                
+            _iterator: Iterator
+
+        class private TrackPointerIterator: Khovsgol.TrackPointerIterator
+            construct(iterator: Iterator)
+                _iterator = iterator
+        
+            def override has_next(): bool
+                return _iterator.has_next()
+                
+            def override next(): bool
+                return _iterator.next()
+                
+            def override get(): TrackPointer
+                var row = _iterator.get()
+                var track_pointer = new TrackPointer()
+                track_pointer.path = row.get_text("path")
+                track_pointer.position = row.get_int("position")
+                track_pointer.album = row.get_text("album")
+                return track_pointer
+                
+            _iterator: Iterator
+
+        class private AlbumIterator: Khovsgol.AlbumIterator
+            construct(iterator: Iterator)
+                _iterator = iterator
+        
+            def override has_next(): bool
+                return _iterator.has_next()
+                
+            def override next(): bool
+                return _iterator.next()
+                
+            def override get(): Album
+                var row = _iterator.get()
+                var album = new Album()
+                album.path = row.get_text("path")
+                album.library = row.get_text("library")
+                album.title = row.get_text("title")
+                album.title_sort = row.get_text("title_sort")
+                album.artist = row.get_text("artist")
+                album.artist_sort = row.get_text("artist_sort")
+                album.date = row.get_int("date")
+                album.compilation = row.get_int("compilation") == 1
+                album.file_type = row.get_text("type")
+                return album
+                
+            _iterator: Iterator
+
+        class private ArtistIterator: Khovsgol.ArtistIterator
+            construct(iterator: Iterator)
+                _iterator = iterator
+        
+            def override has_next(): bool
+                return _iterator.has_next()
+                
+            def override next(): bool
+                return _iterator.next()
+                
+            def override get(): Artist
+                var row = _iterator.get()
+                var artist = new Artist()
+                artist.artist = row.get_text("artist")
+                artist.artist_sort = row.get_text("artist_sort")
+                return artist
                 
             _iterator: Iterator

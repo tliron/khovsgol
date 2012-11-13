@@ -100,13 +100,13 @@ namespace Nap
 
     class DocumentResource: Resource
         def override get(conversation: Conversation)
-            conversation.response_json = get_json(conversation)
+            conversation.response_json_object = get_json(conversation)
 
         def override post(conversation: Conversation)
             var entity = conversation.get_entity()
             if entity is not null
                 try
-                    conversation.response_json = post_json(conversation, JSON.from(entity))
+                    conversation.response_json_object = post_json(conversation, JSON.from_object(entity))
                 except e: JSON.Error
                     bad_request_json(conversation, e.message)
             else
@@ -116,7 +116,7 @@ namespace Nap
             var entity = conversation.get_entity()
             if entity is not null
                 try
-                    conversation.response_json = put_json(conversation, JSON.from(entity))
+                    conversation.response_json_object = put_json(conversation, JSON.from_object(entity))
                 except e: JSON.Error
                     bad_request_json(conversation, e.message)
             else

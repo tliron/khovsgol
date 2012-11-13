@@ -5,14 +5,17 @@ namespace Nap
     def bad_request_json(conversation: Conversation, message: string)
         var json = new Json.Object()
         json.set_string_member("error", message)
-        conversation.response_json = json
+        conversation.response_json_object = json
         conversation.status_code = StatusCode.BAD_REQUEST
 
     def json_to_text(conversation: Conversation)
-        if conversation.response_json is not null
+        if (conversation.response_json_object is not null) or (conversation.response_json_array is not null)
             var jsonp = conversation.query["jsonp"]
             var human = jsonp is null && conversation.query["human"] == "true"
-            conversation.response_text = JSON.to(conversation.response_json, human)
+            if conversation.response_json_object is not null
+                conversation.response_text = JSON.object_to(conversation.response_json_object, human)
+            else
+                conversation.response_text = JSON.array_to(conversation.response_json_array, human)
             if jsonp is not null
                 conversation.response_text = "%s(%s)".printf(jsonp, conversation.response_text)
             if conversation.media_type is null
@@ -88,29 +91,29 @@ namespace Nap
         
         _delegated: unowned Delegate
 
-    class GetJsonHandler: Object implements Node
+    class GetJsonObjectHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
         def handle(conversation: Conversation) raises GLib.Error
-            conversation.response_json = _delegated()
+            conversation.response_json_object = _delegated()
         
         delegate Delegate(): Json.Object? raises GLib.Error
         
         _delegated: unowned Delegate
 
-    class GetJsonArgsHandler: Object implements Node
+    class GetJsonObjectArgsHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
         def handle(conversation: Conversation) raises GLib.Error
-            conversation.response_json = _delegated(new Arguments(conversation))
+            conversation.response_json_object = _delegated(new Arguments(conversation))
         
         delegate Delegate(arguments: Arguments): Json.Object? raises GLib.Error
         
         _delegated: unowned Delegate
 
-    class SetJsonHandler: Object implements Node
+    class SetJsonObjectHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -118,7 +121,7 @@ namespace Nap
             var entity = conversation.get_entity()
             if entity is not null
                 try
-                    conversation.response_json = _delegated(JSON.from(entity))
+                    conversation.response_json_object = _delegated(JSON.from_object(entity))
                 except e: JSON.Error
                     bad_request_json(conversation, e.message)
             else
@@ -128,7 +131,7 @@ namespace Nap
         
         _delegated: unowned Delegate
     
-    class SetJsonArgsHandler: Object implements Node
+    class SetJsonObjectArgsHandler: Object implements Node
         construct(delegated: Delegate)
             _delegated = delegated
         
@@ -136,12 +139,70 @@ namespace Nap
             var entity = conversation.get_entity()
             if entity is not null
                 try
-                    conversation.response_json = _delegated(JSON.from(entity), new Arguments(conversation))
+                    conversation.response_json_object = _delegated(JSON.from_object(entity), new Arguments(conversation))
                 except e: JSON.Error
                     bad_request_json(conversation, e.message)
             else
                 bad_request_json(conversation, "No entity")
         
         delegate Delegate(entity: Json.Object, arguments: Arguments): Json.Object? raises GLib.Error
+        
+        _delegated: unowned Delegate
+
+    class GetJsonArrayHandler: Object implements Node
+        construct(delegated: Delegate)
+            _delegated = delegated
+        
+        def handle(conversation: Conversation) raises GLib.Error
+            conversation.response_json_array = _delegated()
+        
+        delegate Delegate(): Json.Array? raises GLib.Error
+        
+        _delegated: unowned Delegate
+
+    class GetJsonArrayArgsHandler: Object implements Node
+        construct(delegated: Delegate)
+            _delegated = delegated
+        
+        def handle(conversation: Conversation) raises GLib.Error
+            conversation.response_json_array = _delegated(new Arguments(conversation))
+        
+        delegate Delegate(arguments: Arguments): Json.Array? raises GLib.Error
+        
+        _delegated: unowned Delegate
+
+    class SetJsonArrayHandler: Object implements Node
+        construct(delegated: Delegate)
+            _delegated = delegated
+        
+        def handle(conversation: Conversation) raises GLib.Error
+            var entity = conversation.get_entity()
+            if entity is not null
+                try
+                    conversation.response_json_array = _delegated(JSON.from_array(entity))
+                except e: JSON.Error
+                    bad_request_json(conversation, e.message)
+            else
+                bad_request_json(conversation, "No entity")
+        
+        delegate Delegate(entity: Json.Array): Json.Array? raises GLib.Error
+        
+        _delegated: unowned Delegate
+    
+    class SetJsonArrayArgsHandler: Object implements Node
+        construct(delegated: Delegate)
+            _delegated = delegated
+        
+        def handle(conversation: Conversation) raises GLib.Error
+            var entity = conversation.get_entity()
+            if entity is not null
+                try
+                    conversation.response_json_array = _delegated(JSON.from_array(entity), new Arguments(conversation))
+                except e: JSON.Error
+                    bad_request_json(conversation, e.message)
+            else
+                bad_request_json(conversation, "No entity")
+        
+        delegate Delegate(entity: Json.Array, arguments: Arguments): Json.Array? raises GLib.Error
         
         _delegated: unowned Delegate

@@ -23,7 +23,8 @@ namespace Nap.Connector._Soup
         prop status_code: int = StatusCode.OK
         prop media_type: string?
         prop response_text: string?
-        prop response_json: Json.Object?
+        prop response_json_object: Json.Object?
+        prop response_json_array: Json.Array?
         
         def get_method(): string
             return _soup_message.method
