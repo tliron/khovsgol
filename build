@@ -2,13 +2,16 @@
 
 # apt-get install valac-0.18 gtk-doc-tools
 
-# Gee:    apt-get install libgee-dev,       valac --pkg=gee-1.0
-# Soup:   apt-get install libsoup-2.4-dev,  valac --pkg=libsoup-2.4
-# Json:   apt-get install libjson-glib-dev, valac --pkg=json-glib-1.0
-# Sqlite: apt-get install libsqlite3-dev,   valac --pkg=sqlite3
-# Posix:                                    valac --pkg=posix --Xcc=-D"_GNU_SOURCE"
-# Gtk:    apt-get install libgtk-3-dev,     valac --pkg=gtk+-3.0
-# Daemon: apt-get install libdaemon-dev,    valac --pkg=libdaemon
+# Gee:    apt-get install libgee-dev,          valac --pkg=gee-1.0
+# Soup:   apt-get install libsoup-2.4-dev,     valac --pkg=libsoup-2.4
+# Json:   apt-get install libjson-glib-dev,    valac --pkg=json-glib-1.0
+# Sqlite: apt-get install libsqlite3-dev,      valac --pkg=sqlite3
+# Posix:                                       valac --pkg=posix --Xcc=-D"_GNU_SOURCE"
+# Gtk:    apt-get install libgtk-3-dev,        valac --pkg=gtk+-3.0
+# Daemon: apt-get install libdaemon-dev,       valac --pkg=libdaemon
+# Gst:    apt-get install libgstreamer1.0-dev, valac --pkg=gstreamer-1.0
+
+# gstreamer1.0-pulseaudio, gstreamer1.0-plugins-base
 
 compile()
 {
@@ -29,7 +32,8 @@ compile()
         --pkg=posix --Xcc=-D"_GNU_SOURCE" \
         --pkg=sqlite3 \
         --pkg=gtk+-3.0 \
-        --pkg=libdaemon
+        --pkg=libdaemon \
+        --pkg=gstreamer-1.0
 
         #--enable-deprecated \
 }

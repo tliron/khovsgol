@@ -17,5 +17,9 @@ namespace Khovsgol.Client
         _window: Window
 
 init
-    Gtk.init(ref args)
+    // Initialize GTK+
+    var arguments = new array of string[0]
+    weak_arguments: weak array of string = arguments
+    Gtk.init(ref weak_arguments)
+    
     new Khovsgol.Client.Instance().start()

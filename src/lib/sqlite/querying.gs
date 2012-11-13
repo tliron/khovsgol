@@ -3,8 +3,44 @@
 uses
     Sqlite
     
-namespace SQLite
+namespace SqliteUtilities
 
+    /*
+     * String join for Gee.Iterable.
+     */
+    def static join(sep: string, items: Gee.Iterable of string): string
+        var str = new StringBuilder()
+        var i = items.iterator()
+        while i.has_next()
+            i.next()
+            str.append(i.get())
+            if i.has_next()
+                str.append(sep)
+        return str.str
+    
+    /*
+     * String join for multiples of a string.
+     */
+    def static join_same(sep: string, item: string, num: int): string
+        var str = new StringBuilder()
+        num--
+        for var i = 0 to num
+            str.append(item)
+            if i < num
+                str.append(sep)
+        return str.str
+
+    /*
+     * Escapes a string for use in SQL's LIKE, where '\' is the escape
+     * character.
+     */
+    def static escape_like(text: string): string
+        return text.replace("%", "\\%").replace("_", "\\_")
+
+    /*
+     * Wrapper for Sqlite.Statement rows, allowing fetching of column
+     * values by name.
+     */
     class Row
         construct(iterator: Iterator, columns: int)
             _iterator = iterator
@@ -12,7 +48,7 @@ namespace SQLite
                 _column_names[iterator.statement.column_name(c)] = c
         
         def get_text(name: string): string
-            var value = _iterator.constants[name]
+            var value = _iterator.query.constants[name]
             if value is null
                 value = _iterator.statement.column_text(_column_names[name])
             return value
@@ -26,8 +62,11 @@ namespace SQLite
         _iterator: Iterator
         _column_names: dict of string, int = new dict of string, int
     
+    /*
+     * Row iterator for Sqlite.Statement.
+     */
     class Iterator
-        construct(db: Database, query: Query) raises SQLite.Error
+        construct(db: Database, query: Query) raises SqliteUtilities.Error
             db.prepare(out _statement, query.to_sql())
             var index = 1
             for var binding in query.bindings
@@ -35,10 +74,10 @@ namespace SQLite
 
             _result = _statement.step()
             _columns = _statement.column_count()
-            _constants = query.constants
+            _query = query
             
         prop readonly statement: Statement
-        prop readonly constants: dict of string, string
+        prop readonly query: Query
 
         def get(): Row
             return new Row(self, _columns)
@@ -53,6 +92,9 @@ namespace SQLite
         _columns: int
         _result: int = ERROR
     
+    /*
+     * SQL query builder.
+     */
     class Query
         prop table: string
         prop readonly fields: list of string = new list of string
@@ -60,20 +102,12 @@ namespace SQLite
         prop readonly requirements: list of string = new list of string
         prop readonly bindings: list of string = new list of string
         prop readonly sort: list of string = new list of string
-        prop constraint: string = ""
-        
-        def add_fields(first: string, ...)
-            _fields.add(first)
-            var args = va_list()
-            arg: string? = args.arg()
-            while arg is not null
-                _fields.add(arg)
-                arg = args.arg()
+        prop constraint: string? = null
         
         def to_sql(): string
             var query = new StringBuilder()
             query.append("SELECT ")
-            if constraint.length > 0
+            if (constraint is not null) && (constraint.length > 0)
                 query.append(constraint)
                 query.append(" ")
             query.append(join(",", fields))
@@ -88,5 +122,13 @@ namespace SQLite
 
             return query.str
         
-        def execute(db: Database): Iterator raises SQLite.Error
+        def add_fields(first: string, ...)
+            _fields.add(first)
+            var args = va_list()
+            arg: string? = args.arg()
+            while arg is not null
+                _fields.add(arg)
+                arg = args.arg()
+        
+        def execute(db: Database): Iterator raises SqliteUtilities.Error
             return new Iterator(db, self)

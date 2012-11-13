@@ -1,5 +1,5 @@
 
-namespace SQLite {
+namespace SqliteUtilities {
     public errordomain Error {
         ERRMSG
     }

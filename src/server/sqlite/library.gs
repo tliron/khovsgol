@@ -1,49 +1,16 @@
 [indent=4]
 
 uses
-    SQLite
     Sqlite
+    SqliteUtilities
 
-namespace Khovsgol.Database
+namespace Khovsgol.Sqlite
 
     const SEPARATOR: string = "/"
             
-    class Libraries: Object implements Khovsgol.Libraries
+    class Libraries: Khovsgol.Libraries
         construct() raises GLib.Error
-            _db = new SQLite.Database("%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir()), "khovsgol.db")
-            
-            var args = new IterateTracksArgs()
-            args.title_like = "hello"
-            var tracks = iterate_tracks(args)
-            while tracks.has_next()
-                var track = tracks.get()
-                print track.path
-                tracks.next()
-                
-            print "-"
-            
-            var args2 = new IterateTracksInAlbumArgs()
-            args2.album = "/Depot/Music/Rush/Signals"
-            args2.sort.add("position")
-            tracks = iterate_tracks_in_album(args2)
-            while tracks.has_next()
-                var track = tracks.get()
-                print track.path
-                tracks.next()
-
-            print "-"
-            
-            var args3 = new IterateTracksByArtistArgs()
-            args3.artist = "Rush"
-            tracks = iterate_tracks_by_artist(args3)
-            while tracks.has_next()
-                var track = tracks.get()
-                print track.path
-                tracks.next()
-                
-            
-            
-            //dump_table("track")
+            _db = new SqliteUtilities.Database("%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir()), "khovsgol.db")
 
             // Track table
             _db.execute("CREATE TABLE IF NOT EXISTS track (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, album TEXT COLLATE NOCASE, album_sort TEXT, position INTEGER, duration REAL, date INTEGER, type TEXT)")
@@ -74,12 +41,46 @@ namespace Khovsgol.Database
 
             // Scanned table
             _db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp REAL)")
+            
+            //test()
+        
+        def test() raises GLib.Error
+            var args = new IterateTracksArgs()
+            args.title_like = "hello"
+            var tracks = iterate_tracks(args)
+            while tracks.has_next()
+                var track = tracks.get()
+                print track.path
+                tracks.next()
+                
+            print "-"
+            
+            var args2 = new IterateTracksInAlbumArgs()
+            args2.album = "/Depot/Music/Rush/Signals"
+            args2.sort.add("position")
+            tracks = iterate_tracks_in_album(args2)
+            while tracks.has_next()
+                var track = tracks.get()
+                print track.path
+                tracks.next()
+
+            print "-"
+            
+            var args3 = new IterateTracksByArtistArgs()
+            args3.artist = "Rush"
+            tracks = iterate_tracks_by_artist(args3)
+            while tracks.has_next()
+                var track = tracks.get()
+                print track.path
+                tracks.next()
+            
+            //dump_table("track")
         
         //
         // Track
         //
         
-        def get_track(path: string): Track? raises GLib.Error
+        def override get_track(path: string): Track? raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "SELECT library, title, title_sort, artist, artist_sort, album, album_sort, position, duration, date, type FROM track WHERE path=?")
             statement.bind_text(1, path)
@@ -100,7 +101,7 @@ namespace Khovsgol.Database
                 return track
             return null
         
-        def save_track(track: Track) raises GLib.Error
+        def override save_track(track: Track) raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "INSERT OR REPLACE INTO track (path, library, title, title_sort, artist, artist_sort, album, album_sort, position, duration, date, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             statement.bind_text(1, track.path)
@@ -116,7 +117,7 @@ namespace Khovsgol.Database
             statement.bind_text(11, track.file_type)
             _db.assert_done(statement.step())
 
-        def delete_track(path: string) raises GLib.Error
+        def override delete_track(path: string) raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "DELETE FROM track WHERE path=?")
             statement.bind_text(1, path)
@@ -126,7 +127,7 @@ namespace Khovsgol.Database
         // TrackPointer
         //
         
-        def get_track_pointer(album: string, position: int): TrackPointer? raises GLib.Error
+        def override get_track_pointer(album: string, position: int): TrackPointer? raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "SELECT path FROM track_pointer WHERE album=? AND position=?")
             statement.bind_text(1, album)
@@ -139,7 +140,7 @@ namespace Khovsgol.Database
                 return track_pointer
             return null
 
-        def save_track_pointer(track_pointer: TrackPointer) raises GLib.Error
+        def override save_track_pointer(track_pointer: TrackPointer) raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "INSERT OR REPLACE INTO track_pointer (path, position, album) VALUES (?, ?, ?)")
             statement.bind_text(1, track_pointer.path)
@@ -147,7 +148,7 @@ namespace Khovsgol.Database
             statement.bind_text(3, track_pointer.album)
             _db.assert_done(statement.step())
 
-        def delete_track_pointer(album: string, position: int) raises GLib.Error
+        def override delete_track_pointer(album: string, position: int) raises GLib.Error
             // TODO: renumber the rest of the pointers?
             statement: Statement
             _db.prepare(out statement, "DELETE FROM track_pointer WHERE album=? AND position=?")
@@ -155,13 +156,13 @@ namespace Khovsgol.Database
             statement.bind_int(2, position)
             _db.assert_done(statement.step())
 
-        def delete_track_pointers(album: string) raises GLib.Error
+        def override delete_track_pointers(album: string) raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "DELETE FROM track_pointer WHERE album=?")
             statement.bind_text(1, album)
             _db.assert_done(statement.step())
 
-        def move_track_pointers(album: string, delta: int, from_position: int = -1) raises GLib.Error
+        def override move_track_pointers(album: string, delta: int, from_position: int = -1) raises GLib.Error
             statement: Statement
             if from_position == -1
                 _db.prepare(out statement, "UPDATE track_pointer SET position=position+? WHERE album=?")
@@ -178,7 +179,7 @@ namespace Khovsgol.Database
         // Album
         //
         
-        def get_album(path: string): Album? raises GLib.Error
+        def override get_album(path: string): Album? raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "SELECT library, title, title_sort, artist, artist_sort, date, compilation, type FROM album WHERE path=?")
             statement.bind_text(1, path)
@@ -196,7 +197,7 @@ namespace Khovsgol.Database
                 return album
             return null
         
-        def save_album(album: Album) raises GLib.Error
+        def override save_album(album: Album) raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "INSERT OR REPLACE INTO album (path, library, title, title_sort, artist, artist_sort, date, compilation, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
             statement.bind_text(1, album.path)
@@ -210,7 +211,7 @@ namespace Khovsgol.Database
             statement.bind_text(9, album.file_type)
             _db.assert_done(statement.step())
 
-        def delete_album(path: string) raises GLib.Error
+        def override delete_album(path: string) raises GLib.Error
             statement: Statement
             
             // Delete track pointers
@@ -232,7 +233,7 @@ namespace Khovsgol.Database
         // Iterators
         //
         
-        def iterate_tracks(args: IterateTracksArgs): Khovsgol.TrackIterator raises GLib.Error
+        def override iterate_tracks(args: IterateTracksArgs): Khovsgol.TrackIterator raises GLib.Error
             var q = new Query()
             q.table = "track"
             q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album", "album_sort", "position", "duration", "date", "type")
@@ -261,7 +262,7 @@ namespace Khovsgol.Database
 
             return new TrackIterator(q.execute(_db))
 
-        def iterate_tracks_in_album(args: IterateTracksInAlbumArgs): Khovsgol.TrackIterator raises GLib.Error
+        def override iterate_tracks_in_album(args: IterateTracksInAlbumArgs): Khovsgol.TrackIterator raises GLib.Error
             var q = new Query()
             q.table = "track"
             q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album", "album_sort", "position", "duration", "date", "type")
@@ -271,7 +272,7 @@ namespace Khovsgol.Database
 
             return new TrackIterator(q.execute(_db))
         
-        def iterate_tracks_by_artist(args: IterateTracksByArtistArgs): Khovsgol.TrackIterator raises GLib.Error
+        def override iterate_tracks_by_artist(args: IterateTracksByArtistArgs): Khovsgol.TrackIterator raises GLib.Error
             var q = new Query()
             q.table = "track"
             q.sort.add_all(args.sort)
@@ -299,7 +300,7 @@ namespace Khovsgol.Database
         // Private
         //
     
-        _db: SQLite.Database
+        _db: SqliteUtilities.Database
 
         class private TrackIterator: Object implements Khovsgol.TrackIterator
             construct(iterator: Iterator)
