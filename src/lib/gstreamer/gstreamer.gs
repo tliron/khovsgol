@@ -3,7 +3,7 @@
 uses
     Gst
 
-namespace GstUtilities
+namespace GstUtil
 
     _initialized: bool = false
     
@@ -29,46 +29,38 @@ namespace GstUtilities
             var bus = _pipeline.get_bus()
             bus.add_signal_watch()
             bus.message.connect(on_message)
-
+            
         prop pipeline: Gst.Pipeline
-        prop on_state_changed: unowned OnStateChanged?
-        prop on_eos: unowned OnEOS?
-        prop on_tag: unowned OnTag?
-        prop on_error: unowned OnError?
+
+        event state_changed(new_state: State, old_state: State, pending_state: State)
+        event eos()
+        event tag(tag_list: TagList)
+        event error(error: GLib.Error, text: string)
 
         def private on_message(message: Message)
             var type = message.type
             if type == MessageType.STATE_CHANGED
-                if on_state_changed is not null
-                    new_state: State
-                    old_state: State
-                    pending_state: State
-                    message.parse_state_changed(out new_state, out old_state, out pending_state)
-                    on_state_changed(new_state, old_state, pending_state)
+                new_state: State
+                old_state: State
+                pending_state: State
+                message.parse_state_changed(out new_state, out old_state, out pending_state)
+                state_changed(new_state, old_state, pending_state)
             else if type == MessageType.EOS
-                if on_eos is not null
-                    on_eos()
+                eos()
             else if type == MessageType.TAG
-                if on_tag is not null
-                    tag_list: TagList
-                    message.parse_tag(out tag_list)
-                    on_tag(tag_list)
+                tag_list: TagList
+                message.parse_tag(out tag_list)
+                tag(tag_list)
             else if type == MessageType.ERROR
-                if on_error is not null
-                    error: GLib.Error
-                    text: string
-                    message.parse_error(out error, out text)
-                    on_error(error, text)
-        
-        delegate OnStateChanged(new_state: State, old_state: State, pending_state: State)
-        delegate OnEOS()
-        delegate OnTag(tag_list: TagList)
-        delegate OnError(error: GLib.Error, text: string)
+                e: GLib.Error
+                text: string
+                message.parse_error(out e, out text)
+                error(e, text)
 
     class LinkDecodeBinLater: GLib.Object
         construct(decodebin: dynamic Element, next: Element)
             _next = next
-            ref()
+            ref() // We keep a ref until our pad is added
             decodebin.pad_added.connect(on_pad_added)
 
         def on_pad_added(element: dynamic Element, pad: Pad)
@@ -76,6 +68,6 @@ namespace GstUtilities
             if name == "audio/x-raw"
                 pad.link(_next.get_static_pad("sink"))
             element.pad_added.disconnect(on_pad_added)
-            unref()
+            unref() // Pad added, no need for us to exist anymore
         
         _next: Element

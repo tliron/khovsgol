@@ -28,17 +28,48 @@ namespace Nap
         prop abstract readonly path: string
         prop abstract readonly query: dict of string, string
         prop abstract readonly variables: dict of string, string
-        prop abstract status_code: int = StatusCode.OK
+        prop abstract status_code: int
         prop abstract media_type: string?
         prop abstract response_text: string?
         prop abstract response_json_object: Json.Object?
         prop abstract response_json_array: Json.Array?
         
         def abstract get_method(): string
-        def abstract get_entity(): string
+        def abstract get_entity(): string?
         def abstract commit()
         def abstract pause()
         def abstract unpause()
+
+    /*
+     * A holder for conversation information; does not actually do
+     * anything with a server, but useful for calling handlers.
+     */
+    class SimpleConversation: Object implements Conversation
+        prop readonly path: string
+        prop readonly query: dict of string, string
+        prop readonly variables: dict of string, string
+        prop status_code: int = StatusCode.OK
+        prop media_type: string?
+        prop response_text: string?
+        prop response_json_object: Json.Object?
+        prop response_json_array: Json.Array?
+        prop method: string
+        prop entity: string?
+
+        def get_method(): string
+            return _method
+            
+        def get_entity(): string?
+            return _entity
+        
+        def commit()
+            pass
+            
+        def pause()
+            pass
+            
+        def unpause()
+            pass
                     
     /*
      * A RESTful conversation handler.

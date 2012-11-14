@@ -2,13 +2,18 @@
 
 uses
     Sqlite
-    SqliteUtilities
+    SqliteUtil
 
 namespace Khovsgol.Sqlite
 
     class Libraries: Khovsgol.Libraries
         construct() raises GLib.Error
-            _db = new SqliteUtilities.Database("%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir()), "khovsgol.db")
+            _db = new SqliteUtil.Database("%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir()), "khovsgol.db")
+            
+            var l = new Library(self, "Main")
+            var d = new Filesystem.Directory("/Depot/Music")
+            l.directories[d.path] = d
+            libraries[l.name] = l
 
             // Track table
             _db.execute("CREATE TABLE IF NOT EXISTS track (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, album TEXT COLLATE NOCASE, album_sort TEXT, position INTEGER, duration REAL, date INTEGER, type TEXT)")
@@ -160,9 +165,9 @@ namespace Khovsgol.Sqlite
             statement.bind_text(1, album)
             _db.assert_done(statement.step())
 
-        def override move_track_pointers(album: string, delta: int, from_position: int = -1) raises GLib.Error
+        def override move_track_pointers(album: string, delta: int, from_position: int = int.MIN) raises GLib.Error
             statement: Statement
-            if from_position == -1
+            if from_position == int.MIN
                 _db.prepare(out statement, "UPDATE track_pointer SET position=position+? WHERE album=?")
                 statement.bind_int(1, delta)
                 statement.bind_text(2, album)
@@ -190,7 +195,7 @@ namespace Khovsgol.Sqlite
                 album.artist = statement.column_text(3)
                 album.artist_sort = statement.column_text(4)
                 album.date = statement.column_int(5)
-                album.compilation = statement.column_int(6) == 1
+                album.compilation_type = (CompilationType) statement.column_int(6)
                 album.file_type = statement.column_text(7)
                 return album
             return null
@@ -205,7 +210,7 @@ namespace Khovsgol.Sqlite
             statement.bind_text(5, album.artist)
             statement.bind_text(6, album.artist_sort)
             statement.bind_int(7, album.date)
-            statement.bind_int(8, album.compilation ? 1 : 0)
+            statement.bind_int(8, album.compilation_type)
             statement.bind_text(9, album.file_type)
             _db.assert_done(statement.step())
 
@@ -368,9 +373,9 @@ namespace Khovsgol.Sqlite
             parse_libraries(q, "", args.libraries)
             
             // Compilation type
-            if args.compilation_type > -1
+            if args.compilation_type != CompilationType.ANY
                 q.requirements.add("compilation=?")
-                q.bindings.add(args.compilation_type.to_string())
+                q.bindings.add((int) args.compilation_type)
                 
             return new AlbumIterator(q.execute(_db))
 
@@ -487,7 +492,7 @@ namespace Khovsgol.Sqlite
         // Private
         //
     
-        _db: SqliteUtilities.Database
+        _db: SqliteUtil.Database
 
         def private parse_libraries(q: Query, prefix: string, libraries: list of string)
             if !libraries.is_empty
@@ -571,7 +576,7 @@ namespace Khovsgol.Sqlite
                 album.artist = row.get_text("artist")
                 album.artist_sort = row.get_text("artist_sort")
                 album.date = row.get_int("date")
-                album.compilation = row.get_int("compilation") == 1
+                album.compilation_type = (CompilationType) row.get_int("compilation")
                 album.file_type = row.get_text("type")
                 return album
                 

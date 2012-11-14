@@ -36,7 +36,15 @@ namespace Nap
      * resource.
      */
     class DelegatedResource: Resource
-        construct(get: Node?, post: Node?, put: Node?, delete: Node?, ...)
+        construct(get: Handler? = null, post: Handler? = null, put: Handler? = null, delete: Handler? = null, ...)
+            _get = get
+            _post = post
+            _put = put
+            _delete = delete
+            
+            add_ownerships(va_list())
+        
+        construct nodes(get: Node? = null, post: Node? = null, put: Node? = null, delete: Node? = null, ...)
             _get = get.handle
             _post = post.handle
             _put = put.handle
@@ -53,14 +61,6 @@ namespace Nap
                 
             add_ownerships(va_list())
 
-        construct delegates(get: Handler?, post: Handler?, put: Handler?, delete: Handler?, ...)
-            _get = get
-            _post = post
-            _put = put
-            _delete = delete
-            
-            add_ownerships(va_list())
-        
         def add_ownerships(args: va_list)
             ownership: Object? = args.arg()
             while ownership is not null
@@ -97,59 +97,3 @@ namespace Nap
         _post: unowned Handler?
         _put: unowned Handler?
         _delete: unowned Handler?
-
-    class DocumentResource: Resource
-        def override get(conversation: Conversation)
-            conversation.response_json_object = get_json(conversation)
-
-        def override post(conversation: Conversation)
-            var entity = conversation.get_entity()
-            if entity is not null
-                try
-                    conversation.response_json_object = post_json(conversation, JSON.from_object(entity))
-                except e: JSON.Error
-                    bad_request_json(conversation, e.message)
-            else
-                bad_request_json(conversation, "No entity")
-
-        def override put(conversation: Conversation)
-            var entity = conversation.get_entity()
-            if entity is not null
-                try
-                    conversation.response_json_object = put_json(conversation, JSON.from_object(entity))
-                except e: JSON.Error
-                    bad_request_json(conversation, e.message)
-            else
-                bad_request_json(conversation, "No entity")
-
-        def virtual get_json(conversation: Conversation): Json.Object?
-            return new Json.Object()
-
-        def virtual post_json(conversation: Conversation, entity: Json.Object): Json.Object?
-            return new Json.Object()
-
-        def virtual put_json(conversation: Conversation, entity: Json.Object): Json.Object?
-            return new Json.Object()
-        
-    class DelegatedDocumentResource: DocumentResource
-        construct(get_json: json_delegate?, post_json: json_entity_delegate?)
-            _get_json = get_json
-            _post_json = post_json
-
-        def override get_json(conversation: Conversation): Json.Object?
-            if _get_json is not null
-                return _get_json()
-            else
-                return super.get_json(conversation)
-
-        def override post_json(conversation: Conversation, entity: Json.Object): Json.Object?
-            if _post_json is not null
-                return _post_json(entity)
-            else
-                return super.post_json(conversation, entity)
-        
-        delegate json_delegate(): Json.Object?
-        delegate json_entity_delegate(entity: Json.Object): Json.Object?
-
-        _get_json: unowned json_delegate?
-        _post_json: unowned json_entity_delegate?

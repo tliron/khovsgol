@@ -17,13 +17,13 @@ namespace Khovsgol.Server
             
             initialize_logging()
 
-            _resources = new Resources(new Sqlite.Libraries())
-            _player = new GStreamer.Player()
+            _api = new Api(new Sqlite.Libraries(), new Players())
+            _uri_space = new UriSpace(_api)
             
             Connector._Soup.Server.delay = _arguments.delay * 1000
 
             _server = new Connector._Soup.Server(_arguments.port, _main_loop.get_context())
-            _server.set_handler(_resources.router.handle)
+            _server.set_handler(_uri_space.handle)
 
             if _arguments.threads > 0
                 try
@@ -50,10 +50,10 @@ namespace Khovsgol.Server
 
         _arguments: Arguments
         _server: Nap.Server
-        _player: GStreamer.Player
         _main_loop: MainLoop
         _logger: Logging.Logger = Logging.get_logger("khovsgol.server")
-        _resources: Resources
+        _api: Api
+        _uri_space: UriSpace
 
     class Arguments: Object
         construct(args: array of string)

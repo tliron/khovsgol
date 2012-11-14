@@ -29,7 +29,7 @@ namespace Nap.Connector._Soup
         def get_method(): string
             return _soup_message.method
             
-        def get_entity(): string
+        def get_entity(): string?
             /*var body = _soup_message.request_body
             var buffer = body.flatten()
             return (string) buffer.get_as_bytes().get_data()*/

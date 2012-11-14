@@ -3,7 +3,7 @@
 uses
     Sqlite
     
-namespace SqliteUtilities
+namespace SqliteUtil
 
     /*
      * String join for Gee.Iterable.
@@ -66,11 +66,15 @@ namespace SqliteUtilities
      * Row iterator for Sqlite.Statement.
      */
     class Iterator
-        construct(db: Database, query: Query) raises SqliteUtilities.Error
+        construct(db: Database, query: Query) raises SqliteUtil.Error
             db.prepare(out _statement, query.to_sql())
             var index = 1
             for var binding in query.bindings
-                _statement.bind_text(index++, binding)
+                var name = binding.type().name()
+                if name == "gchararray"
+                    _statement.bind_text(index++, binding.get_string())
+                else if name == "gint"
+                    _statement.bind_int(index++, binding.get_int())
 
             _result = _statement.step()
             _columns = _statement.column_count()
@@ -100,7 +104,7 @@ namespace SqliteUtilities
         prop readonly fields: list of string = new list of string
         prop readonly constants: dict of string, string = new dict of string, string
         prop readonly requirements: list of string = new list of string
-        prop readonly bindings: list of string = new list of string
+        prop readonly bindings: list of GLib.Value? = new list of GLib.Value?
         prop readonly sort: list of string = new list of string
         prop constraint: string? = null
         
@@ -130,5 +134,5 @@ namespace SqliteUtilities
                 _fields.add(arg)
                 arg = args.arg()
         
-        def execute(db: Database): Iterator raises SqliteUtilities.Error
+        def execute(db: Database): Iterator raises SqliteUtil.Error
             return new Iterator(db, self)
