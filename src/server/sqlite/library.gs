@@ -7,14 +7,12 @@ uses
 namespace Khovsgol.Sqlite
 
     class Libraries: Khovsgol.Libraries
-        construct() raises GLib.Error
+        def override initialize() raises GLib.Error
+            if _db is not null
+                return
+        
             _db = new SqliteUtil.Database("%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir()), "khovsgol.db")
             
-            var l = new Library(self, "Main")
-            var d = new Filesystem.Directory("/Depot/Music")
-            l.directories[d.path] = d
-            libraries[l.name] = l
-
             // Track table
             _db.execute("CREATE TABLE IF NOT EXISTS track (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, album TEXT COLLATE NOCASE, album_sort TEXT, position INTEGER, duration REAL, date INTEGER, type TEXT)")
             _db.execute("CREATE INDEX IF NOT EXISTS track_library_idx ON track (library)")
@@ -32,7 +30,7 @@ namespace Khovsgol.Sqlite
             _db.execute("CREATE INDEX IF NOT EXISTS track_pointer_album_idx ON track_pointer (album)")
 
             // Album table
-            _db.execute("CREATE TABLE IF NOT EXISTS album (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, date INTEGER, compilation INTEGER, type TEXT)")
+            _db.execute("CREATE TABLE IF NOT EXISTS album (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, date INTEGER(8), compilation INTEGER(1), type TEXT)")
             _db.execute("CREATE INDEX IF NOT EXISTS album_library_idx ON album (library)")
             _db.execute("CREATE INDEX IF NOT EXISTS album_title_idx ON album (title)")
             _db.execute("CREATE INDEX IF NOT EXISTS album_title_sort_idx ON album (title_sort)")
@@ -46,39 +44,7 @@ namespace Khovsgol.Sqlite
             _db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp REAL)")
             
             //test()
-        
-        def test() raises GLib.Error
-            var args = new IterateTracksArgs()
-            args.title_like = "hello"
-            var tracks = iterate_tracks(args)
-            while tracks.has_next()
-                var track = tracks.get()
-                print track.path
-                tracks.next()
-                
-            print "-"
-            
-            var args2 = new IterateForAlbumArgs()
-            args2.album = "/Depot/Music/Rush/Signals"
-            args2.sort.add("position")
-            tracks = iterate_tracks_in_album(args2)
-            while tracks.has_next()
-                var track = tracks.get()
-                print track.path
-                tracks.next()
 
-            print "-"
-            
-            var args3 = new IterateForArtistArgs()
-            args3.artist = "Rush"
-            tracks = iterate_tracks_by_artist(args3)
-            while tracks.has_next()
-                var track = tracks.get()
-                print track.path
-                tracks.next()
-            
-            //dump_table("track")
-        
         //
         // Tracks
         //
@@ -194,7 +160,7 @@ namespace Khovsgol.Sqlite
                 album.title_sort = statement.column_text(2)
                 album.artist = statement.column_text(3)
                 album.artist_sort = statement.column_text(4)
-                album.date = statement.column_int(5)
+                album.date = statement.column_int64(5)
                 album.compilation_type = (CompilationType) statement.column_int(6)
                 album.file_type = statement.column_text(7)
                 return album
@@ -209,7 +175,7 @@ namespace Khovsgol.Sqlite
             statement.bind_text(4, album.title_sort)
             statement.bind_text(5, album.artist)
             statement.bind_text(6, album.artist_sort)
-            statement.bind_int(7, album.date)
+            statement.bind_int64(7, album.date)
             statement.bind_int(8, album.compilation_type)
             statement.bind_text(9, album.file_type)
             _db.assert_done(statement.step())
@@ -492,9 +458,7 @@ namespace Khovsgol.Sqlite
         // Private
         //
     
-        _db: SqliteUtil.Database
-
-        def private parse_libraries(q: Query, prefix: string, libraries: list of string)
+        def private static parse_libraries(q: Query, prefix: string, libraries: list of string)
             if !libraries.is_empty
                 q.requirements.add("%slibrary IN (%s)".printf(prefix, join_same(",", "?", libraries.size)))
                 q.bindings.add_all(libraries)
@@ -636,3 +600,37 @@ namespace Khovsgol.Sqlite
                 
             _iterator: Iterator
             _name: string
+
+        _db: SqliteUtil.Database
+
+        def test() raises GLib.Error
+            var args = new IterateTracksArgs()
+            args.title_like = "hello"
+            var tracks = iterate_tracks(args)
+            while tracks.has_next()
+                var track = tracks.get()
+                print track.path
+                tracks.next()
+                
+            print "-"
+            
+            var args2 = new IterateForAlbumArgs()
+            args2.album = "/Depot/Music/Rush/Signals"
+            args2.sort.add("position")
+            tracks = iterate_tracks_in_album(args2)
+            while tracks.has_next()
+                var track = tracks.get()
+                print track.path
+                tracks.next()
+
+            print "-"
+            
+            var args3 = new IterateForArtistArgs()
+            args3.artist = "Rush"
+            tracks = iterate_tracks_by_artist(args3)
+            while tracks.has_next()
+                var track = tracks.get()
+                print track.path
+                tracks.next()
+            
+            //dump_table("track")

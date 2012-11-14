@@ -5,6 +5,12 @@ uses
 
 namespace JsonUtil
 
+    interface HasJsonObject
+        def abstract to_json(): Json.Object
+
+    interface HasJsonArray
+        def abstract to_json(): Json.Array
+
     //
     // Types
     //
@@ -18,7 +24,7 @@ namespace JsonUtil
     def is_string(node: Json.Node?): bool
         return (node is not null) && (node.get_node_type() == NodeType.VALUE) && (node.get_value_type().name() == "gchararray")
 
-    def is_int(node: Json.Node?): bool
+    def is_int64(node: Json.Node?): bool
         return (node is not null) && (node.get_node_type() == NodeType.VALUE) && (node.get_value_type().name() == "gint64")
 
     def is_double(node: Json.Node?): bool
@@ -40,9 +46,13 @@ namespace JsonUtil
         var node = obj.get_member(key)
         return is_string(node) ? node.get_string() : null
 
+    def get_int64_member_or_min(obj: Json.Object, key: string): int64
+        var node = obj.get_member(key)
+        return is_int64(node) ? node.get_int() : int.MIN
+
     def get_int_member_or_min(obj: Json.Object, key: string): int
         var node = obj.get_member(key)
-        return is_int(node) ? (int) node.get_int() : int.MIN
+        return is_int64(node) ? (int) node.get_int() : int.MIN
 
     def get_double_member_or_nan(obj: Json.Object, key: string): double
         var node = obj.get_member(key)
@@ -60,9 +70,13 @@ namespace JsonUtil
         var node = arr.get_element(index)
         return is_string(node) ? node.get_string() : null
 
+    def get_int64_element_or_min(arr: Json.Array, index: int): int64
+        var node = arr.get_element(index)
+        return is_int64(node) ? node.get_int() : int64.MIN
+
     def get_int_element_or_min(arr: Json.Array, index: int): int
         var node = arr.get_element(index)
-        return is_int(node) ? (int) node.get_int() : int.MIN
+        return is_int64(node) ? (int) node.get_int() : int.MIN
 
     def get_double_element_or_nan(arr: Json.Array, index: int): double
         var node = arr.get_element(index)
@@ -75,6 +89,10 @@ namespace JsonUtil
     def set_string_member_not_null(obj: Json.Object, key: string, value: string?)
         if value is not null
             obj.set_string_member(key, value)
+
+    def set_int64_member_not_min(obj: Json.Object, key: string, value: int64)
+        if value != int64.MIN
+            obj.set_int_member(key, value)
 
     def set_int_member_not_min(obj: Json.Object, key: string, value: int)
         if value != int.MIN

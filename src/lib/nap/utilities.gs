@@ -1,12 +1,9 @@
 [indent=4]
 
+uses
+    JsonUtil
+
 namespace Nap
-
-    interface HasJsonObject
-        def abstract to_json(): Json.Object
-
-    interface HasJsonArray
-        def abstract to_json(): Json.Array
 
     def set_json_object_or_not_found(has_json: HasJsonObject?, conversation: Conversation): bool
         if has_json is not null

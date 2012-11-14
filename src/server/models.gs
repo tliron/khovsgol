@@ -1,17 +1,33 @@
 [indent=4]
 
+uses
+    JsonUtil
+
 namespace Khovsgol
 
     const SEPARATOR: string = "/"
     
     def to_sortable(text: string): string
         return text.down()
+    
+    //
+    // Crucible
+    //
+    
+    interface Crucible: Object
+        prop abstract readonly libraries: Libraries
+        prop abstract readonly players: Players
         
+        def abstract create_library(): Library
+        def abstract create_directory(): Directory
+        def abstract create_player(): Player
+        def abstract create_play_list(): PlayList
+
     //
     // Track
     //
 
-    class Track: Object implements Nap.HasJsonObject
+    class Track: Object implements HasJsonObject
         prop path: string
         prop library: string
         prop title: string
@@ -28,22 +44,22 @@ namespace Khovsgol
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_member_not_null(json, "path", _path)
-            JsonUtil.set_string_member_not_null(json, "library", _library)
-            JsonUtil.set_string_member_not_null(json, "title", _title)
-            JsonUtil.set_string_member_not_null(json, "title_sort", _title_sort)
-            JsonUtil.set_string_member_not_null(json, "artist", _artist)
-            JsonUtil.set_string_member_not_null(json, "artist_sort", _artist_sort)
-            JsonUtil.set_string_member_not_null(json, "album", _album)
-            JsonUtil.set_string_member_not_null(json, "album_sort", _album_sort)
-            JsonUtil.set_string_member_not_null(json, "album_path", _album_path)
-            JsonUtil.set_int_member_not_min(json, "position", _position)
-            JsonUtil.set_double_member_not_nan(json, "duration", _duration)
-            JsonUtil.set_int_member_not_min(json, "date", _date)
-            JsonUtil.set_string_member_not_null(json, "type", _file_type)
+            set_string_member_not_null(json, "path", _path)
+            set_string_member_not_null(json, "library", _library)
+            set_string_member_not_null(json, "title", _title)
+            set_string_member_not_null(json, "title_sort", _title_sort)
+            set_string_member_not_null(json, "artist", _artist)
+            set_string_member_not_null(json, "artist_sort", _artist_sort)
+            set_string_member_not_null(json, "album", _album)
+            set_string_member_not_null(json, "album_sort", _album_sort)
+            set_string_member_not_null(json, "album_path", _album_path)
+            set_int_member_not_min(json, "position", _position)
+            set_double_member_not_nan(json, "duration", _duration)
+            set_int_member_not_min(json, "date", _date == 0 ? int.MIN : _date)
+            set_string_member_not_null(json, "type", _file_type)
             return json
     
-    class abstract TrackIterator: Object implements Nap.HasJsonArray
+    class abstract TrackIterator: Object implements HasJsonArray
         def abstract has_next(): bool
         def abstract next(): bool
         def abstract new get(): Track
@@ -56,7 +72,7 @@ namespace Khovsgol
                 var track = get()
                 var obj = track.to_json()
                 if get_album_path is not null
-                    JsonUtil.set_string_member_not_null(obj, "album_path", _get_album_path(track))
+                    set_string_member_not_null(obj, "album_path", _get_album_path(track))
                 json.add_object_element(obj)
                 next()
             return json
@@ -80,19 +96,19 @@ namespace Khovsgol
     // TrackPointer
     //
 
-    class TrackPointer: Object implements Nap.HasJsonObject
+    class TrackPointer: Object implements HasJsonObject
         prop path: string
         prop position: int
         prop album: string
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_member_not_null(json, "path", _path)
-            JsonUtil.set_int_member_not_min(json, "position", _position)
-            JsonUtil.set_string_member_not_null(json, "album", _album)
+            set_string_member_not_null(json, "path", _path)
+            set_int_member_not_min(json, "position", _position)
+            set_string_member_not_null(json, "album", _album)
             return json
 
-    class abstract TrackPointerIterator: Object implements Nap.HasJsonArray
+    class abstract TrackPointerIterator: Object implements HasJsonArray
         def abstract has_next(): bool
         def abstract next(): bool
         def abstract new get(): TrackPointer
@@ -114,31 +130,31 @@ namespace Khovsgol
         COMPILATION = 1
         CUSTOM_COMPILATION = 2
 
-    class Album: Object implements Nap.HasJsonObject
+    class Album: Object implements HasJsonObject
         prop path: string
         prop library: string
         prop title: string
         prop title_sort: string
         prop artist: string
         prop artist_sort: string
-        prop date: int = int.MIN
+        prop date: int64 = int64.MIN
         prop compilation_type: CompilationType
         prop file_type: string
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_member_not_null(json, "path", _path)
-            JsonUtil.set_string_member_not_null(json, "library", _library)
-            JsonUtil.set_string_member_not_null(json, "title", _title)
-            JsonUtil.set_string_member_not_null(json, "title_sort", _title_sort)
-            JsonUtil.set_string_member_not_null(json, "artist", _artist)
-            JsonUtil.set_string_member_not_null(json, "artist_sort", _artist_sort)
-            JsonUtil.set_int_member_not_min(json, "date", _date)
-            JsonUtil.set_int_member_not_min(json, "compilation", _compilation_type)
-            JsonUtil.set_string_member_not_null(json, "type", _file_type)
+            set_string_member_not_null(json, "path", _path)
+            set_string_member_not_null(json, "library", _library)
+            set_string_member_not_null(json, "title", _title)
+            set_string_member_not_null(json, "title_sort", _title_sort)
+            set_string_member_not_null(json, "artist", _artist)
+            set_string_member_not_null(json, "artist_sort", _artist_sort)
+            set_int64_member_not_min(json, "date", _date == 0 ? int64.MIN : _date)
+            set_int_member_not_min(json, "compilation", _compilation_type)
+            set_string_member_not_null(json, "type", _file_type)
             return json
 
-    class abstract AlbumIterator: Object implements Nap.HasJsonArray
+    class abstract AlbumIterator: Object implements HasJsonArray
         def abstract has_next(): bool
         def abstract next(): bool
         def abstract new get(): Album
@@ -154,7 +170,7 @@ namespace Khovsgol
     // Artist
     //
     
-    class Artist: Object implements Nap.HasJsonArray
+    class Artist: Object implements HasJsonArray
         prop artist: string
         prop artist_sort: string
         
@@ -164,7 +180,7 @@ namespace Khovsgol
             json.add_string_element(_artist_sort)
             return json
     
-    class abstract ArtistIterator: Object implements Nap.HasJsonArray
+    class abstract ArtistIterator: Object implements HasJsonArray
         def abstract has_next(): bool
         def abstract next(): bool
         def abstract new get(): Artist
@@ -180,8 +196,10 @@ namespace Khovsgol
     // Library
     //
 
-    class abstract Libraries: Object implements Nap.HasJsonArray
+    class abstract Libraries: Object implements HasJsonArray
         prop libraries: dict of string, Library = new dict of string, Library
+    
+        def abstract initialize() raises GLib.Error
     
         // Tracks
         def abstract get_track(path: string): Track? raises GLib.Error
@@ -247,7 +265,7 @@ namespace Khovsgol
             
             // Add the track pointers at the destination
             for var i = 0 to (paths.get_length() - 1)
-                var path = JsonUtil.get_string_element_or_null(paths, i)
+                var path = get_string_element_or_null(paths, i)
                 if path is not null
                     var track_pointer = new TrackPointer()
                     track_pointer.path = path
@@ -258,19 +276,19 @@ namespace Khovsgol
         def remove(album_path: string, positions: Json.Array) raises GLib.Error
             // Remove track pointers
             for var i = 0 to (positions.get_length() - 1)
-                var position = JsonUtil.get_int_element_or_min(positions, i)
+                var position = get_int_element_or_min(positions, i)
                 if position != int.MIN
                     delete_track_pointer(album_path, position)
             
             // Move positions back for all remaining track pointers
             for var i = 0 to (positions.get_length() - 1)
-                var position = JsonUtil.get_int_element_or_min(positions, i)
+                var position = get_int_element_or_min(positions, i)
                 if position != int.MIN
                     move_track_pointers(album_path, -1, position + 1)
                 
                 // We need to also move back positions in the array
                 for var ii = (i + 1) to (positions.get_length() - 1)
-                    var p = JsonUtil.get_int_element_or_min(positions, ii)
+                    var p = get_int_element_or_min(positions, ii)
                     if p > position
                         positions.get_element(ii).set_int(p - 1)
         
@@ -291,7 +309,7 @@ namespace Khovsgol
             // Remove the track pointers
             var paths = new list of string
             for var i = 0 to (positions.get_length() - 1)
-                var position = JsonUtil.get_int_element_or_min(positions, i)
+                var position = get_int_element_or_min(positions, i)
                 if position != int.MIN
                     var track_pointer = get_track_pointer(album_path, position)
                     paths.add(track_pointer.path)
@@ -299,13 +317,13 @@ namespace Khovsgol
             
             // Move positions back for all remaining track pointers
             for var i = 0 to (positions.get_length() - 1)
-                var position = JsonUtil.get_int_element_or_min(positions, i)
+                var position = get_int_element_or_min(positions, i)
                 if position != int.MIN
                     move_track_pointers(album_path, -1, position + 1)
                 
                 // We need to also move back positions in the array
                 for var ii = (i + 1) to (positions.get_length() - 1)
-                    var p = JsonUtil.get_int_element_or_min(positions, ii)
+                    var p = get_int_element_or_min(positions, ii)
                     if p > position
                         positions.get_element(ii).set_int(p - 1)
                         
@@ -330,11 +348,8 @@ namespace Khovsgol
                 json.add_object_element(library.to_json())
             return json
     
-    class Library: Object implements Nap.HasJsonObject
-        construct(libraries: Libraries, name: string)
-            _libraries = libraries
-            _name = name
-            
+    class Library: Object implements HasJsonObject
+        prop crucible: Crucible
         prop name: string
         prop directories: dict of string, Directory = new dict of string, Directory
         
@@ -347,14 +362,12 @@ namespace Khovsgol
     
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_member_not_null(json, "name", _name)
+            set_string_member_not_null(json, "name", _name)
             directories: Json.Array = new Json.Array()
             for var directory in _directories.values
                 directories.add_object_element(directory.to_json())
             json.set_array_member("directories", directories)
             return json
-    
-        _libraries: Libraries
 
     class IterateForDateArgs
         prop date: int = int.MIN
@@ -389,7 +402,7 @@ namespace Khovsgol
         prop libraries: list of string = new list of string
         prop sort: list of string = new list of string
 
-    class abstract StringIterator: Object implements Nap.HasJsonArray
+    class abstract StringIterator: Object implements HasJsonArray
         def abstract has_next(): bool
         def abstract next(): bool
         def abstract new get(): string
@@ -401,7 +414,7 @@ namespace Khovsgol
                 next()
             return json
 
-    class abstract IntIterator: Object implements Nap.HasJsonArray
+    class abstract IntIterator: Object implements HasJsonArray
         def abstract has_next(): bool
         def abstract next(): bool
         def abstract new get(): int
@@ -417,7 +430,8 @@ namespace Khovsgol
     // Directory
     //
     
-    class abstract Directory: Object implements Nap.HasJsonObject
+    class abstract Directory: Object implements HasJsonObject
+        prop crucible: Crucible
         prop path: string
         prop is_scanning: bool
         
@@ -425,7 +439,7 @@ namespace Khovsgol
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_member_not_null(json, "path", _path)
+            set_string_member_not_null(json, "path", _path)
             json.set_boolean_member("scanning", _is_scanning)
             return json
 
@@ -515,13 +529,15 @@ namespace Khovsgol
         else
             return null
 
-    class Players: Object implements Nap.HasJsonArray
+    class Players: Object implements HasJsonArray
+        prop crucible: Crucible
         prop players: dict of string, Player = new dict of string, Player
          
         def get_or_create_player(name: string): Player
             var player = _players[name]
             if player is null
-                _players[name] = player = new GStreamer.Player(name)
+                _players[name] = player = crucible.create_player()
+                player.name = name
             return player
 
         def to_json(): Json.Array
@@ -530,14 +546,17 @@ namespace Khovsgol
                 json.add_object_element(player.to_json())
             return json
     
-    class abstract Player: Object implements Nap.HasJsonObject
-        construct()
-            _play_list = new PlayList(self)
-    
+    class abstract Player: Object implements HasJsonObject
         prop name: string
         prop plugs: list of Plug = new list of Plug
         prop readonly play_list: PlayList
+            get
+                if _play_list is null
+                    _play_list = _crucible.create_play_list()
+                    _play_list.player = self
+                return _play_list
 
+        prop crucible: Crucible
         prop abstract play_mode: PlayMode
         prop abstract cursor_mode: CursorMode
         prop abstract position_in_play_list: int
@@ -549,71 +568,122 @@ namespace Khovsgol
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_member_not_null(json, "name", _name)
-            JsonUtil.set_string_member_not_null(json, "playMode", "stopped")
-            JsonUtil.set_string_member_not_null(json, "cursorMode", "play_list")
+            set_string_member_not_null(json, "name", _name)
+            set_string_member_not_null(json, "playMode", "stopped")
+            set_string_member_not_null(json, "cursorMode", "play_list")
             var plugs = new Json.Object()
             for var plug in _plugs
                 plugs.set_object_member(plug.name, plug.to_json())
             json.set_object_member("plugs", plugs)
             var cursor = new Json.Object()
-            JsonUtil.set_int_member_not_min(cursor, "positionInPlayList", 1)
-            JsonUtil.set_int_member_not_min(cursor, "positionInTrack", 0)
-            JsonUtil.set_int_member_not_min(cursor, "trackDuration", 100)
+            set_int_member_not_min(cursor, "positionInPlayList", 1)
+            set_int_member_not_min(cursor, "positionInTrack", 0)
+            set_int_member_not_min(cursor, "trackDuration", 100)
             json.set_object_member("cursor", cursor)
             json.set_object_member("playList", play_list.to_json())
             return json
+        
+        _play_list: PlayList
 
     //
     // Plug
     //
     
-    class Plug: Object implements Nap.HasJsonObject
+    class Plug: Object implements HasJsonObject
         prop name: string
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_member_not_null(json, "name", _name)
+            set_string_member_not_null(json, "name", _name)
             return json
     
     //
     // PlayList
     //
     
-    class PlayList: Object implements Nap.HasJsonObject
-        construct(player: Player)
-            _player = player
-    
+    class PlayList: Object implements HasJsonObject
+        prop crucible: Crucible
+        prop player: Player
         prop id: string
         prop version: double
-        prop tracks: list of Track = new list of Track
+        
+        def get_tracks(): list of Track raises GLib.Error
+            validate_tracks()
+            return _tracks
 
-        def set_paths(paths: Json.Array)
+        def set_paths(paths: Json.Array) raises GLib.Error
             // blah
             var l = new list of string
             for var i = 0 to (paths.get_length() - 1)
                 l.add(paths.get_string_element(i))
                 
-        def move(position: int, positions: Json.Array)
+        def move(position: int, positions: Json.Array) raises GLib.Error
             // blah
             var l = new list of int
             for var i = 0 to (positions.get_length() - 1)
                 l.add((int) positions.get_int_element(i))
         
-        def add(position: int, paths: Json.Array)
+        def add(position: int, paths: Json.Array) raises GLib.Error
             pass
         
-        def remove(paths: Json.Array)
+        def remove(paths: Json.Array) raises GLib.Error
             pass
-        
+
         def to_json(): Json.Object
+            try
+                validate_tracks()
+            except e: GLib.Error
+                pass
             var json = new Json.Object()
-            JsonUtil.set_string_member_not_null(json, "id", _id)
+            set_string_member_not_null(json, "id", _id)
             json.set_double_member("version", _version)
             var tracks = new Json.Array()
             for var track in _tracks
                 tracks.add_object_element(track.to_json())
             json.set_array_member("tracks", tracks)
             return json
+            
+        _album_path: string
+        _tracks_timestamp: int64 = int64.MIN
+        _tracks: list of Track = new list of Track
 
-        _player: Player
+        def private initialize() raises GLib.Error
+            if _album_path is null
+                _album_path = "?" + player.name
+            _version = 12345
+            _id = "05c14cdc-2e2b-11e2-acee-00241ddd2a14"
+
+        def get_timestamp(): int64 raises GLib.Error
+            initialize()
+            var album = _crucible.libraries.get_album(_album_path)
+            if album is not null
+                return album.date
+            else
+                update_timestamp()
+                return _tracks_timestamp
+
+        def update_timestamp() raises GLib.Error
+            initialize()
+            var timestamp = get_monotonic_time()
+            var album = new Album()
+            album.path = _album_path
+            album.date = timestamp
+            _crucible.libraries.save_album(album)
+        
+        /*
+         * If our track list is out of date, refetch it from the libraries.
+         */
+        def private validate_tracks() raises GLib.Error
+            var timestamp = get_timestamp()
+            if timestamp > _tracks_timestamp
+                _tracks.clear()
+                var args = new IterateForAlbumArgs()
+                args.album = _album_path
+                args.sort.add("position")
+                var iterator = _crucible.libraries.iterate_raw_track_pointers_in_album(args)
+                while iterator.has_next()
+                    var track = crucible.libraries.get_track(iterator.get().path)
+                    track.album_path = TrackIterator.get_album_path_dynamic(track)
+                    _tracks.add(track)
+                    iterator.next()
+                _tracks_timestamp = timestamp
