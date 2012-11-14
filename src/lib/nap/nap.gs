@@ -42,9 +42,10 @@ namespace Nap
 
     /*
      * A holder for conversation information; does not actually do
-     * anything with a server, but useful for calling handlers.
+     * anything with a server, but useful for calling handlers,
+     * allowing you to treat them as a non-wired RESTful API.
      */
-    class SimpleConversation: Object implements Conversation
+    class MockConversation: Object implements Conversation
         prop readonly path: string
         prop readonly query: dict of string, string
         prop readonly variables: dict of string, string
@@ -92,6 +93,7 @@ namespace Nap
      */
     interface Server: Object
         prop abstract thread_pool: ThreadPool?
+        
         def abstract get_handler(): unowned Handler?
         def abstract set_handler(handler: Handler?)
         def abstract get_error_handler(): unowned ErrorHandler?

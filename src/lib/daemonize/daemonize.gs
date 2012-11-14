@@ -54,6 +54,7 @@ namespace Daemonize
                     Posix.exit(1)
             
         if start
+            // Make sure daemon in not already running
             var pid = Daemon.pid_file_is_running()
             if pid >= 0
                 Daemon.log(Daemon.LogPriority.ERR, "Daemon %s is already running (PID %u)", name, pid)
@@ -61,10 +62,12 @@ namespace Daemonize
                 
             print "Starting daemon %s (%s)", name, get_pid_file()
             
+            // Create pipe to communicate with daemon
             if Daemon.retval_init() < 0
                 Daemon.log(Daemon.LogPriority.ERR, "Failed to create daemon pipe: %s", strerror(errno))
                 Posix.exit(1)
-                
+            
+            // Fork!
             pid = Daemon.fork()
             if pid < 0
                 Daemon.retval_done()
@@ -72,7 +75,7 @@ namespace Daemonize
                 Posix.exit(1)
 
             else if pid != 0
-                // We are the parent now
+                // Here we are in the parent process of the fork
                 var r = Daemon.retval_wait(20)
                 if r < 0
                     Daemon.log(Daemon.LogPriority.ERR, "Could not receive return value from daemon process: %s", strerror(errno))
@@ -81,33 +84,36 @@ namespace Daemonize
                     Posix.exit(r)
 
             else
-                // We are the daemon now
+                // Here we are the daemon process of the fork
                 if Daemon.close_all(-1) < 0
                     Daemon.log(Daemon.LogPriority.ERR, "Failed to close all daemon file descriptors: %s", strerror(errno))
                     Daemon.retval_send(1)
                     exit()
-                    
+                
+                // Create PID file
                 if Daemon.pid_file_create() < 0
                     Daemon.log(Daemon.LogPriority.ERR, "Could not create daemon PID file: %s", strerror(errno))
                     Daemon.retval_send(2)
                     exit()
-                    
+                
+                // Register signal handlers
                 if Daemon.signal_init(Daemon.Sig.INT, Daemon.Sig.TERM, Daemon.Sig.QUIT, Daemon.Sig.HUP, 0) < 0
                     Daemon.log(Daemon.LogPriority.ERR, "Could not register daemon signal handlers: %s", strerror(errno))
                     Daemon.retval_send(3)
                     exit()
-                    
+
                 _daemon_fd = {Daemon.signal_fd(), IOCondition.IN|IOCondition.HUP|IOCondition.ERR, 0}
                 
+                // Wrap GLib's MainLoop polling callback
                 if main_loop is not null
                     _main_loop = main_loop
                     var context = main_loop.get_context()
                     
-                    // Replace the poll function with ours
+                    // Wrap the polling callback with ours
                     _poll = context.get_poll_func()
                     context.set_poll_func(poll)
                     
-                    // Poll our daemon's file descriptor
+                    // Make sure to poll our daemon's file descriptor
                     context.add_poll(ref _daemon_fd, 0)
 
                 Daemon.retval_send(0)
@@ -119,6 +125,8 @@ namespace Daemonize
     /*
      * The default daemon pid_file location is /var/run/, but that would
      * require the daemon to run with root privileges.
+     * 
+     * Our version uses one located in the user's home directory.
      */
     def get_pid_file(): string
         var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
@@ -139,10 +147,11 @@ namespace Daemonize
         Posix.exit(0)
 
     /*
-     * Our wrapping GLib poll callback, with added support for handling
+     * Our wrapping GLib polling callback, with added support for handling
      * daemon signals.
      */
     def private poll(fds: array of PollFD, timeout: int): int
+        // Look for our file descriptor
         for fd in fds
             if fd.fd == _daemon_fd.fd
                  var signal = Daemon.signal_next()
@@ -159,7 +168,8 @@ namespace Daemonize
                     exit()
                     
                  break
-
+                 
+        // Continue to wrapped poll callback
         return _poll(fds, timeout)
 
     _name: string

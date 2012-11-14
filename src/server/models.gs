@@ -28,19 +28,19 @@ namespace Khovsgol
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_not_null(json, "path", _path)
-            JsonUtil.set_string_not_null(json, "library", _library)
-            JsonUtil.set_string_not_null(json, "title", _title)
-            JsonUtil.set_string_not_null(json, "title_sort", _title_sort)
-            JsonUtil.set_string_not_null(json, "artist", _artist)
-            JsonUtil.set_string_not_null(json, "artist_sort", _artist_sort)
-            JsonUtil.set_string_not_null(json, "album", _album)
-            JsonUtil.set_string_not_null(json, "album_sort", _album_sort)
-            JsonUtil.set_string_not_null(json, "album_path", _album_path)
-            json.set_int_member("position", _position)
-            json.set_double_member("duration", _duration)
-            json.set_int_member("date", _date)
-            JsonUtil.set_string_not_null(json, "type", _file_type)
+            JsonUtil.set_string_member_not_null(json, "path", _path)
+            JsonUtil.set_string_member_not_null(json, "library", _library)
+            JsonUtil.set_string_member_not_null(json, "title", _title)
+            JsonUtil.set_string_member_not_null(json, "title_sort", _title_sort)
+            JsonUtil.set_string_member_not_null(json, "artist", _artist)
+            JsonUtil.set_string_member_not_null(json, "artist_sort", _artist_sort)
+            JsonUtil.set_string_member_not_null(json, "album", _album)
+            JsonUtil.set_string_member_not_null(json, "album_sort", _album_sort)
+            JsonUtil.set_string_member_not_null(json, "album_path", _album_path)
+            JsonUtil.set_int_member_not_min(json, "position", _position)
+            JsonUtil.set_double_member_not_nan(json, "duration", _duration)
+            JsonUtil.set_int_member_not_min(json, "date", _date)
+            JsonUtil.set_string_member_not_null(json, "type", _file_type)
             return json
     
     class abstract TrackIterator: Object implements Nap.HasJsonArray
@@ -56,7 +56,7 @@ namespace Khovsgol
                 var track = get()
                 var obj = track.to_json()
                 if get_album_path is not null
-                    JsonUtil.set_string_not_null(obj, "album_path", _get_album_path(track))
+                    JsonUtil.set_string_member_not_null(obj, "album_path", _get_album_path(track))
                 json.add_object_element(obj)
                 next()
             return json
@@ -87,9 +87,9 @@ namespace Khovsgol
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_not_null(json, "path", _path)
-            json.set_int_member("position", _position)
-            JsonUtil.set_string_not_null(json, "album", _album)
+            JsonUtil.set_string_member_not_null(json, "path", _path)
+            JsonUtil.set_int_member_not_min(json, "position", _position)
+            JsonUtil.set_string_member_not_null(json, "album", _album)
             return json
 
     class abstract TrackPointerIterator: Object implements Nap.HasJsonArray
@@ -121,21 +121,21 @@ namespace Khovsgol
         prop title_sort: string
         prop artist: string
         prop artist_sort: string
-        prop date: int
+        prop date: int = int.MIN
         prop compilation_type: CompilationType
         prop file_type: string
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_not_null(json, "path", _path)
-            JsonUtil.set_string_not_null(json, "library", _library)
-            JsonUtil.set_string_not_null(json, "title", _title)
-            JsonUtil.set_string_not_null(json, "title_sort", _title_sort)
-            JsonUtil.set_string_not_null(json, "artist", _artist)
-            JsonUtil.set_string_not_null(json, "artist_sort", _artist_sort)
-            json.set_int_member("date", _date)
-            json.set_int_member("compilation", _compilation_type)
-            JsonUtil.set_string_not_null(json, "type", _file_type)
+            JsonUtil.set_string_member_not_null(json, "path", _path)
+            JsonUtil.set_string_member_not_null(json, "library", _library)
+            JsonUtil.set_string_member_not_null(json, "title", _title)
+            JsonUtil.set_string_member_not_null(json, "title_sort", _title_sort)
+            JsonUtil.set_string_member_not_null(json, "artist", _artist)
+            JsonUtil.set_string_member_not_null(json, "artist_sort", _artist_sort)
+            JsonUtil.set_int_member_not_min(json, "date", _date)
+            JsonUtil.set_int_member_not_min(json, "compilation", _compilation_type)
+            JsonUtil.set_string_member_not_null(json, "type", _file_type)
             return json
 
     class abstract AlbumIterator: Object implements Nap.HasJsonArray
@@ -347,7 +347,7 @@ namespace Khovsgol
     
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_not_null(json, "name", _name)
+            JsonUtil.set_string_member_not_null(json, "name", _name)
             directories: Json.Array = new Json.Array()
             for var directory in _directories.values
                 directories.add_object_element(directory.to_json())
@@ -425,7 +425,7 @@ namespace Khovsgol
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_not_null(json, "path", _path)
+            JsonUtil.set_string_member_not_null(json, "path", _path)
             json.set_boolean_member("scanning", _is_scanning)
             return json
 
@@ -450,7 +450,19 @@ namespace Khovsgol
         else if name == "togglePaused"
             return PlayMode.TOGGLE_PAUSED
         else
-            return 0
+            return PlayMode.NULL
+
+    def get_name_from_play_mode(mode: PlayMode): string?
+        if mode == PlayMode.STOPPED
+            return "stopped"
+        else if mode == PlayMode.PLAYING
+            return "playing"
+        else if mode == PlayMode.PAUSED
+            return "paused"
+        else if mode == PlayMode.TOGGLE_PAUSED
+            return "togglePaused"
+        else
+            return null
     
     enum CursorMode
         NULL = 0 // GLib requires a 0 value for the default
@@ -481,7 +493,27 @@ namespace Khovsgol
         else if name == "repeat_shuffle"
             return CursorMode.REPEAT_SHUFFLE
         else
-            return 0
+            return CursorMode.NULL
+    
+    def get_name_from_cursor_mode(mode: CursorMode): string?
+        if mode == CursorMode.TRACK
+            return "track"
+        else if mode == CursorMode.ALBUM
+            return "album"
+        else if mode == CursorMode.PLAY_LIST
+            return "play_list"
+        else if mode == CursorMode.REPEAT_TRACK
+            return "repeat_track"
+        else if mode == CursorMode.REPEAT_ALBUM
+            return "repeat_album"
+        else if mode == CursorMode.REPEAT_PLAY_LIST
+            return "repeat_play_list"
+        else if mode == CursorMode.SHUFFLE
+            return "shuffle"
+        else if mode == CursorMode.REPEAT_SHUFFLE
+            return "repeat_shuffle"
+        else
+            return null
 
     class Players: Object implements Nap.HasJsonArray
         prop players: dict of string, Player = new dict of string, Player
@@ -517,17 +549,17 @@ namespace Khovsgol
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_not_null(json, "name", _name)
-            JsonUtil.set_string_not_null(json, "playMode", "stopped")
-            JsonUtil.set_string_not_null(json, "cursorMode", "play_list")
+            JsonUtil.set_string_member_not_null(json, "name", _name)
+            JsonUtil.set_string_member_not_null(json, "playMode", "stopped")
+            JsonUtil.set_string_member_not_null(json, "cursorMode", "play_list")
             var plugs = new Json.Object()
             for var plug in _plugs
                 plugs.set_object_member(plug.name, plug.to_json())
             json.set_object_member("plugs", plugs)
             var cursor = new Json.Object()
-            cursor.set_int_member("positionInPlayList", 1)
-            cursor.set_int_member("positionInTrack", 0)
-            cursor.set_int_member("trackDuration", 100)
+            JsonUtil.set_int_member_not_min(cursor, "positionInPlayList", 1)
+            JsonUtil.set_int_member_not_min(cursor, "positionInTrack", 0)
+            JsonUtil.set_int_member_not_min(cursor, "trackDuration", 100)
             json.set_object_member("cursor", cursor)
             json.set_object_member("playList", play_list.to_json())
             return json
@@ -541,7 +573,7 @@ namespace Khovsgol
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_not_null(json, "name", _name)
+            JsonUtil.set_string_member_not_null(json, "name", _name)
             return json
     
     //
@@ -576,7 +608,7 @@ namespace Khovsgol
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            JsonUtil.set_string_not_null(json, "id", _id)
+            JsonUtil.set_string_member_not_null(json, "id", _id)
             json.set_double_member("version", _version)
             var tracks = new Json.Array()
             for var track in _tracks

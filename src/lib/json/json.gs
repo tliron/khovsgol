@@ -72,9 +72,17 @@ namespace JsonUtil
     // Safe setters
     //
 
-    def set_string_not_null(obj: Json.Object, key: string, value: string?)
+    def set_string_member_not_null(obj: Json.Object, key: string, value: string?)
         if value is not null
             obj.set_string_member(key, value)
+
+    def set_int_member_not_min(obj: Json.Object, key: string, value: int)
+        if value != int.MIN
+            obj.set_int_member(key, value)
+
+    def set_double_member_not_nan(obj: Json.Object, key: string, value: double)
+        if value != double.NAN
+            obj.set_double_member(key, value)
         
     //
     // Arrays
