@@ -280,17 +280,14 @@ namespace Khovsgol
                 if position != int.MIN
                     delete_track_pointer(album_path, position)
             
-            // Move positions back for all remaining track pointers
-            for var i = 0 to (positions.get_length() - 1)
-                var position = get_int_element_or_min(positions, i)
-                if position != int.MIN
+                    // Move positions back for all remaining track pointers
                     move_track_pointers(album_path, -1, position + 1)
                 
-                // We need to also move back positions in the array
-                for var ii = (i + 1) to (positions.get_length() - 1)
-                    var p = get_int_element_or_min(positions, ii)
-                    if p > position
-                        positions.get_element(ii).set_int(p - 1)
+                    // We need to also move back positions in the array
+                    for var ii = (i + 1) to (positions.get_length() - 1)
+                        var p = get_int_element_or_min(positions, ii)
+                        if p > position
+                            positions.get_element(ii).set_int(p - 1)
         
         def move(album_path: string, destination: int, positions: Json.Array) raises GLib.Error
             if destination == int.MIN
@@ -315,21 +312,18 @@ namespace Khovsgol
                     paths.add(track_pointer.path)
                     delete_track_pointer(album_path, position)
             
-            // Move positions back for all remaining track pointers
-            for var i = 0 to (positions.get_length() - 1)
-                var position = get_int_element_or_min(positions, i)
-                if position != int.MIN
+                    // Move positions back for all remaining track pointers
                     move_track_pointers(album_path, -1, position + 1)
                 
-                // We need to also move back positions in the array
-                for var ii = (i + 1) to (positions.get_length() - 1)
-                    var p = get_int_element_or_min(positions, ii)
-                    if p > position
-                        positions.get_element(ii).set_int(p - 1)
-                        
-                // We need to also move back the destination position
-                if destination > position
-                    destination--
+                    // We need to also move back positions in the array
+                    for var ii = (i + 1) to (positions.get_length() - 1)
+                        var p = get_int_element_or_min(positions, ii)
+                        if p > position
+                            positions.get_element(ii).set_int(p - 1)
+                            
+                    // We need to also move back the destination position
+                    if destination > position
+                        destination--
 
             // Make room by moving the remaining track pointers forward
             move_track_pointers(album_path, paths.size, destination)
@@ -554,6 +548,10 @@ namespace Khovsgol
                 if _play_list is null
                     _play_list = _crucible.create_play_list()
                     _play_list.player = self
+                    try
+                        _play_list.initialize()
+                    except e: GLib.Error
+                        pass
                 return _play_list
 
         prop crucible: Crucible
@@ -605,65 +603,79 @@ namespace Khovsgol
         prop crucible: Crucible
         prop player: Player
         prop id: string
-        prop version: double
+        prop version: int64 = int64.MIN
+
+        def initialize() raises GLib.Error
+            if _album_path is null
+                _album_path = "?" + player.name
+                _id = DBus.generate_guid()
         
         def get_tracks(): list of Track raises GLib.Error
             validate_tracks()
             return _tracks
 
         def set_paths(paths: Json.Array) raises GLib.Error
-            // blah
-            var l = new list of string
-            for var i = 0 to (paths.get_length() - 1)
-                l.add(paths.get_string_element(i))
-                
-        def move(position: int, positions: Json.Array) raises GLib.Error
-            // blah
-            var l = new list of int
-            for var i = 0 to (positions.get_length() - 1)
-                l.add((int) positions.get_int_element(i))
-        
+            // Stop player
+            player.position_in_play_list = int.MIN
+            
+            _crucible.libraries.delete_track_pointers(_album_path)
+            add(0, paths)
+            
         def add(position: int, paths: Json.Array) raises GLib.Error
-            pass
+            _crucible.libraries.add(_album_path, position, paths)
+            update_version()
         
-        def remove(paths: Json.Array) raises GLib.Error
-            pass
+        def remove(positions: Json.Array) raises GLib.Error
+            // Stop player if we are removing its current track,
+            // or update its position if our removal will affect its number
+            var position_in_play_list = _player.position_in_play_list
+            var final_position_in_play_list = position_in_play_list
+            for var i = 0 to (positions.get_length() - 1)
+                var position = get_int_element_or_min(positions, i)
+                if position != int.MIN
+                    if position == position_in_play_list
+                        final_position_in_play_list = int.MIN
+                        break
+                    else if position < position_in_play_list
+                        final_position_in_play_list--
+            if final_position_in_play_list != position_in_play_list
+                player.position_in_play_list = final_position_in_play_list
+
+            _crucible.libraries.remove(_album_path, positions)
+            update_version()
+
+        def move(position: int, positions: Json.Array) raises GLib.Error
+            // TODO: player cursor...
+        
+            _crucible.libraries.move(_album_path, position, positions)
+            update_version()
 
         def to_json(): Json.Object
+            var json = new Json.Object()
             try
                 validate_tracks()
+                json.set_string_member("id", _id)
+                json.set_int_member("version", _version)
+                var tracks = new Json.Array()
+                for var track in _tracks
+                    tracks.add_object_element(track.to_json())
+                json.set_array_member("tracks", tracks)
             except e: GLib.Error
                 pass
-            var json = new Json.Object()
-            set_string_member_not_null(json, "id", _id)
-            json.set_double_member("version", _version)
-            var tracks = new Json.Array()
-            for var track in _tracks
-                tracks.add_object_element(track.to_json())
-            json.set_array_member("tracks", tracks)
             return json
             
         _album_path: string
-        _tracks_timestamp: int64 = int64.MIN
         _tracks: list of Track = new list of Track
 
-        def private initialize() raises GLib.Error
-            if _album_path is null
-                _album_path = "?" + player.name
-            _version = 12345
-            _id = "05c14cdc-2e2b-11e2-acee-00241ddd2a14"
-
-        def get_timestamp(): int64 raises GLib.Error
-            initialize()
+        def private get_current_version(): int64 raises GLib.Error
             var album = _crucible.libraries.get_album(_album_path)
-            if album is not null
+            if (album is not null) && (album.date != int64.MIN) && (album.date != 0)
                 return album.date
             else
-                update_timestamp()
-                return _tracks_timestamp
+                update_version()
+                return _version
 
-        def update_timestamp() raises GLib.Error
-            initialize()
+        def private update_version() raises GLib.Error
             var timestamp = get_monotonic_time()
             var album = new Album()
             album.path = _album_path
@@ -674,8 +686,8 @@ namespace Khovsgol
          * If our track list is out of date, refetch it from the libraries.
          */
         def private validate_tracks() raises GLib.Error
-            var timestamp = get_timestamp()
-            if timestamp > _tracks_timestamp
+            var current_version = get_current_version()
+            if current_version > _version
                 _tracks.clear()
                 var args = new IterateForAlbumArgs()
                 args.album = _album_path
@@ -686,4 +698,4 @@ namespace Khovsgol
                     track.album_path = TrackIterator.get_album_path_dynamic(track)
                     _tracks.add(track)
                     iterator.next()
-                _tracks_timestamp = timestamp
+                _version = current_version
