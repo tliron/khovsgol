@@ -56,7 +56,72 @@ namespace Logging
         else
             return 0
 
-    _loggers: dict of string, Logger
+    /*
+     * Friendly hierarchical logger implementation based on and
+     * compatible with standard GLib logging. The hierarchy is defined
+     * by "." in the domain names.
+     * 
+     * If an appender is not set, will default to delegating to the
+     * appender of the parent logger.
+     * 
+     * You should *not* construct logger instances directly; use
+     * get_logger() instead.
+     */
+    class Logger: Object
+        construct(domain: string)
+            _domain = domain
+
+            // If we're not the root logger, use a default appender
+            if domain.length > 0
+                appender = new DefaultAppender(self)
+        
+        final
+            if _handler_id > 0
+                Log.remove_handler(_domain, _handler_id)
+        
+        prop readonly domain: string
+        prop appender: Appender?
+            get
+                return _appender
+            set
+                if _handler_id > 0
+                    Log.remove_handler(_domain, _handler_id)
+                _appender = value
+                if _appender is not null
+                    _handler_id = Log.set_handler(_domain, _appender.levels, _appender.handle)
+                else
+                    _handler_id = 0
+        
+        def get_parent(): Logger?
+            var dot = _domain.last_index_of_char('.')
+            if dot > 0
+                return get_logger(_domain.slice(0, dot))
+            else
+                return get_logger()
+        
+        def log(level: LogLevelFlags, message: string, ...)
+            logv(_domain, level, message, va_list())
+
+        def error(message: string, ...)
+            logv(_domain, LogLevelFlags.LEVEL_ERROR, message, va_list())
+
+        def critical(message: string, ...)
+            logv(_domain, LogLevelFlags.LEVEL_CRITICAL, message, va_list())
+
+        def warning(message: string, ...)
+            logv(_domain, LogLevelFlags.LEVEL_WARNING, message, va_list())
+
+        def message(message: string, ...)
+            logv(_domain, LogLevelFlags.LEVEL_MESSAGE, message, va_list())
+
+        def info(message: string, ...)
+            logv(_domain, LogLevelFlags.LEVEL_INFO, message, va_list())
+
+        def debug(message: string, ...)
+            logv(_domain, LogLevelFlags.LEVEL_DEBUG, message, va_list())
+            
+        _handler_id: uint = 0
+        _appender: Appender?
     
     /*
      * Handles the actual appending of log messages to a log.
@@ -86,27 +151,25 @@ namespace Logging
                 appender.handle(domain, levels, message)
         
         _parent: Logger
-    
+
     /*
      * Renders log messages into lines of text and appends them to a
      * stream.
      */
     class StreamAppender: Appender
-        prop format: string = "%s,%.3d: %8s [%s] %s\n"
-        prop date_time_format: string = "%Y-%m-%d %H:%M:%S"
         prop stream: FileOutputStream
-
-        def virtual render(domain: string?, levels: LogLevelFlags, message: string): string
-            var now = new DateTime.now_local()
-            return format.printf(now.format(_date_time_format), now.get_microsecond() / 1000, get_log_level_name(levels), domain, message)
+        prop renderer: Renderer? = new FormatRenderer()
 
         def override handle(domain: string?, levels: LogLevelFlags, message: string)
-            try
-                if _stream is not null
-                    _stream.write(render(domain, levels, message).data)
-                    _stream.flush()
-            except e: Error
-                stderr.printf("Error writing log message to stream: %s\n", e.message)
+            if renderer is not null
+                var rendered = renderer.render(domain, levels, message)
+                if rendered is not null
+                    try
+                        if _stream is not null
+                            _stream.write(rendered.data)
+                            _stream.flush()
+                    except e: Error
+                        stderr.printf("Error writing log message to stream: %s\n", e.message)
     
     /*
      * A file stream appender that handles automatic rolling of log
@@ -211,70 +274,29 @@ namespace Logging
 
         def private static min(a: int, b: int): int
             return a < b ? a : b
+
+    /*
+     * Renders a log message to string.
+     */
+    class abstract Renderer
+        def abstract render(domain: string?, levels: LogLevelFlags, message: string): string?
+
+    /*
+     * Renders a log message as is.
+     */
+    class SimpleRenderer: Renderer
+        def override render(domain: string?, levels: LogLevelFlags, message: string): string?
+            return message
     
     /*
-     * Friendly hierarchical logger implementation based on and
-     * compatible with standard GLib logging. The hierarchy is defined
-     * by "." in the domain names.
-     * 
-     * If an appender is not set, will default to delegating to the
-     * appender of the parent logger.
-     * 
-     * You should *not* construct logger instances directly; use
-     * get_logger() instead.
+     * Renders a log message using formats.
      */
-    class Logger: Object
-        construct(domain: string)
-            _domain = domain
+    class FormatRenderer: Renderer
+        prop format: string = "%s,%.3d: %8s [%s] %s\n"
+        prop date_time_format: string = "%Y-%m-%d %H:%M:%S"
 
-            // If we're not the root logger, use a default appender
-            if domain.length > 0
-                appender = new DefaultAppender(self)
-        
-        final
-            if _handler_id > 0
-                Log.remove_handler(_domain, _handler_id)
-        
-        prop readonly domain: string
-        prop appender: Appender?
-            get
-                return _appender
-            set
-                if _handler_id > 0
-                    Log.remove_handler(_domain, _handler_id)
-                _appender = value
-                if _appender is not null
-                    _handler_id = Log.set_handler(_domain, _appender.levels, _appender.handle)
-                else
-                    _handler_id = 0
-        
-        def get_parent(): Logger?
-            var dot = _domain.last_index_of_char('.')
-            if dot > 0
-                return get_logger(_domain.slice(0, dot))
-            else
-                return get_logger()
-        
-        def log(level: LogLevelFlags, message: string, ...)
-            logv(_domain, level, message, va_list())
+        def override render(domain: string?, levels: LogLevelFlags, message: string): string?
+            var now = new DateTime.now_local()
+            return format.printf(now.format(_date_time_format), now.get_microsecond() / 1000, get_log_level_name(levels), domain, message)
 
-        def error(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_ERROR, message, va_list())
-
-        def critical(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_CRITICAL, message, va_list())
-
-        def warning(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_WARNING, message, va_list())
-
-        def message(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_MESSAGE, message, va_list())
-
-        def info(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_INFO, message, va_list())
-
-        def debug(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_DEBUG, message, va_list())
-            
-        _handler_id: uint = 0
-        _appender: Appender?
+    _loggers: dict of string, Logger

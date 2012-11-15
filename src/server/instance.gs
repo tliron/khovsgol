@@ -69,6 +69,7 @@ namespace Khovsgol.Server
             appender = new Logging.FileAppender()
             appender.deepest_level = LogLevelFlags.LEVEL_INFO
             appender.set_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
+            appender.renderer = new Logging.SimpleRenderer()
             Logging.get_logger("nap.web").appender = appender
             
         def start()

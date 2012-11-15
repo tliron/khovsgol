@@ -6,11 +6,11 @@ namespace Nap
      * HTTP status codes.
      */
     namespace StatusCode
-        const OK: int = 200
-        const BAD_REQUEST: int = 400
-        const NOT_FOUND: int = 404
-        const METHOD_NOT_ALLOWED: int = 405
-        const INTERNAL_SERVER_ERROR: int = 500
+        const OK: uint = 200
+        const BAD_REQUEST: uint = 400
+        const NOT_FOUND: uint = 404
+        const METHOD_NOT_ALLOWED: uint = 405
+        const INTERNAL_SERVER_ERROR: uint = 500
     
     /*
      * HTTP methods.
@@ -28,7 +28,7 @@ namespace Nap
         prop abstract readonly path: string
         prop abstract readonly query: dict of string, string
         prop abstract readonly variables: dict of string, string
-        prop abstract status_code: int
+        prop abstract status_code: uint
         prop abstract media_type: string?
         prop abstract response_text: string?
         prop abstract response_json_object: Json.Object?
@@ -49,7 +49,7 @@ namespace Nap
         prop readonly path: string
         prop readonly query: dict of string, string
         prop readonly variables: dict of string, string
-        prop status_code: int = StatusCode.OK
+        prop status_code: uint = StatusCode.OK
         prop media_type: string?
         prop response_text: string?
         prop response_json_object: Json.Object?
@@ -100,3 +100,28 @@ namespace Nap
         def abstract set_error_handler(ErrorHandler: Handler?)
 
         def abstract start()
+
+    /*
+     * Renders an NCSA Common Log entry.
+     */
+    class NcsaCommonLogEntry
+        prop address: string?
+        prop user_identifier: string?
+        prop user_id: string?
+        prop timestamp: DateTime = new DateTime.now_local()
+        prop method: string
+        prop path: string
+        prop protocol: string
+        prop status_code: uint
+        prop size: uint
+        
+        def get_formatted_timestamp(): string
+            return _timestamp.format("%d/%b/%Y:%H:%M:%S %z")
+        
+        def to_string(): string
+            return "%s %s %s [%s] \"%s %s %s\" %u %u\n".printf(dash(_address), dash(_user_identifier), dash(_user_id), get_formatted_timestamp(), _method, _path, _protocol, _status_code, _size)
+                
+        def private dash(str: string?): string
+            if (str is null) || (str.length == 0)
+                return "-"
+            return str
