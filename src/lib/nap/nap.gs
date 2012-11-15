@@ -118,6 +118,15 @@ namespace Nap
                 except e: JsonUtil.Error
                     pass
             return null
+
+        def get_json_array(method: string, path: string): Json.Array?
+            var entity = handle(method, path)
+            if entity is not null
+                try
+                    return JsonUtil.from_array(entity)
+                except e: JsonUtil.Error
+                    pass
+            return null
         
         def abstract handle(method:string, path: string): string?
 

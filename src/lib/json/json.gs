@@ -29,6 +29,9 @@ namespace JsonUtil
 
     def is_double(node: Json.Node?): bool
         return (node is not null) && (node.get_node_type() == NodeType.VALUE) && (node.get_value_type().name() == "gdouble")
+
+    def is_bool(node: Json.Node?): bool
+        return (node is not null) && (node.get_node_type() == NodeType.VALUE) && (node.get_value_type().name() == "gboolean")
     
     //
     // Safe getters
@@ -57,6 +60,10 @@ namespace JsonUtil
     def get_double_member_or_min(obj: Json.Object, key: string): double
         var node = obj.get_member(key)
         return is_double(node) ? node.get_double() : double.MIN
+
+    def get_bool_member_or_false(obj: Json.Object, key: string): bool
+        var node = obj.get_member(key)
+        return is_bool(node) ? node.get_boolean() : false
     
     def get_object_element_or_null(arr: Json.Array, index: int): Json.Object?
         var node = arr.get_element(index)
@@ -81,6 +88,10 @@ namespace JsonUtil
     def get_double_element_or_min(arr: Json.Array, index: int): double
         var node = arr.get_element(index)
         return is_double(node) ? node.get_double() : double.MIN
+
+    def get_bool_element_or_false(arr: Json.Array, index: int): bool
+        var node = arr.get_element(index)
+        return is_bool(node) ? node.get_boolean() : false
     
     //
     // Safe setters
