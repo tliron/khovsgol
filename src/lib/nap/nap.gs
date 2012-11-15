@@ -102,6 +102,26 @@ namespace Nap
         def abstract start()
 
     /*
+     * A RESTful client.
+     */
+    class abstract Client: Object
+        construct(base_url: string)
+            _base_url = base_url
+        
+        prop readonly base_url: string
+        
+        def get_json_object(method: string, path: string): Json.Object?
+            var entity = handle(method, path)
+            if entity is not null
+                try
+                    return JsonUtil.from_object(entity)
+                except e: JsonUtil.Error
+                    pass
+            return null
+        
+        def abstract handle(method:string, path: string): string?
+
+    /*
      * Renders an NCSA Common Log entry.
      */
     class NcsaCommonLogEntry

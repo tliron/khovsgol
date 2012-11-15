@@ -4,7 +4,7 @@ uses
     Gtk
     Khovsgol
 
-namespace Khovsgol.Client
+namespace Khovsgol.GUI
 
     class Instance: GLib.Object
         construct()
@@ -22,4 +22,4 @@ init
     weak_arguments: weak array of string = arguments
     Gtk.init(ref weak_arguments)
     
-    new Khovsgol.Client.Instance().start()
+    new Khovsgol.GUI.Instance().start()

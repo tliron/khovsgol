@@ -106,7 +106,6 @@ namespace Khovsgol.GStreamer
                 pass
         
         def private on_error(error: GLib.Error, text: string)
-            //stderr.printf("!!!!!!!!!!!!! %s", text)
             _logger.warning(text)
         
         def private build()

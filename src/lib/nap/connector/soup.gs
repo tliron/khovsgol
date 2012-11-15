@@ -75,7 +75,7 @@ namespace Nap.Connector._Soup
         _soup_client: Soup.ClientContext
 
     /*
-     * An HTTP server base on Soup. Accepts conversations coming in
+     * An HTTP server using Soup. Accepts conversations coming in
      * through a specified port.
      */
     class Server: Object implements Nap.Server
@@ -124,3 +124,20 @@ namespace Nap.Connector._Soup
         _handler: unowned Handler?
         _error_handler: unowned ErrorHandler? = default_error_handler
 
+    /*
+     * An HTTP client using Soup.
+     */
+    class Client: Nap.Client
+        construct(base_url: string)
+            super(base_url)
+            _session = new Soup.SessionSync()
+        
+        def override handle(method: string, path: string): string?
+            var message = new Soup.Message(method, base_url + path)
+            var status = _session.send_message(message)
+            if status == StatusCode.OK
+                return (string) message.response_body.data
+            else
+                return null
+
+        _session: Soup.Session

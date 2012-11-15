@@ -128,7 +128,7 @@ namespace Khovsgol.Server
             options[7] = {null}
             
             var context = new OptionContext("- Khovsgol Server")
-            context.set_summary("Music player server")
+            context.set_summary("The anywhere-to-anywhere music player and library/playlist manager")
             context.set_help_enabled(true)
             context.add_main_entries(options, null)
 
