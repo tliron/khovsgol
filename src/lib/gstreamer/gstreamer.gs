@@ -5,8 +5,6 @@ uses
 
 namespace GstUtil
 
-    _initialized: bool = false
-    
     def initialize()
         if !_initialized
             var arguments = new array of string[0]
@@ -30,7 +28,8 @@ namespace GstUtil
             bus.add_signal_watch()
             bus.message.connect(on_message)
             
-        prop pipeline: Gst.Pipeline
+        prop readonly pipeline: Gst.Pipeline
+        prop readonly ownerships: list of GLib.Object = new list of GLib.Object
 
         event state_changed(new_state: State, old_state: State, pending_state: State)
         event eos()
@@ -58,16 +57,23 @@ namespace GstUtil
                 error(e, text)
 
     class LinkDecodeBinLater: GLib.Object
-        construct(decodebin: dynamic Element, next: Element)
+        construct(decodebin: dynamic Element, next: Element, once: bool = false)
             _next = next
-            ref() // We keep a ref until our pad is added
+            _once = once
+            if _once
+                ref() // We keep a ref until our pad is added
             decodebin.pad_added.connect(on_pad_added)
 
         def on_pad_added(element: dynamic Element, pad: Pad)
             var name = pad.query_caps(null).get_structure(0).get_name()
             if name == "audio/x-raw"
                 pad.link(_next.get_static_pad("sink"))
-            element.pad_added.disconnect(on_pad_added)
-            unref() // Pad added, no need for us to exist anymore
+                
+            if _once
+                element.pad_added.disconnect(on_pad_added)
+                unref() // Pad added, no need for us to exist anymore
         
         _next: Element
+        _once: bool
+
+    _initialized: bool = false

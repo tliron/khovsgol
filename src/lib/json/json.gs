@@ -54,9 +54,9 @@ namespace JsonUtil
         var node = obj.get_member(key)
         return is_int64(node) ? (int) node.get_int() : int.MIN
 
-    def get_double_member_or_nan(obj: Json.Object, key: string): double
+    def get_double_member_or_min(obj: Json.Object, key: string): double
         var node = obj.get_member(key)
-        return is_double(node) ? node.get_double() : double.NAN
+        return is_double(node) ? node.get_double() : double.MIN
     
     def get_object_element_or_null(arr: Json.Array, index: int): Json.Object?
         var node = arr.get_element(index)
@@ -78,9 +78,9 @@ namespace JsonUtil
         var node = arr.get_element(index)
         return is_int64(node) ? (int) node.get_int() : int.MIN
 
-    def get_double_element_or_nan(arr: Json.Array, index: int): double
+    def get_double_element_or_min(arr: Json.Array, index: int): double
         var node = arr.get_element(index)
-        return is_double(node) ? node.get_double() : double.NAN
+        return is_double(node) ? node.get_double() : double.MIN
     
     //
     // Safe setters
@@ -98,8 +98,8 @@ namespace JsonUtil
         if value != int.MIN
             obj.set_int_member(key, value)
 
-    def set_double_member_not_nan(obj: Json.Object, key: string, value: double)
-        if value != double.NAN
+    def set_double_member_not_min(obj: Json.Object, key: string, value: double)
+        if value != double.MIN
             obj.set_double_member(key, value)
         
     //

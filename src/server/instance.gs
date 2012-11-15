@@ -34,7 +34,8 @@ namespace Khovsgol.Server
                 try
                     _server.thread_pool = new Nap.ThreadPool(_arguments.threads)
                 except e: ThreadError
-                    print e.message
+                    stderr.printf("%s\n", e.message)
+                    _logger.warning(e.message)
         
         prop readonly libraries: Libraries
         prop readonly players: Players
@@ -107,7 +108,7 @@ namespace Khovsgol.Server
             t.duration = 100
             t.file_type = "flac"
             t.position = 1
-            p.play_list.get_tracks().add(t)
+            p.play_list.tracks.add(t)
             p.play_list.version = 12345
             p.play_list.id = "05c14cdc-2e2b-11e2-acee-00241ddd2a14"*/
 

@@ -581,14 +581,14 @@ namespace Khovsgol.Server
                         processed = true
 
                 // Set position in track
-                var position_in_track = get_double_member_or_nan(cursor, "positionInTrack")
-                if position_in_track != double.NAN
+                var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
+                if position_in_track != double.MIN
                     player.position_in_track = position_in_track
                     processed = true
 
                 // Set ratio in track
-                var ratio_in_track = get_double_member_or_nan(cursor, "ratioInTrack")
-                if ratio_in_track != double.NAN
+                var ratio_in_track = get_double_member_or_min(cursor, "ratioInTrack")
+                if ratio_in_track != double.MIN
                     player.ratio_in_track = ratio_in_track
                     processed = true
             

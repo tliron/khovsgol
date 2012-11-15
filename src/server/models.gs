@@ -54,7 +54,7 @@ namespace Khovsgol
             set_string_member_not_null(json, "album_sort", _album_sort)
             set_string_member_not_null(json, "album_path", _album_path)
             set_int_member_not_min(json, "position", _position)
-            set_double_member_not_nan(json, "duration", _duration)
+            set_double_member_not_min(json, "duration", _duration)
             set_int_member_not_min(json, "date", _date == 0 ? int.MIN : _date)
             set_string_member_not_null(json, "type", _file_type)
             return json
@@ -541,8 +541,10 @@ namespace Khovsgol
             return json
     
     class abstract Player: Object implements HasJsonObject
+        prop crucible: Crucible
         prop name: string
         prop plugs: list of Plug = new list of Plug
+
         prop readonly play_list: PlayList
             get
                 if _play_list is null
@@ -551,37 +553,132 @@ namespace Khovsgol
                     try
                         _play_list.initialize()
                     except e: GLib.Error
-                        pass
+                        Logging.get_logger("khovsgol.playlist").warning(e.message)
                 return _play_list
 
-        prop crucible: Crucible
+        prop position_in_play_list: int
+            get
+                return _position_in_play_list
+            set
+                _position_in_play_list = value
+                
+                if _position_in_play_list < 0
+                    _position_in_play_list = int.MIN
+                    path = null
+                else
+                    var tracks = play_list.tracks
+                    if _position_in_play_list >= tracks.size
+                        _position_in_play_list = int.MIN
+                        path = null
+                    else
+                        var track = tracks[_position_in_play_list]
+                        path = track.path
+
+        prop abstract path: string?
         prop abstract play_mode: PlayMode
         prop abstract cursor_mode: CursorMode
-        prop abstract position_in_play_list: int
         prop abstract position_in_track: double
         prop abstract ratio_in_track: double
+        prop abstract readonly track_duration: double
         
-        def abstract prev()
-        def abstract next()
+        def prev()
+            // TODO: different behavior for shuffle...
+        
+            position_in_play_list = _position_in_play_list - 1
+            
+        def next()
+            var tracks = _play_list.tracks
+            var size = tracks.size
+            var mode = cursor_mode
+            
+            if mode == CursorMode.ALBUM
+                // Play first track if we are not pointing anywhere
+                if _position_in_play_list == int.MIN
+                    position_in_play_list = 0
+                    return
+                
+                // Play subsequent track if it's in the same album
+                else if _position_in_play_list + 1 < size
+                    var current = tracks[_position_in_play_list]
+                    var next = tracks[_position_in_play_list + 1]
+                    if current.album_path == next.album_path
+                        position_in_play_list = _position_in_play_list + 1
+                        return
+                
+            else if mode == CursorMode.PLAY_LIST
+                // Play first track if we are not pointing anywhere
+                if _position_in_play_list == int.MIN
+                    position_in_play_list = 0
+                    return
+                
+                // Otherwise, play subsequent track
+                else
+                    position_in_play_list = _position_in_play_list + 1
+                    return
+                
+            else if mode == CursorMode.REPEAT_TRACK
+                // Play first track if we are not pointing anywhere
+                if _position_in_play_list == int.MIN
+                    position_in_play_list = 0
+                    return
+                
+                // Otherwise, repeat our track
+                else
+                    position_in_play_list = _position_in_play_list
+                    return
+                
+            else if mode == CursorMode.REPEAT_ALBUM
+                // TODO
+                pass
+                
+            else if mode == CursorMode.REPEAT_PLAY_LIST
+                // Play first track if we are not pointing anywhere
+                // Or if we're at the end
+                if (_position_in_play_list == int.MIN) || (_position_in_play_list == size - 1)
+                    position_in_play_list = 0
+                    return
+
+                // Otherwise, play subsequent track
+                else
+                    position_in_play_list = _position_in_play_list + 1
+                    return
+                
+            else if mode == CursorMode.SHUFFLE
+                // TODO
+                pass
+                
+            else if mode == CursorMode.REPEAT_SHUFFLE
+                // TODO
+                pass
+                
+            else // (Default behavior is CursorMode.TRACK)
+                // Play first track if we are not pointing anywhere
+                if _position_in_play_list == int.MIN
+                    position_in_play_list = 0
+                    return
+
+            // Default to point nowhere
+            position_in_play_list = int.MIN
         
         def to_json(): Json.Object
             var json = new Json.Object()
             set_string_member_not_null(json, "name", _name)
-            set_string_member_not_null(json, "playMode", "stopped")
-            set_string_member_not_null(json, "cursorMode", "play_list")
+            set_string_member_not_null(json, "playMode", get_name_from_play_mode(play_mode))
+            set_string_member_not_null(json, "cursorMode", get_name_from_cursor_mode(cursor_mode))
             var plugs = new Json.Object()
             for var plug in _plugs
                 plugs.set_object_member(plug.name, plug.to_json())
             json.set_object_member("plugs", plugs)
             var cursor = new Json.Object()
-            set_int_member_not_min(cursor, "positionInPlayList", 1)
-            set_int_member_not_min(cursor, "positionInTrack", 0)
-            set_int_member_not_min(cursor, "trackDuration", 100)
+            set_int_member_not_min(cursor, "positionInPlayList", position_in_play_list)
+            set_double_member_not_min(cursor, "positionInTrack", position_in_track)
+            set_double_member_not_min(cursor, "trackDuration", track_duration)
             json.set_object_member("cursor", cursor)
             json.set_object_member("playList", play_list.to_json())
             return json
         
         _play_list: PlayList
+        _position_in_play_list: int = int.MIN
 
     //
     // Plug
@@ -605,15 +702,20 @@ namespace Khovsgol
         prop id: string
         prop version: int64 = int64.MIN
 
+        prop readonly tracks: list of Track
+            get
+                try
+                    validate_tracks()
+                except e: GLib.Error
+                    Logging.get_logger("khovsgol.playlist").warning(e.message)
+                return _tracks
+
         def initialize() raises GLib.Error
             if _album_path is null
+                // Magic prefix for playlist "albums"
                 _album_path = "?" + player.name
                 _id = DBus.generate_guid()
         
-        def get_tracks(): list of Track raises GLib.Error
-            validate_tracks()
-            return _tracks
-
         def set_paths(paths: Json.Array) raises GLib.Error
             // Stop player
             player.position_in_play_list = int.MIN
@@ -661,13 +763,13 @@ namespace Khovsgol
                     tracks.add_object_element(track.to_json())
                 json.set_array_member("tracks", tracks)
             except e: GLib.Error
-                pass
+                Logging.get_logger("khovsgol.playlist").warning(e.message)
             return json
             
         _album_path: string
         _tracks: list of Track = new list of Track
 
-        def private get_current_version(): int64 raises GLib.Error
+        def private get_stored_version(): int64 raises GLib.Error
             var album = _crucible.libraries.get_album(_album_path)
             if (album is not null) && (album.date != int64.MIN) && (album.date != 0)
                 return album.date
@@ -683,11 +785,11 @@ namespace Khovsgol
             _crucible.libraries.save_album(album)
         
         /*
-         * If our track list is out of date, refetch it from the libraries.
+         * If the stored version is newer, refresh our track list.
          */
         def private validate_tracks() raises GLib.Error
-            var current_version = get_current_version()
-            if current_version > _version
+            var stored_version = get_stored_version()
+            if stored_version > _version
                 _tracks.clear()
                 var args = new IterateForAlbumArgs()
                 args.album = _album_path
@@ -698,4 +800,4 @@ namespace Khovsgol
                     track.album_path = TrackIterator.get_album_path_dynamic(track)
                     _tracks.add(track)
                     iterator.next()
-                _version = current_version
+                _version = stored_version
