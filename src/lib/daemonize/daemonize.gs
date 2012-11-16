@@ -3,6 +3,12 @@
 namespace Daemonize
 
     /*
+     * Will return false after the daemon receives a HUP (Hang Up) signal.
+     */
+    def has_terminal(): bool
+        return AtomicInt.get(ref _has_terminal) == 1
+
+    /*
      * When "start" and "stop" are false: show the status of the process
      * referenced by the PID file, and then exit.
      * 
@@ -160,26 +166,39 @@ namespace Daemonize
                     
                  else if signal == Daemon.Sig.TERM
                     Daemon.log(Daemon.LogPriority.INFO, "Daemon received TERM")
+                    // Terminate!
+                    // Please shut down.
+                    // Default for "kill" command.
                     exit()
 
                  else if signal == Daemon.Sig.QUIT
                     Daemon.log(Daemon.LogPriority.INFO, "Daemon received QUIT")
+                    // Quit!
+                    // Please do a core dump and produce other useful things for debugging, and then shut down.
+                    // This is what CTRL+\ sends.
+                    // TODO: dump?
                     exit()
 
                  else if signal == Daemon.Sig.INT
                     Daemon.log(Daemon.LogPriority.INFO, "Daemon received INT")
+                    // Interrupt!
+                    // This is what CTRL+C sends
                     exit()
                     
                  else if signal == Daemon.Sig.HUP
                     Daemon.log(Daemon.LogPriority.INFO, "Daemon received HUP")
-                    // TODO: restart app?
+                    // Hang up!
+                    // This means that we no longer have a terminal.
+                    // (Some daemons respond to HUP by reloading their configuration files, a rather quirky interpretation!)
+                    AtomicInt.set(ref _has_terminal, 0)
                     
                  break
                  
         // Continue to wrapped poll callback
         return _poll(fds, timeout)
 
-    _name: string
-    _poll: PollFunc
-    _daemon_fd: PollFD
-    _main_loop: MainLoop
+    _name: private string
+    _poll: private PollFunc
+    _daemon_fd: private PollFD
+    _main_loop: private MainLoop
+    _has_terminal: private int = 1
