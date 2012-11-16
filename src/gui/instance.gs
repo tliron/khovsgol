@@ -1,25 +1,22 @@
 [indent=4]
 
 uses
-    Gtk
     Khovsgol
 
 namespace Khovsgol.GUI
 
-    class Instance: GLib.Object
-        construct()
-            _window = new Window()
+    class Instance: Object
+        construct(args: array of string) raises GLib.Error
+            _window = new MainWindow()
             
         def start()
-            _window.show_all()
             Gtk.main()
         
-        _window: Window
+        _window: MainWindow
 
 init
-    // Initialize GTK+
-    var arguments = new array of string[0]
-    weak_arguments: weak array of string = arguments
-    Gtk.init(ref weak_arguments)
-    
-    new Khovsgol.GUI.Instance().start()
+    try
+        GtkUtil.initialize()
+        new Khovsgol.GUI.Instance(args).start()
+    except e: GLib.Error
+        stderr.printf("%s\n", e.message)
