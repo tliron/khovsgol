@@ -25,16 +25,22 @@ namespace Nap
      * A RESTful conversation.
      */
     interface Conversation: Object
-        prop abstract readonly path: string
+        prop abstract method: string
+        prop abstract path: string
         prop abstract readonly query: dict of string, string
         prop abstract readonly variables: dict of string, string
+        
+        prop abstract request_media_type: string?
+        prop abstract request_text: string?
+        prop abstract request_json_object: Json.Object?
+        prop abstract request_json_array: Json.Array?
+        
         prop abstract status_code: uint
-        prop abstract media_type: string?
+        prop abstract response_media_type: string?
         prop abstract response_text: string?
         prop abstract response_json_object: Json.Object?
         prop abstract response_json_array: Json.Array?
         
-        def abstract get_method(): string
         def abstract get_entity(): string?
         def abstract commit()
         def abstract pause()
@@ -46,22 +52,24 @@ namespace Nap
      * allowing you to treat them as a non-wired RESTful API.
      */
     class MockConversation: Object implements Conversation
-        prop readonly path: string
-        prop readonly query: dict of string, string
-        prop readonly variables: dict of string, string
-        prop status_code: uint = StatusCode.OK
-        prop media_type: string?
+        prop method: string
+        prop path: string
+        prop readonly query: dict of string, string = new dict of string, string
+        prop readonly variables: dict of string, string = new dict of string, string
+
+        prop request_media_type: string?
+        prop request_text: string?
+        prop request_json_object: Json.Object?
+        prop request_json_array: Json.Array?
+        
+        prop status_code: uint
+        prop response_media_type: string?
         prop response_text: string?
         prop response_json_object: Json.Object?
         prop response_json_array: Json.Array?
-        prop method: string
-        prop entity: string?
-
-        def get_method(): string
-            return _method
             
         def get_entity(): string?
-            return _entity
+            return null
         
         def commit()
             pass
@@ -104,14 +112,16 @@ namespace Nap
     /*
      * A RESTful client.
      */
-    class abstract Client: Object
-        construct(base_url: string)
-            _base_url = base_url
+    interface Client: Object
+        prop abstract base_url: string
+
+        def abstract create_conversation(): Conversation raises GLib.Error
         
-        prop readonly base_url: string
-        
-        def get_json_object(method: string, path: string): Json.Object?
-            var entity = handle(method, path)
+        /*def get_json_object(method: string, path: string, payload: Json.Object? = null): Json.Object?
+            payload_text: string? = null
+            if payload != null
+                payload_text = JsonUtil.object_to(payload)
+            var entity = handle(method, path, payload_text)
             if entity is not null
                 try
                     return JsonUtil.from_object(entity)
@@ -119,16 +129,17 @@ namespace Nap
                     pass
             return null
 
-        def get_json_array(method: string, path: string): Json.Array?
-            var entity = handle(method, path)
+        def get_json_array(method: string, path: string, payload: Json.Object? = null): Json.Array?
+            payload_text: string? = null
+            if payload != null
+                payload_text = JsonUtil.object_to(payload)
+            var entity = handle(method, path, payload_text)
             if entity is not null
                 try
                     return JsonUtil.from_array(entity)
                 except e: JsonUtil.Error
                     pass
-            return null
-        
-        def abstract handle(method:string, path: string): string?
+            return null*/
 
     /*
      * Renders an NCSA Common Log entry.

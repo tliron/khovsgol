@@ -8,7 +8,7 @@ namespace Nap
      */
     class Resource: Object implements Node
         def handle(conversation: Conversation) raises GLib.Error
-            var method = conversation.get_method()
+            var method = conversation.method
             if method == Method.GET
                 get(conversation)
             else if method == Method.POST

@@ -3,13 +3,14 @@
 namespace Nap.Connector._Soup
 
     /*
-     * Soup implementation of a Nap conversation.
+     * Soup implementation of a Nap server conversation.
      */
-    class Conversation: Object implements Nap.Conversation
+    class ServerConversation: Object implements Nap.Conversation
         construct(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?, client: Soup.ClientContext)
             _soup_server = server
             _soup_message = message
             _soup_client = client
+            _method = _soup_message.method
             _path = path
             _query = new dict of string, string
             _variables = new dict of string, string
@@ -17,18 +18,22 @@ namespace Nap.Connector._Soup
                 var query_ss = (HashTable of string, string) query
                 for key in query_ss.get_keys()
                     _query[key] = query_ss.get(key)
-            
-        prop readonly path: string
-        prop readonly query: dict of string, string
-        prop readonly variables: dict of string, string
+
+        prop method: string
+        prop path: string
+        prop readonly query: dict of string, string = new dict of string, string
+        prop readonly variables: dict of string, string = new dict of string, string
+
+        prop request_media_type: string?
+        prop request_text: string?
+        prop request_json_object: Json.Object?
+        prop request_json_array: Json.Array?
+        
         prop status_code: uint = StatusCode.OK
-        prop media_type: string?
+        prop response_media_type: string?
         prop response_text: string?
         prop response_json_object: Json.Object?
         prop response_json_array: Json.Array?
-        
-        def get_method(): string
-            return _soup_message.method
             
         def get_entity(): string?
             /*var body = _soup_message.request_body
@@ -37,14 +42,14 @@ namespace Nap.Connector._Soup
             return (string) _soup_message.request_body.data // warning: "assignment discards `const' qualifer"
         
         def commit()
-            json_to_text(self)
+            response_json_to_text(self)
 
             _soup_message.set_status(_status_code)
             
             if _response_text is not null
-                if _media_type is null
-                    _media_type = "text/plain"
-                _soup_message.set_response(_media_type, Soup.MemoryUse.COPY, _response_text.data)
+                if _response_media_type is null
+                    _response_media_type = "text/plain"
+                _soup_message.set_response(_response_media_type, Soup.MemoryUse.COPY, _response_text.data)
             
             log()
                 
@@ -73,6 +78,75 @@ namespace Nap.Connector._Soup
         _soup_server: Soup.Server
         _soup_message: Soup.Message
         _soup_client: Soup.ClientContext
+
+    /*
+     * Soup implementation of a Nap client conversation.
+     */
+    class ClientConversation: Object implements Nap.Conversation
+        construct(soup_session: Soup.Session, base_url: string)
+            _soup_session = soup_session
+            _base_url = base_url
+        
+        prop method: string
+        prop path: string
+        prop readonly query: dict of string, string = new dict of string, string
+        prop readonly variables: dict of string, string = new dict of string, string
+
+        prop request_media_type: string?
+        prop request_text: string?
+        prop request_json_object: Json.Object?
+        prop request_json_array: Json.Array?
+        
+        prop status_code: uint
+        prop response_media_type: string?
+        prop response_text: string?
+        prop response_json_object: Json.Object?
+        prop response_json_array: Json.Array?
+        
+        def get_entity(): string?
+            if _soup_message is not null
+                return (string) _soup_message.response_body.data
+            else
+                return null
+        
+        def commit()
+            request_json_to_text(self)
+            
+            // If we have variables, render as template
+            var p = _path
+            if !_variables.is_empty
+                p = Template.renderd(_path, _variables)
+            
+            var uri = new StringBuilder(_base_url)
+            uri.append(p)
+
+            // Add query to URI
+            if !_query.is_empty
+                uri.append("?")
+                var i = _query.keys.iterator()
+                while i.has_next()
+                    var key = i.get()
+                    uri.append(key)
+                    uri.append("=")
+                    uri.append(Soup.URI.encode(_query[key], null))
+                    if i.has_next()
+                        uri.append("&")
+                    i.next()
+            
+            _soup_message = new Soup.Message(_method, uri.str)
+            if _request_text is not null
+                _soup_message.set_request(_request_media_type, Soup.MemoryUse.COPY, _request_text.data)
+            _status_code = _soup_session.send_message(_soup_message)
+
+        def pause()
+            pass
+
+        def unpause()
+            pass
+                
+        _soup_session: Soup.Session
+        _soup_message: Soup.Message
+        _base_url: string
 
     /*
      * An HTTP server using Soup. Accepts conversations coming in
@@ -107,7 +181,7 @@ namespace Nap.Connector._Soup
         
         def _handle(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?, client: Soup.ClientContext)
             if _handler is not null
-                var conversation = new Conversation(server, message, path, query, client)
+                var conversation = new ServerConversation(server, message, path, query, client)
                 if _thread_pool is not null
                     _thread_pool.submit(_handler, _error_handler, conversation)
                 else
@@ -127,17 +201,14 @@ namespace Nap.Connector._Soup
     /*
      * An HTTP client using Soup.
      */
-    class Client: Nap.Client
+    class Client: Object implements Nap.Client
         construct(base_url: string)
-            super(base_url)
-            _session = new Soup.SessionSync()
-        
-        def override handle(method: string, path: string): string?
-            var message = new Soup.Message(method, base_url + path)
-            var status = _session.send_message(message)
-            if status == StatusCode.OK
-                return (string) message.response_body.data
-            else
-                return null
+            _base_url = base_url
+            _soup_session = new Soup.SessionSync()
+            
+        prop base_url: string
 
-        _session: Soup.Session
+        def create_conversation(): Nap.Conversation raises GLib.Error
+            return new ClientConversation(_soup_session, _base_url)
+
+        _soup_session: Soup.Session

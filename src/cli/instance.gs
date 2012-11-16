@@ -2,7 +2,6 @@
 
 uses
     Khovsgol
-    Nap
     JsonUtil
 
 namespace Khovsgol.CLI
@@ -10,43 +9,50 @@ namespace Khovsgol.CLI
     class Instance: GLib.Object
         construct(args: array of string) raises GLib.Error
             _arguments = new Arguments(args)
-            _client = new Nap.Connector._Soup.Client("http://%s:%u".printf(_arguments.host, _arguments.port))
+            _api = new Client.API(_arguments.host, _arguments.port)
             
-        def start()
+        def start() raises GLib.Error
             var command = _arguments.args[1]
             
             if command == "status"
-                var status = _client.get_json_object(Method.GET, Template.render("/player/{player}/", _arguments.player))
-                if status is not null
-                    var name = get_string_member_or_null(status, "name")
-                    if name is not null
-                        stdout.printf("Player: %s\n", name)
-                        var play_mode = get_string_member_or_null(status, "playMode")
-                        if play_mode is not null
-                            stdout.printf("  Play mode: %s\n", play_mode)
-                        var play_list = get_object_member_or_null(status, "playList")
-                        if play_list is not null
-                            var id = get_string_member_or_null(play_list, "id")
-                            if id is not null
-                                stdout.printf("  ID: %s\n", id)
-                            var version = get_int64_member_or_min(play_list, "version")
-                            if version != int64.MIN
-                                stdout.printf("  Version: %lld\n", version)
-                            var tracks = get_array_member_or_null(play_list, "tracks")
-                            if tracks is not null
-                                for var i = 0 to (tracks.get_length() - 1)
-                                    var track = get_object_element_or_null(tracks, i)
-                                    var position = get_int_member_or_min(track, "position")
-                                    var path = get_string_member_or_null(track, "path")
-                                    if path is not null
-                                        if position != int.MIN
-                                            stdout.printf("    %d: %s\n", position, path)
-                                        else
-                                            stdout.printf("    %s\n", path)
+                print_player(_api.get_player(_arguments.player))
+        
+            else if command == "listen"
+                pass
                     
+            else if command == "unlisten"
+                pass
 
-            if command == "libraries"
-                var libraries = _client.get_json_array(Method.GET, "/libraries/")
+            else if command == "play"
+                print_player(_api.set_play_mode(_arguments.player, "playing"))
+
+            else if command == "stop"
+                print_player(_api.set_play_mode(_arguments.player, "stopped"))
+
+            else if command == "pause"
+                print_player(_api.set_play_mode(_arguments.player, "toggle_paused"))
+
+            else if command == "next"
+                print_player(_api.set_position_in_play_list_string(_arguments.player, "next"))
+
+            else if command == "prev"
+                print_player(_api.set_position_in_play_list_string(_arguments.player, "prev"))
+
+            else if command == "cursor"
+                var position = int.parse(_arguments.args[2])
+                print_player(_api.set_position_in_play_list(_arguments.player, position))
+
+            else if command == "trackposition"
+                pass
+
+            else if command == "trackratio"
+                pass
+
+            else if command == "cursormode"
+                pass
+
+            else if command == "libraries"
+                var libraries = _api.get_libraries()
                 if libraries is not null
                     for var i = 0 to (libraries.get_length() - 1)
                         var library = get_object_element_or_null(libraries, i)
@@ -68,7 +74,60 @@ namespace Khovsgol.CLI
                                                 stdout.printf("\n")
                         
         _arguments: Arguments
-        _client: Client
+        _api: Client.API
+
+        def private print_player(player: Json.Object?)
+            if player is not null
+                var name = get_string_member_or_null(player, "name")
+                if name is not null
+                    stdout.printf("Player: %s\n", name)
+
+                    var play_list = get_object_member_or_null(player, "playList")
+                    if play_list is not null
+                        var id = get_string_member_or_null(play_list, "id")
+                        if id is not null
+                            stdout.printf("  ID: %s\n", id)
+                        var version = get_int64_member_or_min(play_list, "version")
+                        if version != int64.MIN
+                            stdout.printf("  Version: %lld\n", version)
+                    
+                    var cursor_mode = get_string_member_or_null(player, "cursorMode")
+                    if cursor_mode is not null
+                        stdout.printf("  Mode: %s\n", cursor_mode)
+                    
+                    var track_duration = double.MIN
+                    var ratio = double.MIN
+                    var position_in_play_list = int.MIN
+                    var cursor = get_object_member_or_null(player, "cursor")
+                    if cursor is not null
+                        position_in_play_list = get_int_member_or_min(cursor, "positionInPlayList")
+                        var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
+                        track_duration = get_double_member_or_min(cursor, "trackDuration")
+                        if (position_in_track != double.MIN) && (track_duration != double.MIN)
+                            ratio = position_in_track / track_duration
+
+                    var play_mode = get_string_member_or_null(player, "playMode")
+                    if play_mode is not null
+                        if ratio != double.MIN
+                            stdout.printf("  Currently %s (at %d%% of %d seconds)\n", play_mode, (int)(ratio * 100), (int) track_duration)
+                        else
+                            stdout.printf("  Currently %s\n", play_mode)
+                            
+                    if play_list is not null
+                        var tracks = get_array_member_or_null(play_list, "tracks")
+                        if tracks is not null
+                            for var i = 0 to (tracks.get_length() - 1)
+                                var track = get_object_element_or_null(tracks, i)
+                                var position = get_int_member_or_min(track, "position")
+                                var path = get_string_member_or_null(track, "path")
+                                if path is not null
+                                    if position != int.MIN
+                                        if position == position_in_play_list
+                                            stdout.printf("    >%d: %s\n", position, path)
+                                        else
+                                            stdout.printf("     %d: %s\n", position, path)
+                                    else
+                                        stdout.printf("    %s\n", path)
 
     def get_help(): string
         var s = new StringBuilder()

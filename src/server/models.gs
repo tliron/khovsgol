@@ -455,7 +455,7 @@ namespace Khovsgol
             return PlayMode.PLAYING
         else if name == "paused"
             return PlayMode.PAUSED
-        else if name == "togglePaused"
+        else if name == "toggle_paused"
             return PlayMode.TOGGLE_PAUSED
         else
             return PlayMode.NULL
@@ -468,7 +468,7 @@ namespace Khovsgol
         else if mode == PlayMode.PAUSED
             return "paused"
         else if mode == PlayMode.TOGGLE_PAUSED
-            return "togglePaused"
+            return "toggle_paused"
         else
             return null
     
@@ -541,6 +541,9 @@ namespace Khovsgol
             return json
     
     class abstract Player: Object implements HasJsonObject
+        construct()
+            cursor_mode = CursorMode.PLAY_LIST
+    
         prop crucible: Crucible
         prop name: string
         prop plugs: list of Plug = new list of Plug
@@ -562,16 +565,16 @@ namespace Khovsgol
             set
                 _position_in_play_list = value
                 
-                if _position_in_play_list < 0
+                if _position_in_play_list < 1
                     _position_in_play_list = int.MIN
                     path = null
                 else
                     var tracks = play_list.tracks
-                    if _position_in_play_list >= tracks.size
+                    if _position_in_play_list > tracks.size
                         _position_in_play_list = int.MIN
                         path = null
                     else
-                        var track = tracks[_position_in_play_list]
+                        var track = tracks[_position_in_play_list - 1]
                         path = track.path
 
         prop abstract path: string?
@@ -591,16 +594,22 @@ namespace Khovsgol
             var size = tracks.size
             var mode = cursor_mode
             
-            if mode == CursorMode.ALBUM
+            if mode == CursorMode.TRACK
                 // Play first track if we are not pointing anywhere
                 if _position_in_play_list == int.MIN
-                    position_in_play_list = 0
+                    position_in_play_list = 1
+                    return
+
+            else if mode == CursorMode.ALBUM
+                // Play first track if we are not pointing anywhere
+                if _position_in_play_list == int.MIN
+                    position_in_play_list = 1
                     return
                 
                 // Play subsequent track if it's in the same album
-                else if _position_in_play_list + 1 < size
-                    var current = tracks[_position_in_play_list]
-                    var next = tracks[_position_in_play_list + 1]
+                else if _position_in_play_list < size
+                    var current = tracks[_position_in_play_list - 1]
+                    var next = tracks[_position_in_play_list]
                     if current.album_path == next.album_path
                         position_in_play_list = _position_in_play_list + 1
                         return
@@ -608,7 +617,7 @@ namespace Khovsgol
             else if mode == CursorMode.PLAY_LIST
                 // Play first track if we are not pointing anywhere
                 if _position_in_play_list == int.MIN
-                    position_in_play_list = 0
+                    position_in_play_list = 1
                     return
                 
                 // Otherwise, play subsequent track
@@ -619,7 +628,7 @@ namespace Khovsgol
             else if mode == CursorMode.REPEAT_TRACK
                 // Play first track if we are not pointing anywhere
                 if _position_in_play_list == int.MIN
-                    position_in_play_list = 0
+                    position_in_play_list = 1
                     return
                 
                 // Otherwise, repeat our track
@@ -634,8 +643,8 @@ namespace Khovsgol
             else if mode == CursorMode.REPEAT_PLAY_LIST
                 // Play first track if we are not pointing anywhere
                 // Or if we're at the end
-                if (_position_in_play_list == int.MIN) || (_position_in_play_list == size - 1)
-                    position_in_play_list = 0
+                if (_position_in_play_list == int.MIN) || (_position_in_play_list == size)
+                    position_in_play_list = 1
                     return
 
                 // Otherwise, play subsequent track
@@ -650,12 +659,6 @@ namespace Khovsgol
             else if mode == CursorMode.REPEAT_SHUFFLE
                 // TODO
                 pass
-                
-            else // (Default behavior is CursorMode.TRACK)
-                // Play first track if we are not pointing anywhere
-                if _position_in_play_list == int.MIN
-                    position_in_play_list = 0
-                    return
 
             // Default to point nowhere
             position_in_play_list = int.MIN

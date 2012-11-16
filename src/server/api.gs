@@ -360,6 +360,8 @@ namespace Khovsgol.Server
          * send {remove: string}
          * send {action: string}
          * send {action: {type: string, ...}}
+         * 
+         * receive =get_library
          */
         def post_library(conversation: Conversation) raises GLib.Error
             var library = _crucible.libraries.libraries[conversation.variables["library"]]
@@ -654,7 +656,7 @@ namespace Khovsgol.Server
          * send {move: {to: int, positions: [int, ...]}}
          * send {add: [string, ...]}
          * send {add: {position: int, paths: [string, ...]}}
-         * send {remove: [string, ...]}
+         * send {remove: [int, ...]}
          * 
          * receive =get_play_list
          */
@@ -715,7 +717,7 @@ namespace Khovsgol.Server
 
                 processed = true
 
-            // Remove tracks by their paths
+            // Remove tracks by their positions
             var remove = get_array_member_or_null(entity, "remove")
             if remove is not null
                 player.play_list.remove(remove)
@@ -730,12 +732,20 @@ namespace Khovsgol.Server
             else
                 conversation.status_code = StatusCode.BAD_REQUEST
 
+        /*
+         */
         def get_plug(conversation: Conversation) raises GLib.Error
             return
 
+        /*
+         * receive =get_plug
+         */
         def put_plug(conversation: Conversation) raises GLib.Error
             return
 
+        /*
+         * receive =get_plug
+         */
         def delete_plug(conversation: Conversation) raises GLib.Error
             return
         

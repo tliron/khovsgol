@@ -34,7 +34,7 @@ namespace Nap
             conversation.status_code = StatusCode.BAD_REQUEST
             return null
 
-    def json_to_text(conversation: Conversation)
+    def response_json_to_text(conversation: Conversation)
         if (conversation.response_json_object is not null) or (conversation.response_json_array is not null)
             var jsonp = conversation.query["jsonp"]
             var human = jsonp is null && conversation.query["human"] == "true"
@@ -44,12 +44,21 @@ namespace Nap
                 conversation.response_text = JsonUtil.array_to(conversation.response_json_array, human)
             if jsonp is not null
                 conversation.response_text = "%s(%s)".printf(jsonp, conversation.response_text)
-            if conversation.media_type is null
-                conversation.media_type = "application/json"
+            if conversation.response_media_type is null
+                conversation.response_media_type = "application/json"
+
+    def request_json_to_text(conversation: Conversation)
+        if (conversation.request_json_object is not null) or (conversation.request_json_array is not null)
+            if conversation.request_json_object is not null
+                conversation.request_text = JsonUtil.object_to(conversation.request_json_object)
+            else
+                conversation.request_text = JsonUtil.array_to(conversation.request_json_array)
+            if conversation.request_media_type is null
+                conversation.request_media_type = "application/json"
 
     def default_error_handler(conversation: Conversation, error: GLib.Error)
         conversation.status_code = StatusCode.INTERNAL_SERVER_ERROR
-        Logging.get_logger("nap").warning("%s (%s %s)", error.message, conversation.get_method(), conversation.path)
+        Logging.get_logger("nap").warning("%s (%s %s)", error.message, conversation.method, conversation.path)
 
     /*
      * Simplified implementation of URI templates:

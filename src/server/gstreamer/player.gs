@@ -33,6 +33,10 @@ namespace Khovsgol.GStreamer
                             return PlayMode.PAUSED
                 return PlayMode.STOPPED
             set
+                if (value == PlayMode.PLAYING) && (position_in_play_list == int.MIN)
+                    next()
+                    return
+            
                 if _pipeline is not null
                     if value == PlayMode.PLAYING
                         _pipeline.pipeline.set_state(State.PLAYING)
