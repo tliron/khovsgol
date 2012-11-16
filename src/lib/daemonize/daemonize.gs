@@ -97,12 +97,16 @@ namespace Daemonize
                     exit()
                 
                 // Register signal handlers
-                if Daemon.signal_init(Daemon.Sig.INT, Daemon.Sig.TERM, Daemon.Sig.QUIT, Daemon.Sig.HUP, 0) < 0
+                if Daemon.signal_init(Daemon.Sig.TERM, Daemon.Sig.QUIT, Daemon.Sig.INT, Daemon.Sig.HUP, 0) < 0
                     Daemon.log(Daemon.LogPriority.ERR, "Could not register daemon signal handlers: %s", strerror(errno))
                     Daemon.retval_send(3)
                     exit()
 
                 _daemon_fd = {Daemon.signal_fd(), IOCondition.IN|IOCondition.HUP|IOCondition.ERR, 0}
+                
+                // Redirect stdout/stderr
+                stdout = FileStream.open("%s/.%s/log/%s.out".printf(Environment.get_home_dir(), _name, _name), "a")
+                stderr = FileStream.open("%s/.%s/log/%s.err".printf(Environment.get_home_dir(), _name, _name), "a")
                 
                 // Wrap GLib's MainLoop polling callback
                 if main_loop is not null
@@ -130,7 +134,6 @@ namespace Daemonize
      */
     def get_pid_file(): string
         var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
-        //Daemon.log(Daemon.LogPriority.INFO, "PID file: %s", pid_file)
         return pid_file
 
     def private exit()
@@ -156,16 +159,24 @@ namespace Daemonize
             if fd.fd == _daemon_fd.fd
                  var signal = Daemon.signal_next()
                  if signal < 0
-                    Daemon.log(Daemon.LogPriority.ERR, "Could not get next daemon signal: %s", strerror(errno))
+                    Daemon.log(Daemon.LogPriority.ERR, "Could not get daemon signal: %s", strerror(errno))
                     exit()
                     
-                 if (signal == Daemon.Sig.TERM) || (signal == Daemon.Sig.QUIT) || (signal == Daemon.Sig.INT)
-                    Daemon.log(Daemon.LogPriority.INFO, "Daemon received exit signal: %d", signal)
+                 else if signal == Daemon.Sig.TERM
+                    Daemon.log(Daemon.LogPriority.INFO, "Daemon received TERM")
+                    exit()
+
+                 else if signal == Daemon.Sig.QUIT
+                    Daemon.log(Daemon.LogPriority.INFO, "Daemon received QUIT")
+                    exit()
+
+                 else if signal == Daemon.Sig.INT
+                    Daemon.log(Daemon.LogPriority.INFO, "Daemon received INT")
                     exit()
                     
                  else if signal == Daemon.Sig.HUP
                     Daemon.log(Daemon.LogPriority.INFO, "Daemon received HUP")
-                    exit()
+                    // TODO: restart app?
                     
                  break
                  
