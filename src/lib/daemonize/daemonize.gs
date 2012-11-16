@@ -104,10 +104,6 @@ namespace Daemonize
 
                 _daemon_fd = {Daemon.signal_fd(), IOCondition.IN|IOCondition.HUP|IOCondition.ERR, 0}
                 
-                // Redirect stdout/stderr
-                stdout = FileStream.open("%s/.%s/log/%s.out".printf(Environment.get_home_dir(), _name, _name), "a")
-                stderr = FileStream.open("%s/.%s/log/%s.err".printf(Environment.get_home_dir(), _name, _name), "a")
-                
                 // Wrap GLib's MainLoop polling callback
                 if main_loop is not null
                     _main_loop = main_loop
@@ -132,7 +128,7 @@ namespace Daemonize
      * 
      * Our version uses one located in the user's home directory.
      */
-    def get_pid_file(): string
+    def private get_pid_file(): string
         var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
         return pid_file
 
