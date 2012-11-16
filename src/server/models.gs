@@ -69,12 +69,12 @@ namespace Khovsgol
         def to_json(): Json.Array
             var json = new Json.Array()
             while has_next()
+                next()
                 var track = get()
                 var obj = track.to_json()
                 if get_album_path is not null
                     set_string_member_not_null(obj, "album_path", _get_album_path(track))
                 json.add_object_element(obj)
-                next()
             return json
 
         delegate GetAlbumPath(track: Track): string
@@ -116,8 +116,8 @@ namespace Khovsgol
         def to_json(): Json.Array
             var json = new Json.Array()
             while has_next()
-                json.add_object_element(get().to_json())
                 next()
+                json.add_object_element(get().to_json())
             return json
             
     //
@@ -162,9 +162,9 @@ namespace Khovsgol
         def to_json(): Json.Array
             var json = new Json.Array()
             while has_next()
-                json.add_object_element(get().to_json())
                 next()
-            return json    
+                json.add_object_element(get().to_json())
+            return json
     
     //
     // Artist
@@ -188,8 +188,8 @@ namespace Khovsgol
         def to_json(): Json.Array
             var json = new Json.Array()
             while has_next()
-                json.add_array_element(get().to_json())
                 next()
+                json.add_array_element(get().to_json())
             return json
 
     //
@@ -254,10 +254,10 @@ namespace Khovsgol
                 args.album = album_path
                 var iterator = iterate_raw_track_pointers_in_album(args)
                 while iterator.has_next()
+                    iterator.next()
                     var position = iterator.get().position
                     if position > destination
                         destination = position
-                    iterator.next()
                 destination++
 
             // Make room by moving the track pointers after us forward
@@ -297,10 +297,10 @@ namespace Khovsgol
                 args.album = album_path
                 var iterator = iterate_raw_track_pointers_in_album(args)
                 while iterator.has_next()
+                    iterator.next()
                     var position = iterator.get().position
                     if position > destination
                         destination = position
-                    iterator.next()
                 destination++
                 
             // Remove the track pointers
@@ -404,8 +404,8 @@ namespace Khovsgol
         def to_json(): Json.Array
             var json = new Json.Array()
             while has_next()
-                json.add_string_element(get())
                 next()
+                json.add_string_element(get())
             return json
 
     class abstract IntIterator: Object implements HasJsonArray
@@ -416,8 +416,8 @@ namespace Khovsgol
         def to_json(): Json.Array
             var json = new Json.Array()
             while has_next()
-                json.add_int_element(get())
                 next()
+                json.add_int_element(get())
             return json
     
     //

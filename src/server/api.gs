@@ -234,7 +234,7 @@ namespace Khovsgol.Server
             var processed = false
                 
             // Move track pointers
-            var move = entity.get_member("move")
+            var move = get_member_or_null(entity, "move")
             if move is not null
                 destination: int = int.MIN
                 positions: Json.Array? = null
@@ -254,7 +254,7 @@ namespace Khovsgol.Server
                     processed = true
             
             // Add track pointers
-            var add = entity.get_member("add")
+            var add = get_member_or_null(entity, "add")
             if add is not null
                 destination: int = int.MIN
                 paths: Json.Array? = null
@@ -389,7 +389,7 @@ namespace Khovsgol.Server
                 processed = true
 
             // Actions
-            var action = entity.get_member("action")
+            var action = get_member_or_null(entity, "action")
             if action is not null
                 action_type: string? = null
                 path: string? = null
@@ -444,7 +444,7 @@ namespace Khovsgol.Server
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var directory = library.directories[conversation.variables["directory"]]
+            var directory = library.directories[conversation.variables["path"]]
             set_json_object_or_not_found(directory, conversation)
 
         /*
@@ -457,7 +457,7 @@ namespace Khovsgol.Server
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var directory = library.directories[conversation.variables["directory"]]
+            var directory = library.directories[conversation.variables["path"]]
             if directory is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
@@ -479,7 +479,7 @@ namespace Khovsgol.Server
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var path = conversation.variables["directory"]
+            var path = conversation.variables["path"]
             var directory = _crucible.create_directory()
             directory.path = path
             library.directories[path] = directory
@@ -490,7 +490,7 @@ namespace Khovsgol.Server
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var path = conversation.variables["directory"]
+            var path = conversation.variables["path"]
             if !library.directories.has_key(path)
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
@@ -568,7 +568,7 @@ namespace Khovsgol.Server
             var cursor = get_object_member_or_null(entity, "cursor")
             if cursor is not null
                 // Set position in play list
-                var position_in_play_list = cursor.get_member("positionInPlayList")
+                var position_in_play_list = get_member_or_null(cursor, "positionInPlayList")
                 if position_in_play_list is not null
                     if is_string(position_in_play_list)
                         var str = position_in_play_list.get_string()
@@ -682,7 +682,7 @@ namespace Khovsgol.Server
                 processed = true
 
             // Move tracks by their positions
-            var move = entity.get_member("move")
+            var move = get_member_or_null(entity, "move")
             if move is not null
                 positions: Json.Array? = null
                 destination: int = int.MIN
@@ -700,7 +700,7 @@ namespace Khovsgol.Server
                 processed = true
 
             // Add tracks by their paths
-            var add = entity.get_member("add")
+            var add = get_member_or_null(entity, "add")
             if add is not null
                 add_paths: Json.Array? = null
                 position: int = int.MIN
@@ -767,7 +767,7 @@ namespace Khovsgol.Server
             add_node("/libraries/album/{path}/", new DelegatedResource(_api.get_album, _api.post_album, _api.put_album, _api.delete_album))
             
             add_node("/library/{library}/", new DelegatedResource(_api.get_library, _api.post_library, _api.put_library, _api.delete_library))
-            add_node("/library/{library}/directory/{directory}/", new DelegatedResource(_api.get_directory, _api.post_directory, _api.put_directory, _api.delete_directory))
+            add_node("/library/{library}/directory/{path}/", new DelegatedResource(_api.get_directory, _api.post_directory, _api.put_directory, _api.delete_directory))
             add_node("/library/{library}/tracks/", new DelegatedResource(_api.get_tracks))
             add_node("/library/{library}/albums/", new DelegatedResource(_api.get_albums))
             add_node("/library/{library}/artists/", new DelegatedResource(_api.get_artists))

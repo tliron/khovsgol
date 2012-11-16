@@ -29,13 +29,44 @@ namespace Khovsgol.Client
          * receive [=get_track, ...]
          */
         def get_tracks(): Json.Array? raises GLib.Error
-            return null
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/libraries/tracks/"
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_array(entity)
+            else
+                return null
+        
+        class GetAlbumsArgs
+            prop by_artist: string?
+            prop with_artist: string?
+            prop at_date: int = int.MIN
+            prop compilation_type: int = int.MIN
 
         /*
          * receive [=get_album, ...]
          */
-        def get_albums(): Json.Array? raises GLib.Error
-            return null
+        def get_albums(args: GetAlbumsArgs? = null): Json.Array? raises GLib.Error
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/libraries/albums/"
+            if args is not null
+                if args.by_artist is not null
+                    conversation.query["albumartist"] = args.by_artist
+                else if args.with_artist is not null
+                    conversation.query["artist"] = args.with_artist
+                else if args.at_date != int.MIN
+                    conversation.query["date"] = args.at_date.to_string()
+                if args.compilation_type != int.MIN
+                    conversation.query["compilation"] = args.compilation_type.to_string()
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_array(entity)
+            else
+                return null
 
         /*
          * receive [
@@ -46,14 +77,32 @@ namespace Khovsgol.Client
          *  ...
          * ]
          */
-        def get_artists(): Json.Array? raises GLib.Error
-            return null
+        def get_artists(album_artists: bool = false): Json.Array? raises GLib.Error
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/libraries/artists/"
+            if album_artists
+                conversation.query["album"] = "true"
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_array(entity)
+            else
+                return null
 
         /*
          * receive [int, ...]
          */
         def get_dates(): Json.Array? raises GLib.Error
-            return null
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/libraries/dates/"
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_array(entity)
+            else
+                return null
 
         /*
          * receive {
@@ -72,7 +121,16 @@ namespace Khovsgol.Client
          * }
          */
         def get_track(path: string): Json.Object? raises GLib.Error
-            return null
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/libraries/track/{path}/"
+            conversation.variables["path"] = path
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * receive {
@@ -88,7 +146,16 @@ namespace Khovsgol.Client
          * }
          */
         def get_album(path: string): Json.Object? raises GLib.Error
-            return null
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/libraries/album/{path}/"
+            conversation.variables["path"] = path
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * send {move: [int, ...]}
@@ -97,7 +164,29 @@ namespace Khovsgol.Client
          * receive =get_album
          */
         def move_in_album(path: string, destination: int, positions: list of int): Json.Object? raises GLib.Error
-            return null
+            var payload = new Json.Object()
+            var positions_array = new Json.Array()
+            for var position in positions
+                positions_array.add_int_element(position)
+            if destination != int.MIN
+                var move = new Json.Object()
+                move.set_int_member("to", destination)
+                move.set_array_member("positions", positions_array)
+                payload.set_object_member("move", move)
+            else
+                payload.set_array_member("move", positions_array)
+
+            var conversation = _client.create_conversation()
+            conversation.method = Method.POST
+            conversation.path = "/libraries/album/{path}/"
+            conversation.variables["path"] = path
+            conversation.request_json_object = payload
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * send {add: [string, ...]}
@@ -106,7 +195,29 @@ namespace Khovsgol.Client
          * receive =get_album
          */
         def add_to_album(path: string, destination: int, paths: list of string): Json.Object? raises GLib.Error
-            return null
+            var payload = new Json.Object()
+            var paths_array = new Json.Array()
+            for var p in paths
+                paths_array.add_string_element(p)
+            if destination != int.MIN
+                var add = new Json.Object()
+                add.set_int_member("to", destination)
+                add.set_array_member("paths", paths_array)
+                payload.set_object_member("add", add)
+            else
+                payload.set_array_member("add", paths_array)
+
+            var conversation = _client.create_conversation()
+            conversation.method = Method.POST
+            conversation.path = "/libraries/album/{path}/"
+            conversation.variables["path"] = path
+            conversation.request_json_object = payload
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * send {remove: [int, ...]}
@@ -114,18 +225,56 @@ namespace Khovsgol.Client
          * receive =get_album
          */
         def remove_from_album(path: string, positions: list of int): Json.Object? raises GLib.Error
-            return null
+            var payload = new Json.Object()
+            var positions_array = new Json.Array()
+            for var position in positions
+                positions_array.add_int_element(position)
+            payload.set_array_member("remove", positions_array)
+
+            var conversation = _client.create_conversation()
+            conversation.method = Method.POST
+            conversation.path = "/libraries/album/{path}/"
+            conversation.variables["path"] = path
+            conversation.request_json_object = payload
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * send {title: string, library: string, tracks: [string, ...]}
          * 
          * receive =get_album
          */
-        def set_album(title: string, library: string, tracks: list of string): Json.Object? raises GLib.Error
-            return null
+        def create_album(path: string, title: string, library: string, tracks: list of string): Json.Object? raises GLib.Error
+            var payload = new Json.Object()
+            payload.set_string_member("title", title)
+            payload.set_string_member("library", library)
+            var tracks_array = new Json.Array()
+            for var track in tracks
+                tracks_array.add_string_element(track)
+            payload.set_array_member("tracks", tracks_array)
+
+            var conversation = _client.create_conversation()
+            conversation.method = Method.PUT
+            conversation.path = "/libraries/album/{path}/"
+            conversation.variables["path"] = path
+            conversation.request_json_object = payload
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         def delete_album(path: string) raises GLib.Error
-            pass
+            var conversation = _client.create_conversation()
+            conversation.method = Method.DELETE
+            conversation.path = "/libraries/album/{path}/"
+            conversation.variables["path"] = path
+            conversation.commit()
 
         /*
          * receive {
@@ -134,23 +283,58 @@ namespace Khovsgol.Client
          * }
          */
         def get_library(name: string): Json.Object? raises GLib.Error
-            return null
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/library/{library}/"
+            conversation.variables["library"] = name
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
             
         /*
          * send {add: string}
          * 
          * receive =get_library
          */
-        def add_directory(name: string, path: string): Json.Object? raises GLib.Error
-            return null
+        def add_directory_to_library(name: string, path: string): Json.Object? raises GLib.Error
+            var payload = new Json.Object()
+            payload.set_string_member("add", path)
+
+            var conversation = _client.create_conversation()
+            conversation.method = Method.POST
+            conversation.path = "/library/{library}/"
+            conversation.variables["library"] = name
+            conversation.request_json_object = payload
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * send {remove: string}
          * 
          * receive =get_library
          */
-        def remove_directory(name: string, path: string): Json.Object? raises GLib.Error
-            return null
+        def remove_directory_from_library(name: string, path: string): Json.Object? raises GLib.Error
+            var payload = new Json.Object()
+            payload.set_string_member("remove", path)
+
+            var conversation = _client.create_conversation()
+            conversation.method = Method.POST
+            conversation.path = "/library/{library}/"
+            conversation.variables["library"] = name
+            conversation.request_json_object = payload
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * send {action: string}
@@ -159,16 +343,42 @@ namespace Khovsgol.Client
          * receive =get_library
          */
         def library_action(name: string, action: string): Json.Object? raises GLib.Error
-            return null
+            var payload = new Json.Object()
+            payload.set_string_member("action", action)
+
+            var conversation = _client.create_conversation()
+            conversation.method = Method.POST
+            conversation.path = "/library/{library}/"
+            conversation.variables["library"] = name
+            conversation.request_json_object = payload
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * receive =get_library
          */
-        def set_library(name: string): Json.Object? raises GLib.Error
-            return null
+        def create_library(name: string): Json.Object? raises GLib.Error
+            var conversation = _client.create_conversation()
+            conversation.method = Method.PUT
+            conversation.path = "/library/{library}/"
+            conversation.variables["library"] = name
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         def delete_library(name: string) raises GLib.Error
-            pass
+            var conversation = _client.create_conversation()
+            conversation.method = Method.DELETE
+            conversation.path = "/library/{library}/"
+            conversation.variables["library"] = name
+            conversation.commit()
 
         /*
          * receive {
@@ -177,7 +387,17 @@ namespace Khovsgol.Client
          * }
          */
         def get_directory(name: string, path: string): Json.Object? raises GLib.Error
-            return null
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/library/{library}/directory/{path}/"
+            conversation.variables["library"] = name
+            conversation.variables["path"] = path
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * send {action: string}
@@ -186,22 +406,59 @@ namespace Khovsgol.Client
          * receive =get_directory
          */
         def directory_action(name: string, path: string, action: string): Json.Object? raises GLib.Error
-            return null
+            var payload = new Json.Object()
+            payload.set_string_member("action", action)
+
+            var conversation = _client.create_conversation()
+            conversation.method = Method.POST
+            conversation.path = "/library/{library}/directory/{path}/"
+            conversation.variables["library"] = name
+            conversation.variables["path"] = path
+            conversation.request_json_object = payload
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * receive =get_directory
          */
         def create_directory(name: string, path: string): Json.Object? raises GLib.Error
-            return null
+            var conversation = _client.create_conversation()
+            conversation.method = Method.PUT
+            conversation.path = "/library/{library}/directory/{path}/"
+            conversation.variables["library"] = name
+            conversation.variables["path"] = path
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         def delete_directory(name: string, path: string) raises GLib.Error
-            pass
+            var conversation = _client.create_conversation()
+            conversation.method = Method.DELETE
+            conversation.path = "/library/{library}/directory/{path}/"
+            conversation.variables["library"] = name
+            conversation.variables["path"] = path
+            conversation.commit()
 
         /*
          * receive [=get_player, ...]
          */
         def get_players(): Json.Array? raises GLib.Error
-            return null
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/players/"
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_array(entity)
+            else
+                return null
 
         /* receive {
          *  name: string,
@@ -388,15 +645,26 @@ namespace Khovsgol.Client
          *  tracks: =get_tracks
          * }
          */
-        def get_play_list(player: string): Json.Object? raises GLib.Error
-            return null
+        def get_play_list(player: string, full: bool = false): Json.Object? raises GLib.Error
+            var conversation = _client.create_conversation()
+            conversation.method = Method.GET
+            conversation.path = "/player/{player}/playlist/"
+            conversation.variables["player"] = player
+            if full
+                conversation.query["fullrepresentation"] = "true"
+            conversation.commit()
+            var entity = conversation.get_entity()
+            if entity is not null
+                return from_object(entity)
+            else
+                return null
 
         /*
          * send {paths: [string, ...]}
          * 
          * receive =get_play_list
          */
-        def set_play_list_paths(player: string, paths: list of string): Json.Object? raises GLib.Error
+        def set_play_list_paths(player: string, full: bool, paths: list of string): Json.Object? raises GLib.Error
             var payload = new Json.Object()
             var paths_array = new Json.Array()
             for var path in paths
@@ -407,7 +675,8 @@ namespace Khovsgol.Client
             conversation.method = Method.POST
             conversation.path = "/player/{player}/playlist/"
             conversation.variables["player"] = player
-            conversation.query["fullrepresentation"] = "true"
+            if full
+                conversation.query["fullrepresentation"] = "true"
             conversation.request_json_object = payload
             conversation.commit()
             var entity = conversation.get_entity()
@@ -422,7 +691,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_play_list
          */
-        def move_in_play_list(player: string, destination: int, positions: list of int): Json.Object? raises GLib.Error
+        def move_in_play_list(player: string, full: bool, destination: int, positions: list of int): Json.Object? raises GLib.Error
             var payload = new Json.Object()
             var positions_array = new Json.Array()
             for var position in positions
@@ -439,7 +708,8 @@ namespace Khovsgol.Client
             conversation.method = Method.POST
             conversation.path = "/player/{player}/playlist/"
             conversation.variables["player"] = player
-            conversation.query["fullrepresentation"] = "true"
+            if full
+                conversation.query["fullrepresentation"] = "true"
             conversation.request_json_object = payload
             conversation.commit()
             var entity = conversation.get_entity()
@@ -454,7 +724,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_play_list
          */
-        def add_to_play_list(player: string, position: int, paths: list of string): Json.Object? raises GLib.Error
+        def add_to_play_list(player: string, full: bool, position: int, paths: list of string): Json.Object? raises GLib.Error
             var payload = new Json.Object()
             var paths_array = new Json.Array()
             for var path in paths
@@ -471,7 +741,8 @@ namespace Khovsgol.Client
             conversation.method = Method.POST
             conversation.path = "/player/{player}/playlist/"
             conversation.variables["player"] = player
-            conversation.query["fullrepresentation"] = "true"
+            if full
+                conversation.query["fullrepresentation"] = "true"
             conversation.request_json_object = payload
             conversation.commit()
             var entity = conversation.get_entity()
@@ -485,7 +756,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_play_list
          */
-        def remove_from_play_list(player: string, positions: list of int): Json.Object? raises GLib.Error
+        def remove_from_play_list(player: string, full: bool, positions: list of int): Json.Object? raises GLib.Error
             var payload = new Json.Object()
             var positions_array = new Json.Array()
             for var position in positions
@@ -496,7 +767,8 @@ namespace Khovsgol.Client
             conversation.method = Method.POST
             conversation.path = "/player/{player}/playlist/"
             conversation.variables["player"] = player
-            conversation.query["fullrepresentation"] = "true"
+            if full
+                conversation.query["fullrepresentation"] = "true"
             conversation.request_json_object = payload
             conversation.commit()
             var entity = conversation.get_entity()
@@ -523,4 +795,3 @@ namespace Khovsgol.Client
             return null
         
         _client: Nap.Client
-

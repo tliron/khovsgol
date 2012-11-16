@@ -39,17 +39,164 @@ namespace Khovsgol.CLI
                 print_player(_api.set_position_in_play_list_string(_arguments.player, "prev"))
 
             else if command == "cursor"
+                if _arguments.args.length < 3
+                    stderr.printf("Your must provide the position (a number)\n")
+                    Posix.exit(1)
                 var position = int.parse(_arguments.args[2])
                 print_player(_api.set_position_in_play_list(_arguments.player, position))
 
             else if command == "trackposition"
-                pass
+                if _arguments.args.length < 3
+                    stderr.printf("Your must provide the position (a decimal)\n")
+                    Posix.exit(1)
+                var position = double.parse(_arguments.args[2])
+                print_player(_api.set_position_in_track(_arguments.player, position))
 
             else if command == "trackratio"
-                pass
+                if _arguments.args.length < 3
+                    stderr.printf("Your must provide the ratio (a decimal)\n")
+                    Posix.exit(1)
+                var ratio = double.parse(_arguments.args[2])
+                print_player(_api.set_ratio_in_track(_arguments.player, ratio))
 
             else if command == "cursormode"
+                if _arguments.args.length < 3
+                    stderr.printf("Your must provide the cursor mode\n")
+                    Posix.exit(1)
+                var cursor_mode = _arguments.args[2]
+                print_player(_api.set_cursor_mode(_arguments.player, cursor_mode))
+
+            else if command == "addtrack"
                 pass
+
+            else if command == "removetrack"
+                pass
+
+            else if command == "setplug"
+                pass
+
+            else if command == "removeplug"
+                pass
+
+            else if command == "tracks"
+                pass
+
+            else if command == "tracksby"
+                pass
+
+            else if command == "tracksin"
+                pass
+
+            else if command == "track"
+                pass
+
+            else if command == "albums"
+                var albums = _api.get_albums()
+                if albums is not null
+                    for var i = 0 to (albums.get_length() - 1)
+                        var album = get_object_element_or_null(albums, i)
+                        if album is not null
+                            var path = get_string_member_or_null(album, "path")
+                            if path is not null
+                                stdout.printf("%s\n", path)
+
+            else if command == "albumsby"
+                if _arguments.args.length < 3
+                    stderr.printf("Your must provide the artist name\n")
+                    Posix.exit(1)
+                var args = new Client.API.GetAlbumsArgs()
+                args.by_artist = _arguments.args[2]
+                var albums = _api.get_albums(args)
+                if albums is not null
+                    for var i = 0 to (albums.get_length() - 1)
+                        var album = get_object_element_or_null(albums, i)
+                        if album is not null
+                            var path = get_string_member_or_null(album, "path")
+                            if path is not null
+                                stdout.printf("%s\n", path)
+
+            else if command == "albumswith"
+                if _arguments.args.length < 3
+                    stderr.printf("Your must provide the artist name\n")
+                    Posix.exit(1)
+                var args = new Client.API.GetAlbumsArgs()
+                args.with_artist = _arguments.args[2]
+                var albums = _api.get_albums(args)
+                if albums is not null
+                    for var i = 0 to (albums.get_length() - 1)
+                        var album = get_object_element_or_null(albums, i)
+                        if album is not null
+                            var path = get_string_member_or_null(album, "path")
+                            if path is not null
+                                stdout.printf("%s\n", path)
+
+            else if command == "albumsat"
+                if _arguments.args.length < 3
+                    stderr.printf("Your must provide the date (a number)\n")
+                    Posix.exit(1)
+                var args = new Client.API.GetAlbumsArgs()
+                args.at_date = int.parse(_arguments.args[2])
+                var albums = _api.get_albums(args)
+                if albums is not null
+                    for var i = 0 to (albums.get_length() - 1)
+                        var album = get_object_element_or_null(albums, i)
+                        if album is not null
+                            var path = get_string_member_or_null(album, "path")
+                            if path is not null
+                                stdout.printf("%s\n", path)
+
+            else if command == "compilations"
+                var args = new Client.API.GetAlbumsArgs()
+                args.compilation_type = 1
+                var albums = _api.get_albums(args)
+                if albums is not null
+                    for var i = 0 to (albums.get_length() - 1)
+                        var album = get_object_element_or_null(albums, i)
+                        if album is not null
+                            var path = get_string_member_or_null(album, "path")
+                            if path is not null
+                                stdout.printf("%s\n", path)
+
+            else if command == "album"
+                pass
+
+            else if command == "artists"
+                var artists = _api.get_artists()
+                if artists is not null
+                    for var i = 0 to (artists.get_length() - 1)
+                        var artist = get_array_element_or_null(artists, i)
+                        if artist is not null
+                            if artist.get_length() > 0
+                                var name = get_string_element_or_null(artist, 0)
+                                if name is not null
+                                    stdout.printf("%s\n", name)
+
+            else if command == "albumartists"
+                var artists = _api.get_artists(true)
+                if artists is not null
+                    for var i = 0 to (artists.get_length() - 1)
+                        var artist = get_array_element_or_null(artists, i)
+                        if artist is not null
+                            if artist.get_length() > 0
+                                var name = get_string_element_or_null(artist, 0)
+                                if name is not null
+                                    stdout.printf("%s\n", name)
+
+            else if command == "dates"
+                var dates = _api.get_dates()
+                if dates is not null
+                    for var i = 0 to (dates.get_length() - 1)
+                        var date = get_int_element_or_min(dates, i)
+                        if date is not int.MIN
+                            stdout.printf("%d\n", date)
+
+            else if command == "players"
+                var players = _api.get_players()
+                if players is not null
+                    for var i = 0 to (players.get_length() - 1)
+                        var player = get_object_element_or_null(players, i)
+                        if player is not null
+                            print_player(player)
 
             else if command == "libraries"
                 var libraries = _api.get_libraries()
@@ -72,11 +219,19 @@ namespace Khovsgol.CLI
                                                 stdout.printf(" (currently scanning)\n")
                                             else
                                                 stdout.printf("\n")
+            
+            else
+                stderr.printf("Unknown command: %s\n", command)
+                Posix.exit(1)
                         
         _arguments: Arguments
         _api: Client.API
+        
+        def private static indent(indentation: int)
+            if indentation > 0
+                stdout.printf(string.nfill(indentation * 2, ' '))                    
 
-        def private print_player(player: Json.Object?)
+        def private static print_player(player: Json.Object?)
             if player is not null
                 var name = get_string_member_or_null(player, "name")
                 if name is not null
@@ -86,14 +241,17 @@ namespace Khovsgol.CLI
                     if play_list is not null
                         var id = get_string_member_or_null(play_list, "id")
                         if id is not null
-                            stdout.printf("  ID: %s\n", id)
+                            indent(1)
+                            stdout.printf("Unique ID: %s\n", id)
                         var version = get_int64_member_or_min(play_list, "version")
                         if version != int64.MIN
-                            stdout.printf("  Version: %lld\n", version)
+                            indent(1)
+                            stdout.printf("Version: %lld\n", version)
                     
                     var cursor_mode = get_string_member_or_null(player, "cursorMode")
                     if cursor_mode is not null
-                        stdout.printf("  Mode: %s\n", cursor_mode)
+                        indent(1)
+                        stdout.printf("Mode: %s\n", cursor_mode)
                     
                     var track_duration = double.MIN
                     var ratio = double.MIN
@@ -108,10 +266,11 @@ namespace Khovsgol.CLI
 
                     var play_mode = get_string_member_or_null(player, "playMode")
                     if play_mode is not null
+                        indent(1)
                         if ratio != double.MIN
-                            stdout.printf("  Currently %s (at %d%% of %d seconds)\n", play_mode, (int)(ratio * 100), (int) track_duration)
+                            stdout.printf("Currently %s (at %d%% of %d seconds)\n", play_mode, (int)(Math.round(ratio * 100)), (int) track_duration)
                         else
-                            stdout.printf("  Currently %s\n", play_mode)
+                            stdout.printf("Currently %s\n", play_mode)
                             
                     if play_list is not null
                         var tracks = get_array_member_or_null(play_list, "tracks")
@@ -121,13 +280,14 @@ namespace Khovsgol.CLI
                                 var position = get_int_member_or_min(track, "position")
                                 var path = get_string_member_or_null(track, "path")
                                 if path is not null
+                                    indent(2)
                                     if position != int.MIN
                                         if position == position_in_play_list
-                                            stdout.printf("    >%d: %s\n", position, path)
+                                            stdout.printf(">%d: %s\n", position, path)
                                         else
-                                            stdout.printf("     %d: %s\n", position, path)
+                                            stdout.printf(" %d: %s\n", position, path)
                                     else
-                                        stdout.printf("    %s\n", path)
+                                        stdout.printf("%s\n", path)
 
     def get_help(): string
         var s = new StringBuilder()

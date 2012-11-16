@@ -608,9 +608,9 @@ namespace Khovsgol.Sqlite
             args.title_like = "hello"
             var tracks = iterate_tracks(args)
             while tracks.has_next()
+                tracks.next()
                 var track = tracks.get()
                 print track.path
-                tracks.next()
                 
             print "-"
             
@@ -619,9 +619,9 @@ namespace Khovsgol.Sqlite
             args2.sort.add("position")
             tracks = iterate_tracks_in_album(args2)
             while tracks.has_next()
+                tracks.next()
                 var track = tracks.get()
                 print track.path
-                tracks.next()
 
             print "-"
             
@@ -629,8 +629,8 @@ namespace Khovsgol.Sqlite
             args3.artist = "Rush"
             tracks = iterate_tracks_by_artist(args3)
             while tracks.has_next()
+                tracks.next()
                 var track = tracks.get()
                 print track.path
-                tracks.next()
             
             //dump_table("track")

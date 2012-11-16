@@ -36,10 +36,10 @@ namespace Nap.Connector._Soup
         prop response_json_array: Json.Array?
             
         def get_entity(): string?
-            /*var body = _soup_message.request_body
-            var buffer = body.flatten()
-            return (string) buffer.get_as_bytes().get_data()*/
-            return (string) _soup_message.request_body.data // warning: "assignment discards `const' qualifer"
+            var entity = (string) _soup_message.request_body.data
+            if (entity is not null) && (entity.length > 0)
+                return entity
+            return null
         
         def commit()
             response_json_to_text(self)
@@ -105,9 +105,10 @@ namespace Nap.Connector._Soup
         
         def get_entity(): string?
             if _soup_message is not null
-                return (string) _soup_message.response_body.data
-            else
-                return null
+                var entity = (string) _soup_message.response_body.data
+                if (entity is not null) && (entity.length > 0)
+                    return entity
+            return null
         
         def commit()
             request_json_to_text(self)
@@ -125,13 +126,13 @@ namespace Nap.Connector._Soup
                 uri.append("?")
                 var i = _query.keys.iterator()
                 while i.has_next()
+                    i.next()
                     var key = i.get()
                     uri.append(key)
                     uri.append("=")
                     uri.append(Soup.URI.encode(_query[key], null))
                     if i.has_next()
                         uri.append("&")
-                    i.next()
             
             _soup_message = new Soup.Message(_method, uri.str)
             if _request_text is not null

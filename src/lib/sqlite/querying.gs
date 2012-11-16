@@ -76,7 +76,7 @@ namespace SqliteUtil
                 else if name == "gint"
                     _statement.bind_int(index++, binding.get_int())
 
-            _result = _statement.step()
+            _done = false
             _columns = _statement.column_count()
             _query = query
             
@@ -87,14 +87,18 @@ namespace SqliteUtil
             return new Row(self, _columns)
         
         def has_next(): bool
+            if !_done
+                _result = _statement.step()
+                _done = true
             return _result == ROW
         
         def next(): bool
-            _result = _statement.step()
+            _done = false
             return _result == ROW
             
         _columns: int
-        _result: int = ERROR
+        _result: int
+        _done: bool
     
     /*
      * SQL query builder.
