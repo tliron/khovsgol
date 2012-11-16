@@ -92,7 +92,7 @@ namespace Khovsgol.CLI
 
             else if command == "albums"
                 var albums = _api.get_albums()
-                if albums is not null
+                if (albums is not null) && (albums.get_length() > 0)
                     for var i = 0 to (albums.get_length() - 1)
                         var album = get_object_element_or_null(albums, i)
                         if album is not null
@@ -107,7 +107,7 @@ namespace Khovsgol.CLI
                 var args = new Client.API.GetAlbumsArgs()
                 args.by_artist = _arguments.args[2]
                 var albums = _api.get_albums(args)
-                if albums is not null
+                if (albums is not null) && (albums.get_length() > 0)
                     for var i = 0 to (albums.get_length() - 1)
                         var album = get_object_element_or_null(albums, i)
                         if album is not null
@@ -122,7 +122,7 @@ namespace Khovsgol.CLI
                 var args = new Client.API.GetAlbumsArgs()
                 args.with_artist = _arguments.args[2]
                 var albums = _api.get_albums(args)
-                if albums is not null
+                if (albums is not null) && (albums.get_length() > 0)
                     for var i = 0 to (albums.get_length() - 1)
                         var album = get_object_element_or_null(albums, i)
                         if album is not null
@@ -137,7 +137,7 @@ namespace Khovsgol.CLI
                 var args = new Client.API.GetAlbumsArgs()
                 args.at_date = int.parse(_arguments.args[2])
                 var albums = _api.get_albums(args)
-                if albums is not null
+                if (albums is not null) && (albums.get_length() > 0)
                     for var i = 0 to (albums.get_length() - 1)
                         var album = get_object_element_or_null(albums, i)
                         if album is not null
@@ -149,7 +149,7 @@ namespace Khovsgol.CLI
                 var args = new Client.API.GetAlbumsArgs()
                 args.compilation_type = 1
                 var albums = _api.get_albums(args)
-                if albums is not null
+                if (albums is not null) && (albums.get_length() > 0)
                     for var i = 0 to (albums.get_length() - 1)
                         var album = get_object_element_or_null(albums, i)
                         if album is not null
@@ -162,7 +162,7 @@ namespace Khovsgol.CLI
 
             else if command == "artists"
                 var artists = _api.get_artists()
-                if artists is not null
+                if (artists is not null) && (artists.get_length() > 0)
                     for var i = 0 to (artists.get_length() - 1)
                         var artist = get_array_element_or_null(artists, i)
                         if artist is not null
@@ -173,7 +173,7 @@ namespace Khovsgol.CLI
 
             else if command == "albumartists"
                 var artists = _api.get_artists(true)
-                if artists is not null
+                if (artists is not null) && (artists.get_length() > 0)
                     for var i = 0 to (artists.get_length() - 1)
                         var artist = get_array_element_or_null(artists, i)
                         if artist is not null
@@ -184,7 +184,7 @@ namespace Khovsgol.CLI
 
             else if command == "dates"
                 var dates = _api.get_dates()
-                if dates is not null
+                if (dates is not null) && (dates.get_length() > 0)
                     for var i = 0 to (dates.get_length() - 1)
                         var date = get_int_element_or_min(dates, i)
                         if date is not int.MIN
@@ -192,7 +192,7 @@ namespace Khovsgol.CLI
 
             else if command == "players"
                 var players = _api.get_players()
-                if players is not null
+                if (players is not null) && (players.get_length() > 0)
                     for var i = 0 to (players.get_length() - 1)
                         var player = get_object_element_or_null(players, i)
                         if player is not null
@@ -200,7 +200,7 @@ namespace Khovsgol.CLI
 
             else if command == "libraries"
                 var libraries = _api.get_libraries()
-                if libraries is not null
+                if (libraries is not null) && (libraries.get_length() > 0)
                     for var i = 0 to (libraries.get_length() - 1)
                         var library = get_object_element_or_null(libraries, i)
                         var name = get_string_member_or_null(library, "name")
@@ -274,7 +274,7 @@ namespace Khovsgol.CLI
                             
                     if play_list is not null
                         var tracks = get_array_member_or_null(play_list, "tracks")
-                        if tracks is not null
+                        if (tracks is not null) && (tracks.get_length() > 0)
                             for var i = 0 to (tracks.get_length() - 1)
                                 var track = get_object_element_or_null(tracks, i)
                                 var position = get_int_member_or_min(track, "position")

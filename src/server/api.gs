@@ -315,7 +315,7 @@ namespace Khovsgol.Server
                 
                 // Create track pointers
                 var tracks = get_array_member_or_null(entity, "tracks")
-                if tracks is not null
+                if (tracks is not null) && (tracks.get_length() > 0)
                     position: int = 1
                     for var i = 0 to (tracks.get_length() - 1)
                         var track = get_string_element_or_null(tracks, i)

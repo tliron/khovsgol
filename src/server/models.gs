@@ -247,6 +247,10 @@ namespace Khovsgol
         def abstract set_timestamp(path: string, timestamp: double) raises GLib.Error
         
         def add(album_path: string, destination: int, paths: Json.Array) raises GLib.Error
+            if paths.get_length() == 0
+                return
+            var last = paths.get_length() - 1
+            
             if destination == int.MIN
                 // Set destination position at end of current track pointers
                 destination = 0
@@ -261,10 +265,10 @@ namespace Khovsgol
                 destination++
 
             // Make room by moving the track pointers after us forward
-            move_track_pointers(album_path, (int) paths.get_length(), destination)
+            move_track_pointers(album_path, (int) last + 1, destination)
             
             // Add the track pointers at the destination
-            for var i = 0 to (paths.get_length() - 1)
+            for var i = 0 to last
                 var path = get_string_element_or_null(paths, i)
                 if path is not null
                     var track_pointer = new TrackPointer()
@@ -274,8 +278,11 @@ namespace Khovsgol
                     save_track_pointer(track_pointer)
         
         def remove(album_path: string, positions: Json.Array) raises GLib.Error
-            // Remove track pointers
-            for var i = 0 to (positions.get_length() - 1)
+            if positions.get_length() == 0
+                return
+            var last = positions.get_length() - 1
+
+            for var i = 0 to last
                 var position = get_int_element_or_min(positions, i)
                 if position != int.MIN
                     delete_track_pointer(album_path, position)
@@ -284,12 +291,17 @@ namespace Khovsgol
                     move_track_pointers(album_path, -1, position + 1)
                 
                     // We need to also move back positions in the array
-                    for var ii = (i + 1) to (positions.get_length() - 1)
-                        var p = get_int_element_or_min(positions, ii)
-                        if p > position
-                            positions.get_element(ii).set_int(p - 1)
+                    if i < last
+                        for var ii = (i + 1) to last
+                            var p = get_int_element_or_min(positions, ii)
+                            if p > position
+                                positions.get_element(ii).set_int(p - 1)
         
         def move(album_path: string, destination: int, positions: Json.Array) raises GLib.Error
+            if positions.get_length() == 0
+                return
+            var last = positions.get_length() - 1
+
             if destination == int.MIN
                 // Set destination position at end of current track pointers
                 destination = 0
@@ -305,7 +317,7 @@ namespace Khovsgol
                 
             // Remove the track pointers
             var paths = new list of string
-            for var i = 0 to (positions.get_length() - 1)
+            for var i = 0 to last
                 var position = get_int_element_or_min(positions, i)
                 if position != int.MIN
                     var track_pointer = get_track_pointer(album_path, position)
@@ -316,10 +328,11 @@ namespace Khovsgol
                     move_track_pointers(album_path, -1, position + 1)
                 
                     // We need to also move back positions in the array
-                    for var ii = (i + 1) to (positions.get_length() - 1)
-                        var p = get_int_element_or_min(positions, ii)
-                        if p > position
-                            positions.get_element(ii).set_int(p - 1)
+                    if i < last
+                        for var ii = (i + 1) to last
+                            var p = get_int_element_or_min(positions, ii)
+                            if p > position
+                                positions.get_element(ii).set_int(p - 1)
                             
                     // We need to also move back the destination position
                     if destination > position
@@ -731,11 +744,15 @@ namespace Khovsgol
             update_version()
         
         def remove(positions: Json.Array) raises GLib.Error
+            if positions.get_length() < 0
+                return
+            var last = positions.get_length() - 1
+        
             // Stop player if we are removing its current track,
             // or update its position if our removal will affect its number
             var position_in_play_list = _player.position_in_play_list
             var final_position_in_play_list = position_in_play_list
-            for var i = 0 to (positions.get_length() - 1)
+            for var i = 0 to last
                 var position = get_int_element_or_min(positions, i)
                 if position != int.MIN
                     if position == position_in_play_list
@@ -743,11 +760,12 @@ namespace Khovsgol
                         break
                     else if position < position_in_play_list
                         final_position_in_play_list--
-            if final_position_in_play_list != position_in_play_list
-                player.position_in_play_list = final_position_in_play_list
 
             _crucible.libraries.remove(_album_path, positions)
             update_version()
+
+            if final_position_in_play_list != position_in_play_list
+                player.position_in_play_list = final_position_in_play_list
 
         def move(position: int, positions: Json.Array) raises GLib.Error
             // TODO: player cursor...
