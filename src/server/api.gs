@@ -248,7 +248,7 @@ namespace Khovsgol.Server
                     conversation.status_code = StatusCode.BAD_REQUEST
                     return
                 
-                if (positions is not null) and (positions.get_length() > 0)
+                if positions is not null
                     _crucible.libraries.move(album_path, destination, positions)
 
                     processed = true
@@ -268,14 +268,14 @@ namespace Khovsgol.Server
                     conversation.status_code = StatusCode.BAD_REQUEST
                     return
 
-                if (paths is not null) and (paths.get_length() > 0)
+                if paths is not null
                     _crucible.libraries.add(album_path, destination, paths)
 
                     processed = true
 
             // Remove track pointers
             var remove = get_array_member_or_null(entity, "remove")
-            if (remove is not null) && (remove.get_length() > 0)
+            if remove is not null
                 _crucible.libraries.remove(album_path, remove)
 
                 processed = true
@@ -319,14 +319,12 @@ namespace Khovsgol.Server
                     position: int = 1
                     for var i = 0 to (tracks.get_length() - 1)
                         var track = get_string_element_or_null(tracks, i)
-                        if track is null
-                            conversation.status_code = StatusCode.BAD_REQUEST
-                            return
-                        var track_pointer = new TrackPointer()
-                        track_pointer.path = track
-                        track_pointer.album = album_path
-                        track_pointer.position = position++
-                        _crucible.libraries.save_track_pointer(track_pointer)
+                        if track is not null
+                            var track_pointer = new TrackPointer()
+                            track_pointer.path = track
+                            track_pointer.album = album_path
+                            track_pointer.position = position++
+                            _crucible.libraries.save_track_pointer(track_pointer)
 
                 set_json_object_or_not_found(album, conversation)
             else

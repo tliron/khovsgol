@@ -247,9 +247,10 @@ namespace Khovsgol
         def abstract set_timestamp(path: string, timestamp: double) raises GLib.Error
         
         def add(album_path: string, destination: int, paths: Json.Array) raises GLib.Error
-            if paths.get_length() == 0
+            var length = paths.get_length()
+            if length == 0
                 return
-            var last = paths.get_length() - 1
+            var last = length - 1
             
             if destination == int.MIN
                 // Set destination position at end of current track pointers
@@ -278,9 +279,10 @@ namespace Khovsgol
                     save_track_pointer(track_pointer)
         
         def remove(album_path: string, positions: Json.Array) raises GLib.Error
-            if positions.get_length() == 0
+            var length = positions.get_length()
+            if length == 0
                 return
-            var last = positions.get_length() - 1
+            var last = length - 1
 
             for var i = 0 to last
                 var position = get_int_element_or_min(positions, i)
@@ -298,9 +300,10 @@ namespace Khovsgol
                                 positions.get_element(ii).set_int(p - 1)
         
         def move(album_path: string, destination: int, positions: Json.Array) raises GLib.Error
-            if positions.get_length() == 0
+            var length = positions.get_length()
+            if length == 0
                 return
-            var last = positions.get_length() - 1
+            var last = length - 1
 
             if destination == int.MIN
                 // Set destination position at end of current track pointers
@@ -744,9 +747,10 @@ namespace Khovsgol
             update_version()
         
         def remove(positions: Json.Array) raises GLib.Error
-            if positions.get_length() < 0
+            var length = positions.get_length()
+            if length == 0
                 return
-            var last = positions.get_length() - 1
+            var last = length - 1
         
             // Stop player if we are removing its current track,
             // or update its position if our removal will affect its number
