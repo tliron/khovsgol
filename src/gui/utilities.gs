@@ -29,16 +29,50 @@ namespace Khovsgol.GUI
 
     class EntryBox: Box
         construct(label: string, name: string? = null, value: string? = null)
-            var entry = new Entry()
+            orientation = Orientation.HORIZONTAL
+            spacing = 5
+            _entry = new Entry()
             if name is not null
-                entry.name = name
+                _entry.name = name
             /*if sensitivity is not null
                 entry.set_sensitive(sensitivity)*/
             if value is not null
                 entry.text = value
-            var box = new Box(Orientation.HORIZONTAL, 5)
             var l = new Label.with_mnemonic(label)
             l.use_markup = true
             l.mnemonic_widget = entry
-            box.pack_start(l, false, true, 0)
-            box.pack_start(entry, true, true, 0)
+            pack_start(l, false)
+            pack_start(_entry)
+        
+        prop readonly entry: Entry
+
+    class SimpleComboBox: Box
+        construct(name: string? = null, label: string? = null)
+            orientation = Orientation.HORIZONTAL
+            spacing = 5
+            
+            _store = new ListStore(2, typeof(Value), typeof(string))
+                
+            _combo_box = new ComboBox.with_model(_store)
+            if name is not null
+                _combo_box.name = name
+            var renderer = new CellRendererText()
+            _combo_box.pack_start(renderer, true)
+            _combo_box.add_attribute(renderer, "text", 1)
+            
+            if label is not null
+                var l = new Label.with_mnemonic(label)
+                l.use_markup = true
+                l.mnemonic_widget = _combo_box
+                pack_start(l, false)
+
+            pack_start(_combo_box)
+        
+        def append(value: Value, label: string)
+            i: TreeIter
+            _store.append(out i)
+            _store.set(i, 0, value)
+            _store.set(i, 1, label)
+
+        _store: ListStore
+        _combo_box: ComboBox
