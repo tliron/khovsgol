@@ -100,10 +100,12 @@ namespace Khovsgol.GUI
             add(progress_item)
             add(visualization)
             
+            _instance.api.play_mode_change.connect(on_play_mode_change)
+            
         prop readonly accel_group: AccelGroup
             
         def private on_unrealize()
-            pass
+            _instance.api.play_mode_change.disconnect(on_play_mode_change)
             
         def private on_quit()
             _instance.stop()
@@ -150,5 +152,8 @@ namespace Khovsgol.GUI
             
         def private on_visualization()
             pass
+
+        def private on_play_mode_change(play_mode: string?, old_play_mode: string?)
+            print play_mode
 
         _instance: Instance

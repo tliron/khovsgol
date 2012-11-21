@@ -7,13 +7,20 @@ namespace Khovsgol.GUI
 
     class Instance: Object
         construct(args: array of string) raises GLib.Error
+            _api = new Client.API("localhost", 8181)
             _window = new MainWindow(self)
             
+        prop readonly api: Client.API
+            
         def start()
+            if _api is not null
+                _api.start_watch(Environment.get_user_name())
             Gtk.main()
         
         def stop()
-            Posix.exit(0)
+            Gtk.main_quit()
+            if _api is not null
+                _api.stop_watch(true)
         
         _window: MainWindow
 

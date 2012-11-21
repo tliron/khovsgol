@@ -148,6 +148,8 @@ namespace Khovsgol.GUI
             add(box)
             set(0, 0, 1, 1)
             
+            _instance.api.cursor_mode_change_gdk.connect(on_cursor_mode_change)
+
         prop readonly accel_group: AccelGroup
         
         def private create_import_menu(): Gtk.MenuItem
@@ -181,7 +183,7 @@ namespace Khovsgol.GUI
             return item
             
         def private on_unrealize()
-            pass
+            _instance.api.cursor_mode_change_gdk.disconnect(on_cursor_mode_change)
         
         def private on_progress_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
             pass
@@ -236,6 +238,9 @@ namespace Khovsgol.GUI
         
         def private on_export_m3u()
             pass
+
+        def private on_cursor_mode_change(cursor_mode: string?, old_cursor_mode: string?)
+            print cursor_mode
             
         _instance: Instance
         _store: ListStore

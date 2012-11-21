@@ -208,8 +208,22 @@ namespace Nap.Connector._Soup
             _soup_session = new Soup.SessionSync()
             
         prop base_url: string
+            get
+                _base_url_lock.lock()
+                try
+                    return _base_url
+                finally
+                    _base_url_lock.unlock()
+            set
+                _base_url_lock.lock()
+                try
+                    _base_url = value
+                finally
+                    _base_url_lock.unlock()
 
         def create_conversation(): Nap.Conversation raises GLib.Error
-            return new ClientConversation(_soup_session, _base_url)
+            return new ClientConversation(_soup_session, base_url)
 
         _soup_session: Soup.Session
+        _base_url: string
+        _base_url_lock: Mutex = Mutex()

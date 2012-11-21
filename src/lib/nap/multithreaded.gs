@@ -4,7 +4,7 @@ namespace Nap
 
     class ThreadPool: GLib.Object
         construct(max_threads: int) raises ThreadError
-            _thread_pool = (GLib.ThreadPool of Context) create_thread_pool((ThreadPoolFunc) _handle, max_threads, true)
+            _thread_pool = (GLib.ThreadPool of Context) create_thread_pool((ThreadPoolFunc) handle, max_threads, true)
             //_thread_pool = new GLib.ThreadPool.with_owned_data((ThreadPoolFunc) _handle, max_threads, true)
         
         prop readonly max_threads: int
@@ -20,7 +20,7 @@ namespace Nap
     
         _thread_pool: GLib.ThreadPool of Context
 
-        def private static _handle(context: Context)
+        def private static handle(context: Context)
             try
                 context.handler(context.conversation)
                 context.conversation.commit()
