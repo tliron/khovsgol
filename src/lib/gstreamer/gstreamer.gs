@@ -76,4 +76,4 @@ namespace GstUtil
         _next: Element
         _once: bool
 
-    _initialized: bool = false
+    _initialized: private bool = false

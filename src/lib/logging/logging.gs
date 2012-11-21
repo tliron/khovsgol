@@ -299,4 +299,4 @@ namespace Logging
             var now = new DateTime.now_local()
             return format.printf(now.format(_date_time_format), now.get_microsecond() / 1000, get_log_level_name(levels), domain, message)
 
-    _loggers: dict of string, Logger
+    _loggers: private dict of string, Logger
