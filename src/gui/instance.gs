@@ -7,10 +7,13 @@ namespace Khovsgol.GUI
 
     class Instance: Object
         construct(args: array of string) raises GLib.Error
-            _window = new MainWindow()
+            _window = new MainWindow(self)
             
         def start()
             Gtk.main()
+        
+        def stop()
+            Posix.exit(0)
         
         _window: MainWindow
 

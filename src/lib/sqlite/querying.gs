@@ -70,11 +70,10 @@ namespace SqliteUtil
             db.prepare(out _statement, query.to_sql())
             var index = 1
             for var binding in query.bindings
-                var name = binding.type().name()
-                if name == "gchararray"
-                    _statement.bind_text(index++, binding.get_string())
-                else if name == "gint"
-                    _statement.bind_int(index++, binding.get_int())
+                if binding.holds(typeof(string))
+                    _statement.bind_text(index++, (string) binding)
+                else if binding.holds(typeof(int))
+                    _statement.bind_int(index++, (int) binding)
 
             _done = false
             _columns = _statement.column_count()
