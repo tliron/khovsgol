@@ -7,15 +7,45 @@ uses
 
 namespace Khovsgol.Client
 
+    /*
+     * Unified client-side API. Internally uses a Nap client to access
+     * the server remotely over HTTP. The instance can be reconnected
+     * to other servers after created.
+     * 
+     * All return values are in JSON object or array types.
+     * 
+     * Supports watching a player, such that changes to the player data
+     * will trigger signal emissions. All signals have "_gdk" versions
+     * that are called within the GDK thread, via
+     * Gdk.threads_add_idle(), guaranteeing them for safe use with GTK+.
+     * 
+     * A polling thread can be started to regularly watch the player.
+     */
     class API: GLib.Object
         construct(host: string, port: uint) raises GLib.Error
             _client = new Nap.Connector._Soup.Client("http://%s:%u".printf(host, port))
             _logger = Logging.get_logger("khovsgol.client")
         
-        prop readonly is_watching: bool
+        prop readonly logger: Logging.Logger
+        
+        prop watching_player: string?
             get
-                return AtomicInt.get(ref _is_watching) == 1
-                
+                _watching_player_lock.lock()
+                try
+                    return _watching_player
+                finally
+                    _watching_player_lock.unlock()
+            set
+                _watching_player_lock.lock()
+                try
+                    _watching_player = value
+                finally
+                    _watching_player_lock.unlock()
+
+        prop readonly is_polling: bool
+            get
+                return AtomicInt.get(ref _is_polling) == 1
+
         event play_mode_change(play_mode: string?, old_play_mode: string?)
         event play_mode_change_gdk(play_mode: string?, old_play_mode: string?)
         event cursor_mode_change(cursor_mode: string?, old_cursor_mode: string?)
@@ -30,16 +60,15 @@ namespace Khovsgol.Client
         def new connect(host: string, port: uint)
             _client.base_url = "http://%s:%u".printf(host, port)
             
-        def start_watch(player: string)
-            _is_stopping = 0
-            _is_watching = 1
-            _watch_player = player
-            _watch_thread = new Thread of bool("watch", watch)
+        def start_player_poll()
+            AtomicInt.set(ref _is_poll_stopping, 0)
+            AtomicInt.set(ref _is_polling, 1)
+            _poll_thread = new Thread of bool("PollPlayer", poll)
         
-        def stop_watch(block: bool = false)
-            AtomicInt.set(ref _is_stopping, 1)
+        def stop_player_poll(block: bool = false)
+            AtomicInt.set(ref _is_poll_stopping, 1)
             if block
-                _watch_thread.join()
+                _poll_thread.join()
         
         /*
          * receive [=get_library, ...]
@@ -511,7 +540,9 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                var player_object = from_object(entity)
+                process_player(player_object)
+                return player_object
             else
                 return null
 
@@ -532,7 +563,9 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                var player_object = from_object(entity)
+                process_player(player_object)
+                return player_object
             else
                 return null
 
@@ -553,7 +586,9 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                var player_object = from_object(entity)
+                process_player(player_object)
+                return player_object
             else
                 return null
 
@@ -576,7 +611,9 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                var player_object = from_object(entity)
+                process_player(player_object)
+                return player_object
             else
                 return null
         
@@ -599,7 +636,9 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                var player_object = from_object(entity)
+                process_player(player_object)
+                return player_object
             else
                 return null
 
@@ -622,7 +661,9 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                var player_object = from_object(entity)
+                process_player(player_object)
+                return player_object
             else
                 return null
 
@@ -645,7 +686,9 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                var player_object = from_object(entity)
+                process_player(player_object)
+                return player_object
             else
                 return null
 
@@ -685,7 +728,12 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                if full
+                    var player_object = from_object(entity)
+                    process_player(player_object)
+                    return player_object
+                else
+                    return from_object(entity)
             else
                 return null
 
@@ -711,7 +759,12 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                if full
+                    var player_object = from_object(entity)
+                    process_player(player_object)
+                    return player_object
+                else
+                    return from_object(entity)
             else
                 return null
 
@@ -744,7 +797,12 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                if full
+                    var player_object = from_object(entity)
+                    process_player(player_object)
+                    return player_object
+                else
+                    return from_object(entity)
             else
                 return null
 
@@ -777,7 +835,12 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                if full
+                    var player_object = from_object(entity)
+                    process_player(player_object)
+                    return player_object
+                else
+                    return from_object(entity)
             else
                 return null
 
@@ -803,7 +866,12 @@ namespace Khovsgol.Client
             conversation.commit()
             var entity = conversation.get_entity()
             if entity is not null
-                return from_object(entity)
+                if full
+                    var player_object = from_object(entity)
+                    process_player(player_object)
+                    return player_object
+                else
+                    return from_object(entity)
             else
                 return null
 
@@ -824,90 +892,93 @@ namespace Khovsgol.Client
         def delete_plug(player: string, plug: string): Json.Object? raises GLib.Error
             return null
         
-        _client: Nap.Client
-        _logger: Logging.Logger
+        def process_player(player: Json.Object?)
+            if player is null
+                return
+            
+            _watching_player_lock.lock()
+            try
+                var name = get_string_member_or_null(player, "name")
+                if name != _watching_player
+                    return
+                    
+                var play_mode = get_string_member_or_null(player, "playMode")
+                if play_mode is not null
+                    if play_mode != _play_mode
+                        play_mode_change(play_mode, _play_mode)
+                        new PlayModeChangeGdk(self, play_mode, _play_mode)
+                        _play_mode = play_mode
 
-        _watch_thread: Thread of bool
+                var cursor_mode = get_string_member_or_null(player, "cursorMode")
+                if cursor_mode is not null
+                    if cursor_mode != _cursor_mode
+                        cursor_mode_change(cursor_mode, _cursor_mode)
+                        new CursorModeChangeGdk(self, cursor_mode, _cursor_mode)
+                        _cursor_mode = cursor_mode
+
+                var cursor = get_object_member_or_null(player, "cursor")
+                if cursor is not null
+                    var position_in_play_list = get_int_member_or_min(cursor, "positionInPlayList")
+                    if position_in_play_list != _position_in_play_list
+                        position_in_play_list_change(position_in_play_list, _position_in_play_list)
+                        new PositionInPlayListChangeGdk(self, position_in_play_list, _position_in_play_list)
+                        _position_in_play_list = position_in_play_list
+                    var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
+                    var track_duration = get_double_member_or_min(cursor, "trackDuration")
+                    if position_in_track != _position_in_track
+                        position_in_track_change(position_in_track, _position_in_track, track_duration)
+                        new PositionInTrackChangeGdk(self, position_in_play_list, _position_in_play_list, track_duration)
+                        _position_in_track = position_in_track
+
+                var play_list = get_object_member_or_null(player, "playList")
+                if play_list is not null
+                    var id = get_string_member_or_null(play_list, "id")
+                    var version = get_int64_member_or_min(play_list, "version")
+                    if (id != _play_list_id) || (version != _play_list_version)
+                        var tracks = get_array_member_or_null(play_list, "tracks")
+                        play_list_change(id, version, _play_list_id, _play_list_version, tracks)
+                        new PlayListChangeGdk(self, id, version, _play_list_id, _play_list_version, tracks)
+                        _play_list_id = id
+                        _play_list_version = version
+            finally
+                _watching_player_lock.unlock()
+
+        _client: Nap.Client
+
+        _poll_thread: Thread of bool
+        _poll_interval: ulong = 1000000
 
         // The following should only be accessed atomically
-        _is_stopping: int
-        _is_watching: int
+        _is_poll_stopping: int
+        _is_polling: int
 
         // The following should only be accessed via mutex
-        _watch_player: string?
-        _watch_player_lock: Mutex = Mutex()
-        
-        // The following should only be accessed by watch()
-        _watch_interval: ulong = 1000000
-        //_is_watch_error: bool = false
+        _watching_player_lock: Mutex = Mutex()
+        _watching_player: string?
         _play_mode: string
         _cursor_mode: string
         _position_in_play_list: int
         _position_in_track: double
         _play_list_id: string?
         _play_list_version: int64
-
-        def private watch(): bool
+        
+        def private poll(): bool
             while true
-                Thread.usleep(_watch_interval)
+                Thread.usleep(_poll_interval)
             
-                if AtomicInt.get(ref _is_stopping) == 1
+                // Should we stop polling?
+                if AtomicInt.get(ref _is_poll_stopping) == 1
                     break
                     
                 try
-                    watch_player: string
-                    _watch_player_lock.lock()
-                    try
-                        watch_player = _watch_player
-                    finally
-                        _watch_player_lock.unlock()
-                    
-                    var player = get_player(watch_player)
-                    
-                    var play_mode = get_string_member_or_null(player, "playMode")
-                    if play_mode is not null
-                        if play_mode != _play_mode
-                            play_mode_change(play_mode, _play_mode)
-                            new PlayModeChangeGdk(self, play_mode, _play_mode)
-                            _play_mode = play_mode
-
-                    var cursor_mode = get_string_member_or_null(player, "cursorMode")
-                    if cursor_mode is not null
-                        if cursor_mode != _cursor_mode
-                            cursor_mode_change(cursor_mode, _cursor_mode)
-                            new CursorModeChangeGdk(self, cursor_mode, _cursor_mode)
-                            _cursor_mode = cursor_mode
-
-                    var cursor = get_object_member_or_null(player, "cursor")
-                    if cursor is not null
-                        var position_in_play_list = get_int_member_or_min(cursor, "positionInPlayList")
-                        if position_in_play_list != _position_in_play_list
-                            position_in_play_list_change(position_in_play_list, _position_in_play_list)
-                            new PositionInPlayListChangeGdk(self, position_in_play_list, _position_in_play_list)
-                            _position_in_play_list = position_in_play_list
-                        var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
-                        var track_duration = get_double_member_or_min(cursor, "trackDuration")
-                        if position_in_track != _position_in_track
-                            position_in_track_change(position_in_track, _position_in_track, track_duration)
-                            new PositionInTrackChangeGdk(self, position_in_play_list, _position_in_play_list, track_duration)
-                            _position_in_track = position_in_track
-
-                    var play_list = get_object_member_or_null(player, "playList")
-                    if play_list is not null
-                        var id = get_string_member_or_null(play_list, "id")
-                        var version = get_int64_member_or_min(play_list, "version")
-                        if (id != _play_list_id) || (version != _play_list_version)
-                            var tracks = get_array_member_or_null(play_list, "tracks")
-                            play_list_change(id, version, _play_list_id, _play_list_version, tracks)
-                            new PlayListChangeGdk(self, id, version, _play_list_id, _play_list_version, tracks)
-                            _play_list_id = id
-                            _play_list_version = version
-          
+                    get_player(watching_player)
                 except e: GLib.Error
                     // TODO: special handling for network errors
                     _logger.warning(e.message)
             
-            AtomicInt.set(ref _is_watching, 0)
+            // We've stopped polling
+            AtomicInt.set(ref _is_polling, 0)
+            AtomicInt.set(ref _is_poll_stopping, 0)
             return true
 
     class PlayModeChangeGdk: GLib.Object

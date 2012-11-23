@@ -2,6 +2,7 @@
 
 uses
     Gtk
+    JsonUtil
     Khovsgol
 
 namespace Khovsgol.GUI
@@ -86,13 +87,13 @@ namespace Khovsgol.GUI
             column.pack_start(renderer1, true)
             column.pack_start(renderer2, false)
             column.pack_start(progress_renderer, false)
-            column.add_attribute(renderer1, "markup", 2)
-            column.add_attribute(renderer2, "markup", 3)
+            column.add_attribute(renderer1, "markup", Column.MARKUP1)
+            column.add_attribute(renderer2, "markup", Column.MARKUP2)
             column.set_cell_data_func(progress_renderer, on_progress_render)
             column.set_cell_data_func(renderer2, on_markup2_render)
 
             // object, search, markup1, markup2, position
-            _store = new ListStore(5, typeof(Object), typeof(string), typeof(string), typeof(string), typeof(uint))
+            _store = new ListStore(5, typeof(Json.Object), typeof(string), typeof(string), typeof(string), typeof(int))
 
             _tree_view = new TreeView.with_model(_store)
             _tree_view.headers_visible = false
@@ -113,15 +114,16 @@ namespace Khovsgol.GUI
 
             // Bottom
 
-            var mode_box = new SimpleComboBox()
-            mode_box.append("play_list", "Play entire list")
-            mode_box.append("album", "Stop after album")
-            mode_box.append("track", "Stop after track")
-            mode_box.append("repeat_play_list", "Repeat playlist")
-            mode_box.append("repeat_album", "Repeat album")
-            mode_box.append("repeat_track", "Repeat track")
-            mode_box.append("shuffle", "Shuffle")
-            mode_box.append("repeat_shuffle", "Keep shuffling")
+            _mode_box = new SimpleComboBox()
+            _mode_box.append("play_list", "Play entire list")
+            _mode_box.append("album", "Stop after album")
+            _mode_box.append("track", "Stop after track")
+            _mode_box.append("repeat_play_list", "Repeat playlist")
+            _mode_box.append("repeat_album", "Repeat album")
+            _mode_box.append("repeat_track", "Repeat track")
+            _mode_box.append("shuffle", "Shuffle")
+            _mode_box.append("repeat_shuffle", "Keep shuffling")
+            _on_cursor_mode_id = _mode_box.combo_box.changed.connect(on_cursor_mode)
 
             /*self.mode_combo_box = mode_box #.get_children()[1]
             self.mode_combo_box.connect('changed', self.on_mode_changed)
@@ -135,7 +137,7 @@ namespace Khovsgol.GUI
             actions_button.button_press_event.connect(on_actions)
             
             var bottom_box = new Box(Orientation.HORIZONTAL, 5)
-            bottom_box.pack_start(mode_box)
+            bottom_box.pack_start(_mode_box)
             //bottom_box.pack_start(style_box)
             bottom_box.pack_start(actions_button, false)
 
@@ -149,6 +151,10 @@ namespace Khovsgol.GUI
             set(0, 0, 1, 1)
             
             _instance.api.cursor_mode_change_gdk.connect(on_cursor_mode_change)
+            _instance.api.play_mode_change_gdk.connect(on_play_mode_change)
+            _instance.api.play_list_change_gdk.connect(on_play_list_change)
+            _instance.api.position_in_play_list_change_gdk.connect(on_position_in_play_list_change)
+            _instance.api.position_in_track_change_gdk.connect(on_position_in_track_change)
 
         prop readonly accel_group: AccelGroup
         
@@ -184,9 +190,25 @@ namespace Khovsgol.GUI
             
         def private on_unrealize()
             _instance.api.cursor_mode_change_gdk.disconnect(on_cursor_mode_change)
-        
-        def private on_progress_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
-            pass
+            _instance.api.play_mode_change_gdk.disconnect(on_play_mode_change)
+            _instance.api.play_list_change_gdk.disconnect(on_play_list_change)
+            _instance.api.position_in_play_list_change_gdk.disconnect(on_position_in_play_list_change)
+            _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_change)
+       
+        def private on_progress_render(layout: CellLayout, renderer: dynamic CellRenderer, model: TreeModel, iter: TreeIter)
+            position: Value
+            _store.get_value(iter, Column.POSITION, out position)
+            if _position_in_play_list == (int) position
+                renderer.visible = true
+                if (_position_in_track != double.MIN) && (_track_duration != double.MIN)
+                    var percent = (_position_in_track / _track_duration) * 100.0
+                    renderer.value = percent
+                    renderer.text = _play_mode
+                else
+                    renderer.value = 0
+                    renderer.text = "Stopped"
+            else
+                renderer.visible = false
             
         def private on_markup2_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
             pass
@@ -198,13 +220,65 @@ namespace Khovsgol.GUI
             return false
  
         def private on_dragged(context: Gdk.DragContext, selection_data: SelectionData, info: uint, time: uint)
-            pass
-        
+            var selection = _tree_view.get_selection()
+            var tree_paths = selection.get_selected_rows(null)
+            iter: TreeIter
+            value: Value
+            var target = selection_data.get_target()
+            var target_name = target.name()
+            if target_name == "JSON_NUMBER_ARRAY"
+                // Playlist positions moved within the playlist
+                var data = new Json.Array()
+                for var tree_path in tree_paths
+                    if _store.get_iter(out iter, tree_path)
+                        _store.get_value(iter, Column.POSITION, out value)
+                        data.add_int_element((int) value)
+                selection_data.@set(target, 8, array_to(data).data)
+                
+            else
+                // Track paths, likely to a custom compilation in the library pane
+                var data = new Json.Array()
+                for var tree_path in tree_paths
+                    if _store.get_iter(out iter, tree_path)
+                        _store.get_value(iter, Column.TRACK, out value)
+                        var track = (Json.Object) value
+                        if track is not null
+                            var path = get_string_member_or_null(track, "path")
+                            if path is not null
+                                data.add_string_element(path)
+                selection_data.@set(target, 8, array_to(data).data)
+                    
         def private on_dropped(context: Gdk.DragContext, x: int, y: int, selection_data: SelectionData, info: uint, time: uint)
-            pass
+            var target_name = selection_data.get_target().name()
+            if target_name == "JSON_NUMBER_ARRAY"
+                // Playlist positions moved within the playlist
+                var text = (string) selection_data.get_data()
+                if text is not null
+                    try
+                        var data = from_array(text)
+                        print array_to(data, true)
+                    except e: JsonUtil.Error
+                        pass
+
+            else if target_name == "JSON_STRING_ARRAY"
+                // Track paths, likely from the library pane
+                var text = (string) selection_data.get_data()
+                if text is not null
+                    try
+                        var data = from_array(text)
+                        print array_to(data, true)
+                    except e: JsonUtil.Error
+                        pass
 
         def private on_actions(event: Gdk.EventButton): bool
             return false
+            
+        _on_cursor_mode_id: ulong
+        def private on_cursor_mode()
+            try
+                _instance.api.set_cursor_mode(_instance.player, (string) _mode_box.active)
+            except e: GLib.Error
+                _instance.api.logger.warning(e.message)
         
         def private on_play()
             pass
@@ -238,25 +312,64 @@ namespace Khovsgol.GUI
         
         def private on_export_m3u()
             pass
-
+            
         def private on_cursor_mode_change(cursor_mode: string?, old_cursor_mode: string?)
-            print cursor_mode
+            //var v = SignalHandler.block_by_func(_mode_box.combo_box, (void*) on_cursor_mode, self)
+            SignalHandler.block(_mode_box.combo_box, _on_cursor_mode_id)
+            _mode_box.active = cursor_mode
+            SignalHandler.unblock(_mode_box.combo_box, _on_cursor_mode_id)
+
+        def private on_play_mode_change(play_mode: string?, old_play_mode: string?)
+            _play_mode = play_mode
+                    
+        def private on_play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
+            if (tracks is not null) && (tracks.get_length() > 0)
+                _store.clear()
+                iter: TreeIter
+                for var i = 0 to (tracks.get_length() - 1)
+                    var track = get_object_element_or_null(tracks, i)
+                    var path = get_string_member_or_null(track, "path")
+                    if path is not null
+                        var title = get_string_member_or_null(track, "title")
+                        var title_sort = get_string_member_or_null(track, "title_sort")
+                        var position = get_int_member_or_min(track, "position")
+                        _store.append(out iter)
+                        _store.set(iter, Column.TRACK, track, Column.SEARCH, title_sort, Column.MARKUP1, "%d\t%s".printf(position, title), Column.MARKUP2, null, Column.POSITION, position, -1)
+            
+        def private on_position_in_play_list_change(position_in_play_list: int, old_position_in_play_list: int)
+            _position_in_play_list = position_in_play_list
+        
+        def private on_position_in_track_change(position_in_track: double, old_position_in_track: double, track_duration: double)
+            _position_in_track = position_in_track
+            _track_duration = track_duration
             
         _instance: Instance
         _store: ListStore
         _tree_view: TreeView
+        _mode_box: SimpleComboBox
         _popup_empty: Gtk.Menu
         _popup_none: Gtk.Menu
         _popup_one: Gtk.Menu
         _popup_many: Gtk.Menu
+        _play_mode: string
+        _position_in_play_list: int
+        _position_in_track: double
+        _track_duration: double
 
-        const DRAG_TARGETS: array of TargetEntry = {
-            {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, 0},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP, 1},
-            {"TEXT", 0, 2},
-            {"STRING", 0, 3},
-            {"text/plain", 0, 4}}
+        enum private Column
+            TRACK = 0    // Json.Object
+            SEARCH = 1   // string
+            MARKUP1 = 2  // string
+            MARKUP2 = 3  // string
+            POSITION = 4 // int
 
-        const DROP_TARGETS: array of TargetEntry = {
+        const private DRAG_TARGETS: array of TargetEntry = {
             {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, 0},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP, 1}}
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1},
+            {"TEXT",              0,                       2},
+            {"STRING",            0,                       3},
+            {"text/plain",        0,                       4}}
+
+        const private DROP_TARGETS: array of TargetEntry = {
+            {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, 0},
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1}}

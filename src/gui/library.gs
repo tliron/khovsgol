@@ -32,7 +32,7 @@ namespace Khovsgol.GUI
 
             // Tree
             
-            var store = new TreeStore(4, typeof(Object), typeof(string), typeof(string), typeof(string)) // node, search, markup1, markup2
+            var store = new TreeStore(4, typeof(Json.Object), typeof(string), typeof(string), typeof(string)) // node, search, markup1, markup2
             
             var renderer1 = new CellRendererText()
             renderer1.ellipsize = Pango.EllipsizeMode.END // This also mysteriously enables right alignment for RTL text
@@ -42,8 +42,8 @@ namespace Khovsgol.GUI
             var column = new TreeViewColumn()
             column.pack_start(renderer1, true)
             column.pack_start(renderer2, false)
-            column.add_attribute(renderer1, "markup", 2)
-            column.add_attribute(renderer2, "markup", 3)
+            column.add_attribute(renderer1, "markup", Column.MARKUP1)
+            column.add_attribute(renderer2, "markup", Column.MARKUP2)
             column.set_cell_data_func(renderer2, on_markup2_render)
 
             var tree_view = new TreeView.with_model(store)
@@ -167,13 +167,19 @@ namespace Khovsgol.GUI
         _popup: Gtk.Menu
         _popup_custom: Gtk.Menu
 
-        const DRAG_TARGETS: array of TargetEntry = {
-            {"JSON_ARRAY", TargetFlags.SAME_WIDGET, 0},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP, 1}, // name, flags, id
-            {"TEXT", 0, 2},
-            {"STRING", 0, 3},
-            {"text/plain", 0, 4}}
+        enum private Column
+            NODE = 0     // Json.Object
+            SEARCH = 1   // string
+            MARKUP1 = 2  // string
+            MARKUP2 = 3  // string
 
-        const DROP_TARGETS: array of TargetEntry = {
-            {"JSON_ARRAY", TargetFlags.SAME_WIDGET, 0},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP, 1}}
+        const private DRAG_TARGETS: array of TargetEntry = {
+            {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, 0},
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1}, // name, flags, id
+            {"TEXT",              0,                       2},
+            {"STRING",            0,                       3},
+            {"text/plain",        0,                       4}}
+
+        const private DROP_TARGETS: array of TargetEntry = {
+            {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, 0},
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1}}

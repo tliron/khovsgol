@@ -31,7 +31,7 @@ namespace Khovsgol.GUI
             var manage_receiver = new ControlToolButton(Stock.JUMP_TO, Gdk.Key.R, "Manage receiver\n<Alt>R", _accel_group)
             manage_receiver.clicked.connect(on_manage_receiver)
             
-            var info_label = new Label("")
+            var info_label = new Label(null)
             var info_label_alignment = new Alignment(0, 0, 1, 1)
             info_label_alignment.set_padding(0, 0, 5, 5)
             info_label_alignment.add(info_label)
@@ -44,8 +44,8 @@ namespace Khovsgol.GUI
             var play = new ControlToolButton(Stock.MEDIA_PLAY, Gdk.Key.@2, "Play this track\n<Alt>2", _accel_group)
             play.clicked.connect(on_play)
 
-            var toggle_pause = new ControlToggleToolButton(Stock.MEDIA_PAUSE, Gdk.Key.@3, "Pause or unpause playing\n<Alt>3", _accel_group)
-            toggle_pause.clicked.connect(on_toggle_pause)
+            _toggle_pause = new ControlToggleToolButton(Stock.MEDIA_PAUSE, Gdk.Key.@3, "Pause or unpause playing\n<Alt>3", _accel_group)
+            _on_toggle_pause_id = _toggle_pause.clicked.connect(on_toggle_pause)
             
             var stop = new ControlToolButton(Stock.MEDIA_STOP, Gdk.Key.@4, "Stop playing\n<Alt>4", _accel_group)
             stop.clicked.connect(on_stop)
@@ -59,10 +59,10 @@ namespace Khovsgol.GUI
             var volume_item = new ToolItem()
             volume_item.add(volume_button)
 
-            var progress = new ProgressBar()
-            progress.show_text = true
+            _progress = new ProgressBar()
+            _progress.show_text = true
             var progress_box = new EventBox()
-            progress_box.add(progress)
+            progress_box.add(_progress)
             progress_box.button_press_event.connect(on_progress_clicked)
             progress_box.scroll_event.connect(on_progress_scrolled)
             var progress_alignment = new Alignment(0, 0, 1, 1)
@@ -93,19 +93,21 @@ namespace Khovsgol.GUI
             add(separator)
             add(previous)
             add(play)
-            add(toggle_pause)
+            add(_toggle_pause)
             add(stop)
             add(next)
             add(volume_item)
             add(progress_item)
             add(visualization)
             
-            _instance.api.play_mode_change.connect(on_play_mode_change)
+            _instance.api.play_mode_change_gdk.connect(on_play_mode_change)
+            _instance.api.position_in_track_change_gdk.connect(on_position_in_track_change)
             
         prop readonly accel_group: AccelGroup
             
         def private on_unrealize()
-            _instance.api.play_mode_change.disconnect(on_play_mode_change)
+            _instance.api.play_mode_change_gdk.disconnect(on_play_mode_change)
+            _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_change)
             
         def private on_quit()
             _instance.stop()
@@ -126,34 +128,61 @@ namespace Khovsgol.GUI
             pass
 
         def private on_previous()
-            pass
+            try
+                _instance.api.set_position_in_play_list_string(_instance.player, "prev")
+            except e: GLib.Error
+                _instance.api.logger.warning(e.message)
             
         def private on_play()
-            pass
-            
+            try
+                _instance.api.set_play_mode(_instance.player, "playing")
+            except e: GLib.Error
+                _instance.api.logger.warning(e.message)
+        
+        _on_toggle_pause_id: ulong
         def private on_toggle_pause()
-            pass
+            try
+                _instance.api.set_play_mode(_instance.player, "toggle_paused")
+            except e: GLib.Error
+                _instance.api.logger.warning(e.message)
             
         def private on_stop()
-            pass
+            try
+                _instance.api.set_play_mode(_instance.player, "stopped")
+            except e: GLib.Error
+                _instance.api.logger.warning(e.message)
             
         def private on_next()
-            pass
+            try
+                _instance.api.set_position_in_play_list_string(_instance.player, "next")
+            except e: GLib.Error
+                _instance.api.logger.warning(e.message)
         
-        def private on_progress_clicked(event: Gdk.EventButton): bool
+        def private on_progress_clicked(e: Gdk.EventButton): bool
+            var w = _progress.get_allocated_width()
+            var ratio = (double) e.x / w
+            print "%f", ratio
             return false
             
-        def private on_progress_scrolled(event: Gdk.EventScroll): bool
-            if (event.direction == Gdk.ScrollDirection.LEFT) || (event.direction == Gdk.ScrollDirection.DOWN)
-                print "left"
-            else if (event.direction == Gdk.ScrollDirection.RIGHT) || (event.direction == Gdk.ScrollDirection.UP)
-                print "right"
+        def private on_progress_scrolled(e: Gdk.EventScroll): bool
+            var ratio = _progress.fraction
+            if (e.direction == Gdk.ScrollDirection.LEFT) || (e.direction == Gdk.ScrollDirection.DOWN)
+                print "left %f", ratio
+            else if (e.direction == Gdk.ScrollDirection.RIGHT) || (e.direction == Gdk.ScrollDirection.UP)
+                print "right %f", ratio
             return false
             
         def private on_visualization()
             pass
 
         def private on_play_mode_change(play_mode: string?, old_play_mode: string?)
-            print play_mode
+            SignalHandler.block(_toggle_pause, _on_toggle_pause_id)
+            _toggle_pause.active = (play_mode == "paused")
+            SignalHandler.unblock(_toggle_pause, _on_toggle_pause_id)
+ 
+        def private on_position_in_track_change(position_in_track: double, old_position_in_track: double, track_duration: double)
+            pass
 
         _instance: Instance
+        _progress: ProgressBar
+        _toggle_pause: ControlToggleToolButton

@@ -23,7 +23,13 @@ namespace Khovsgol.Server
             return get_list_of_string(conversation.query["library"])
 
     /*
-     * Unified API.
+     * Unified server-side API.
+     * 
+     * All arguments and JSON object or array return values are provided
+     * via Nap conversations.
+     * 
+     * The UriSpace class wraps this API in RESTful resources that
+     * can easily be served over HTTP via Nap.
      */
     class Api
         construct(crucible: Crucible) raises GLib.Error

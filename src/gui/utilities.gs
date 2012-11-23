@@ -51,8 +51,7 @@ namespace Khovsgol.GUI
             orientation = Orientation.HORIZONTAL
             spacing = 5
             
-            _store = new ListStore(2, typeof(Value), typeof(string))
-                
+            _store = new ListStore(2, typeof(Variant), typeof(string))
             _combo_box = new ComboBox.with_model(_store)
             if name is not null
                 _combo_box.name = name
@@ -68,11 +67,34 @@ namespace Khovsgol.GUI
 
             pack_start(_combo_box)
         
-        def append(value: Value, label: string)
+        prop readonly combo_box: ComboBox
+        prop readonly store: ListStore
+        
+        prop active: Variant?
+            get
+                iter: TreeIter
+                if _combo_box.get_active_iter(out iter)
+                    stored: Value
+                    _store.get_value(iter, 0, out stored)
+                    return (Variant) stored
+                else
+                    return null
+            set
+                if value is not null
+                    iter: TreeIter
+                    if _store.get_iter_first(out iter)
+                        stored: Value
+                        while true
+                            _store.get_value(iter, 0, out stored)
+                            if value.compare((Variant) stored) == 0
+                                _combo_box.set_active_iter(iter)
+                                break
+                            if !_store.iter_next(ref iter)
+                                break
+                else
+                    _combo_box.active = -1
+        
+        def append(value: Variant, label: string)
             i: TreeIter
             _store.append(out i)
-            _store.set(i, 0, value)
-            _store.set(i, 1, label)
-
-        _store: ListStore
-        _combo_box: ComboBox
+            _store.set(i, 0, value, 1, label, -1)
