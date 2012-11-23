@@ -11,7 +11,7 @@ namespace Khovsgol.GUI
             _instance = instance
             _accel_group = new AccelGroup()
 
-            unrealize.connect(on_unrealize)
+            unrealize.connect(on_unrealized)
             
             var quit = new ControlToolButton(Stock.QUIT, Gdk.Key.Q, "Quit\n<Alt>Q", _accel_group) 
             quit.clicked.connect(on_quit)
@@ -100,14 +100,14 @@ namespace Khovsgol.GUI
             add(progress_item)
             add(visualization)
             
-            _instance.api.play_mode_change_gdk.connect(on_play_mode_change)
-            _instance.api.position_in_track_change_gdk.connect(on_position_in_track_change)
+            _instance.api.play_mode_change_gdk.connect(on_play_mode_changed)
+            _instance.api.position_in_track_change_gdk.connect(on_position_in_track_changed)
             
         prop readonly accel_group: AccelGroup
             
-        def private on_unrealize()
-            _instance.api.play_mode_change_gdk.disconnect(on_play_mode_change)
-            _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_change)
+        def private on_unrealized()
+            _instance.api.play_mode_change_gdk.disconnect(on_play_mode_changed)
+            _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
             
         def private on_quit()
             _instance.stop()
@@ -128,35 +128,20 @@ namespace Khovsgol.GUI
             pass
 
         def private on_previous()
-            try
-                _instance.api.set_position_in_play_list_string(_instance.player, "prev")
-            except e: GLib.Error
-                _instance.api.logger.warning(e.message)
+            _instance.api.set_position_in_play_list_string(_instance.player, "prev")
             
         def private on_play()
-            try
-                _instance.api.set_play_mode(_instance.player, "playing")
-            except e: GLib.Error
-                _instance.api.logger.warning(e.message)
+            _instance.api.set_play_mode(_instance.player, "playing")
         
         _on_toggle_pause_id: ulong
         def private on_toggle_pause()
-            try
-                _instance.api.set_play_mode(_instance.player, "toggle_paused")
-            except e: GLib.Error
-                _instance.api.logger.warning(e.message)
+            _instance.api.set_play_mode(_instance.player, "toggle_paused")
             
         def private on_stop()
-            try
-                _instance.api.set_play_mode(_instance.player, "stopped")
-            except e: GLib.Error
-                _instance.api.logger.warning(e.message)
+            _instance.api.set_play_mode(_instance.player, "stopped")
             
         def private on_next()
-            try
-                _instance.api.set_position_in_play_list_string(_instance.player, "next")
-            except e: GLib.Error
-                _instance.api.logger.warning(e.message)
+            _instance.api.set_position_in_play_list_string(_instance.player, "next")
         
         def private on_progress_clicked(e: Gdk.EventButton): bool
             var w = _progress.get_allocated_width()
@@ -175,12 +160,12 @@ namespace Khovsgol.GUI
         def private on_visualization()
             pass
 
-        def private on_play_mode_change(play_mode: string?, old_play_mode: string?)
+        def private on_play_mode_changed(play_mode: string?, old_play_mode: string?)
             SignalHandler.block(_toggle_pause, _on_toggle_pause_id)
             _toggle_pause.active = (play_mode == "paused")
             SignalHandler.unblock(_toggle_pause, _on_toggle_pause_id)
  
-        def private on_position_in_track_change(position_in_track: double, old_position_in_track: double, track_duration: double)
+        def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             pass
 
         _instance: Instance

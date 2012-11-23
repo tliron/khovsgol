@@ -821,7 +821,9 @@ namespace Khovsgol
                 args.sort.add("position")
                 var iterator = _crucible.libraries.iterate_raw_track_pointers_in_album(args)
                 while iterator.has_next()
-                    var track = crucible.libraries.get_track(iterator.get().path)
+                    var track_pointer = iterator.get()
+                    var track = crucible.libraries.get_track(track_pointer.path)
+                    track.position = track_pointer.position
                     track.album_path = TrackIterator.get_album_path_dynamic(track)
                     _tracks.add(track)
                     iterator.next()

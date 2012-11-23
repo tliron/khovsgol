@@ -12,7 +12,7 @@ namespace Khovsgol.GUI
             _instance = instance
             _accel_group = new AccelGroup()
 
-            unrealize.connect(on_unrealize)
+            unrealize.connect(on_unrealized)
 
             // Popup menus
             
@@ -95,7 +95,8 @@ namespace Khovsgol.GUI
             // object, search, markup1, markup2, position
             _store = new ListStore(5, typeof(Json.Object), typeof(string), typeof(string), typeof(string), typeof(int))
 
-            _tree_view = new TreeView.with_model(_store)
+            _tree_view = new ClickableDraggableTreeView()
+            _tree_view.model = _store
             _tree_view.headers_visible = false
             _tree_view.get_selection().mode = SelectionMode.MULTIPLE
             _tree_view.set_row_separator_func(on_row_separator)
@@ -103,7 +104,8 @@ namespace Khovsgol.GUI
             _tree_view.search_column = 1
             _tree_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, DRAG_TARGETS, Gdk.DragAction.LINK|Gdk.DragAction.MOVE)
             _tree_view.enable_model_drag_dest(DROP_TARGETS, Gdk.DragAction.LINK|Gdk.DragAction.MOVE)
-            //clickable_draggable_treeview(self.tree_view, self.on_right_clicked, self.on_double_clicked)
+            _tree_view.double_click.connect(on_double_clicked)
+            _tree_view.right_click.connect(on_right_clicked)
             _tree_view.key_press_event.connect(on_key_pressed)
             _tree_view.drag_data_get.connect(on_dragged)
             _tree_view.drag_data_received.connect(on_dropped)
@@ -150,50 +152,20 @@ namespace Khovsgol.GUI
             add(box)
             set(0, 0, 1, 1)
             
-            _instance.api.cursor_mode_change_gdk.connect(on_cursor_mode_change)
-            _instance.api.play_mode_change_gdk.connect(on_play_mode_change)
-            _instance.api.play_list_change_gdk.connect(on_play_list_change)
-            _instance.api.position_in_play_list_change_gdk.connect(on_position_in_play_list_change)
-            _instance.api.position_in_track_change_gdk.connect(on_position_in_track_change)
+            _instance.api.cursor_mode_change_gdk.connect(on_cursor_mode_changed)
+            _instance.api.play_mode_change_gdk.connect(on_play_mode_changed)
+            _instance.api.play_list_change_gdk.connect(on_play_list_changed)
+            _instance.api.position_in_play_list_change_gdk.connect(on_position_in_play_list_changed)
+            _instance.api.position_in_track_change_gdk.connect(on_position_in_track_changed)
 
         prop readonly accel_group: AccelGroup
         
-        def private create_import_menu(): Gtk.MenuItem
-            var submenu = new Gtk.Menu()
-            var item = new Gtk.MenuItem.with_mnemonic("From XSPF file...")
-            item.activate.connect(on_import_xspf)
-            submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("From PLS file...")
-            item.activate.connect(on_import_pls)
-            submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("From M3U file...")
-            item.activate.connect(on_import_m3u)
-            submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Import playlist...")
-            item.submenu = submenu
-            return item
-
-        def private create_export_menu(): Gtk.MenuItem
-            var submenu = new Gtk.Menu()
-            var item = new Gtk.MenuItem.with_mnemonic("To XSPF file...")
-            item.activate.connect(on_export_xspf)
-            submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("To PLS file...")
-            item.activate.connect(on_export_pls)
-            submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("To M3U file...")
-            item.activate.connect(on_export_m3u)
-            submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Export playlist...")
-            item.submenu = submenu
-            return item
-            
-        def private on_unrealize()
-            _instance.api.cursor_mode_change_gdk.disconnect(on_cursor_mode_change)
-            _instance.api.play_mode_change_gdk.disconnect(on_play_mode_change)
-            _instance.api.play_list_change_gdk.disconnect(on_play_list_change)
-            _instance.api.position_in_play_list_change_gdk.disconnect(on_position_in_play_list_change)
-            _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_change)
+        def private on_unrealized()
+            _instance.api.cursor_mode_change_gdk.disconnect(on_cursor_mode_changed)
+            _instance.api.play_mode_change_gdk.disconnect(on_play_mode_changed)
+            _instance.api.play_list_change_gdk.disconnect(on_play_list_changed)
+            _instance.api.position_in_play_list_change_gdk.disconnect(on_position_in_play_list_changed)
+            _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
        
         def private on_progress_render(layout: CellLayout, renderer: dynamic CellRenderer, model: TreeModel, iter: TreeIter)
             position: Value
@@ -215,8 +187,36 @@ namespace Khovsgol.GUI
             
         def private on_row_separator(mode: TreeModel, iter: TreeIter): bool
             return false
+        
+        def private on_double_clicked(e: Gdk.EventButton)
+            pass
 
-        def private on_key_pressed(event: Gdk.EventKey): bool
+        def private on_right_clicked(e: Gdk.EventButton)
+            iter: TreeIter
+            if _store.get_iter_first(out iter)
+                var selections = _tree_view.get_selection().count_selected_rows()
+                if selections == 0
+                    _popup_none.popup(null, null, null, e.button, e.time)
+                else if selections == 1
+                    _popup_one.popup(null, null, null, e.button, e.time)
+                else
+                    _popup_many.popup(null, null, null, e.button, e.time)
+            else
+                _popup_empty.popup(null, null, null, e.button, e.time)
+
+        def private on_key_pressed(e: Gdk.EventKey): bool
+            if e.keyval == Gdk.Key.Menu
+                iter: TreeIter
+                if _store.get_iter_first(out iter)
+                    var selections = _tree_view.get_selection().count_selected_rows()
+                    if selections == 0
+                        _popup_none.popup(null, null, null, 0, e.time)
+                    else if selections == 1
+                        _popup_one.popup(null, null, null, 0, e.time)
+                    else
+                        _popup_many.popup(null, null, null, 0, e.time)
+                else
+                    _popup_empty.popup(null, null, null, 0, e.time)
             return false
  
         def private on_dragged(context: Gdk.DragContext, selection_data: SelectionData, info: uint, time: uint)
@@ -249,15 +249,29 @@ namespace Khovsgol.GUI
                 selection_data.@set(target, 8, array_to(data).data)
                     
         def private on_dropped(context: Gdk.DragContext, x: int, y: int, selection_data: SelectionData, info: uint, time: uint)
+            tree_path: TreePath
+            drop_position: TreeViewDropPosition
+            destination: int = int.MIN
+            if _tree_view.get_dest_row_at_pos(x, y, out tree_path, out drop_position)
+                iter: TreeIter
+                if _store.get_iter(out iter, tree_path)
+                    value: Value
+                    _store.get_value(iter, Column.POSITION, out value)
+                    destination = (int) value
+                    if (drop_position == TreeViewDropPosition.AFTER) || (drop_position == TreeViewDropPosition.INTO_OR_AFTER)
+                        destination++
+                    
             var target_name = selection_data.get_target().name()
             if target_name == "JSON_NUMBER_ARRAY"
                 // Playlist positions moved within the playlist
                 var text = (string) selection_data.get_data()
                 if text is not null
                     try
-                        var data = from_array(text)
-                        print array_to(data, true)
-                    except e: JsonUtil.Error
+                        var positions = from_array(text)
+                        _instance.api.move_in_play_list(_instance.player, destination, positions, true, true)
+                        Gdk.drop_finish(context, true, time)
+                        return
+                    except e: GLib.Error
                         pass
 
             else if target_name == "JSON_STRING_ARRAY"
@@ -265,20 +279,21 @@ namespace Khovsgol.GUI
                 var text = (string) selection_data.get_data()
                 if text is not null
                     try
-                        var data = from_array(text)
-                        print array_to(data, true)
-                    except e: JsonUtil.Error
+                        var tracks = from_array(text)
+                        _instance.api.add_to_play_list(_instance.player, destination, tracks, true, true)
+                        Gdk.drop_finish(context, true, time)
+                        return
+                    except e: GLib.Error
                         pass
+                        
+            Gdk.drop_finish(context, false, time)
 
-        def private on_actions(event: Gdk.EventButton): bool
+        def private on_actions(e: Gdk.EventButton): bool
             return false
             
         _on_cursor_mode_id: ulong
         def private on_cursor_mode()
-            try
-                _instance.api.set_cursor_mode(_instance.player, (string) _mode_box.active)
-            except e: GLib.Error
-                _instance.api.logger.warning(e.message)
+            _instance.api.set_cursor_mode(_instance.player, (string) _mode_box.active)
         
         def private on_play()
             pass
@@ -313,16 +328,16 @@ namespace Khovsgol.GUI
         def private on_export_m3u()
             pass
             
-        def private on_cursor_mode_change(cursor_mode: string?, old_cursor_mode: string?)
+        def private on_cursor_mode_changed(cursor_mode: string?, old_cursor_mode: string?)
             //var v = SignalHandler.block_by_func(_mode_box.combo_box, (void*) on_cursor_mode, self)
             SignalHandler.block(_mode_box.combo_box, _on_cursor_mode_id)
             _mode_box.active = cursor_mode
             SignalHandler.unblock(_mode_box.combo_box, _on_cursor_mode_id)
 
-        def private on_play_mode_change(play_mode: string?, old_play_mode: string?)
+        def private on_play_mode_changed(play_mode: string?, old_play_mode: string?)
             _play_mode = play_mode
                     
-        def private on_play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
+        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
             if (tracks is not null) && (tracks.get_length() > 0)
                 _store.clear()
                 iter: TreeIter
@@ -336,16 +351,46 @@ namespace Khovsgol.GUI
                         _store.append(out iter)
                         _store.set(iter, Column.TRACK, track, Column.SEARCH, title_sort, Column.MARKUP1, "%d\t%s".printf(position, title), Column.MARKUP2, null, Column.POSITION, position, -1)
             
-        def private on_position_in_play_list_change(position_in_play_list: int, old_position_in_play_list: int)
+        def private on_position_in_play_list_changed(position_in_play_list: int, old_position_in_play_list: int)
             _position_in_play_list = position_in_play_list
         
-        def private on_position_in_track_change(position_in_track: double, old_position_in_track: double, track_duration: double)
+        def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             _position_in_track = position_in_track
             _track_duration = track_duration
             
+        def private create_import_menu(): Gtk.MenuItem
+            var submenu = new Gtk.Menu()
+            var item = new Gtk.MenuItem.with_mnemonic("From XSPF file...")
+            item.activate.connect(on_import_xspf)
+            submenu.append(item)
+            item = new Gtk.MenuItem.with_mnemonic("From PLS file...")
+            item.activate.connect(on_import_pls)
+            submenu.append(item)
+            item = new Gtk.MenuItem.with_mnemonic("From M3U file...")
+            item.activate.connect(on_import_m3u)
+            submenu.append(item)
+            item = new Gtk.MenuItem.with_mnemonic("Import playlist...")
+            item.submenu = submenu
+            return item
+
+        def private create_export_menu(): Gtk.MenuItem
+            var submenu = new Gtk.Menu()
+            var item = new Gtk.MenuItem.with_mnemonic("To XSPF file...")
+            item.activate.connect(on_export_xspf)
+            submenu.append(item)
+            item = new Gtk.MenuItem.with_mnemonic("To PLS file...")
+            item.activate.connect(on_export_pls)
+            submenu.append(item)
+            item = new Gtk.MenuItem.with_mnemonic("To M3U file...")
+            item.activate.connect(on_export_m3u)
+            submenu.append(item)
+            item = new Gtk.MenuItem.with_mnemonic("Export playlist...")
+            item.submenu = submenu
+            return item
+            
         _instance: Instance
         _store: ListStore
-        _tree_view: TreeView
+        _tree_view: ClickableDraggableTreeView
         _mode_box: SimpleComboBox
         _popup_empty: Gtk.Menu
         _popup_none: Gtk.Menu

@@ -10,6 +10,7 @@ namespace Khovsgol.GUI
         construct(instance: Instance)
             _instance = instance
             
+            realize.connect(on_realized)
             delete_event.connect(on_delete)
             
             var control_bar = new ControlBar(_instance)
@@ -45,6 +46,10 @@ namespace Khovsgol.GUI
             configure_event.connect(on_configured)
             _panes.notify.connect(on_split)
               
+        def private on_realized()
+            _instance.api.reset_watch()
+            _instance.api.update(true)
+                
         def private on_delete(event: Gdk.EventAny): bool
             iconify()
             return true // bypass default delete handler

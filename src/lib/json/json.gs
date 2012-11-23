@@ -154,6 +154,18 @@ namespace JsonUtil
         for var e in source.get_elements()
             destination.add_element(e)
 
+    def to_int_array(l: list of int): Json.Array
+        var arr = new Json.Array()
+        for var e in l
+            arr.add_int_element(e)
+        return arr
+
+    def to_string_array(l: list of string): Json.Array
+        var arr = new Json.Array()
+        for var e in l
+            arr.add_string_element(e)
+        return arr
+
     //
     // Text conversion
     //
