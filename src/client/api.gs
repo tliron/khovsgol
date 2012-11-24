@@ -8,6 +8,19 @@ uses
 namespace Khovsgol.Client
 
     /*
+     * String join for Gee.Iterable.
+     */
+    def static join(sep: string, items: Gee.Iterable of string): string
+        var str = new StringBuilder()
+        var i = items.iterator()
+        while i.has_next()
+            i.next()
+            str.append(i.get())
+            if i.has_next()
+                str.append(sep)
+        return str.str
+
+    /*
      * Unified client-side API. Internally uses a Nap client to access
      * the server remotely over HTTP. The instance can be reconnected
      * to other servers after created.
@@ -103,14 +116,42 @@ namespace Khovsgol.Client
                 on_error(e)
                 return null
 
+        class GetTracksArgs
+            prop by_artist: string?
+            prop by_artist_like: string?
+            prop in_album: string?
+            prop search_title: string?
+            prop search_artist: string?
+            prop search_album: string?
+            prop compilation_type: int = int.MIN
+            prop sort: list of string = new list of string
+
         /*
          * receive [=get_track, ...]
          */
-        def get_tracks(): Json.Array?
+        def get_tracks(args: GetTracksArgs): Json.Array?
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/tracks/"
+                if args.by_artist is not null
+                    conversation.query["artist"] = args.by_artist
+                else if args.by_artist_like is not null
+                    conversation.query["artist"] = args.by_artist_like
+                    conversation.query["like"] = "true"
+                else if args.in_album is not null
+                    conversation.query["album"] = args.in_album
+                else
+                    if args.search_title is not null
+                        conversation.query["liketitle"] = args.search_title
+                    if args.search_artist is not null
+                        conversation.query["likeartist"] = args.search_artist
+                    if args.search_album is not null
+                        conversation.query["likealbum"] = args.search_album
+                    if args.compilation_type != int.MIN
+                        conversation.query["compilation"] = args.compilation_type.to_string()
+                if !args.sort.is_empty
+                    conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
                 var entity = conversation.get_entity()
                 if entity is not null
@@ -126,6 +167,7 @@ namespace Khovsgol.Client
             prop with_artist: string?
             prop at_date: int = int.MIN
             prop compilation_type: int = int.MIN
+            prop sort: list of string = new list of string
 
         /*
          * receive [=get_album, ...]
@@ -144,6 +186,8 @@ namespace Khovsgol.Client
                         conversation.query["date"] = args.at_date.to_string()
                     if args.compilation_type != int.MIN
                         conversation.query["compilation"] = args.compilation_type.to_string()
+                    if !args.sort.is_empty
+                        conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
                 var entity = conversation.get_entity()
                 if entity is not null
@@ -163,13 +207,15 @@ namespace Khovsgol.Client
          *  ...
          * ]
          */
-        def get_artists(album_artists: bool = false): Json.Array?
+        def get_artists(album_artists: bool = false, sort: string?): Json.Array?
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/artists/"
                 if album_artists
                     conversation.query["album"] = "true"
+                if sort is not null
+                    conversation.query["sort"] = sort
                 conversation.commit()
                 var entity = conversation.get_entity()
                 if entity is not null

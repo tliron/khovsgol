@@ -8,6 +8,10 @@ namespace Khovsgol.GUI
     //def get_stock_icon_pixbuf(window, name):
       //  return window.render_icon(getattr(Gtk, 'STOCK_' + name), Gtk.IconSize.MENU, None)
 
+    interface Style: GLib.Object
+        prop abstract readonly name: string
+        prop abstract readonly label: string
+
     class ControlButton: Button
         construct(id: string, alt_key: uint, tooltip: string, accel_group: AccelGroup)
             image = new Image.from_stock(id, IconSize.BUTTON)

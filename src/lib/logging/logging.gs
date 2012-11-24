@@ -99,26 +99,47 @@ namespace Logging
             else
                 return get_logger()
         
-        def log(level: LogLevelFlags, message: string, ...)
-            logv(_domain, level, message, va_list())
+        def log(level: LogLevelFlags, message: string)
+            GLib.log(_domain, level, "%s", message)
 
-        def error(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_ERROR, message, va_list())
+        def logf(level: LogLevelFlags, message: string, ...)
+            GLib.logv(_domain, level, message, va_list())
 
-        def critical(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_CRITICAL, message, va_list())
+        def error(message: string)
+            GLib.log(_domain, LogLevelFlags.LEVEL_ERROR, "%s", message)
 
-        def warning(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_WARNING, message, va_list())
+        def errorf(message: string, ...)
+            GLib.logv(_domain, LogLevelFlags.LEVEL_ERROR, message, va_list())
 
-        def message(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_MESSAGE, message, va_list())
+        def critical(message: string)
+            GLib.log(_domain, LogLevelFlags.LEVEL_CRITICAL, "%s", message)
 
-        def info(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_INFO, message, va_list())
+        def criticalf(message: string, ...)
+            GLib.logv(_domain, LogLevelFlags.LEVEL_CRITICAL, message, va_list())
 
-        def debug(message: string, ...)
-            logv(_domain, LogLevelFlags.LEVEL_DEBUG, message, va_list())
+        def warning(message: string)
+            GLib.log(_domain, LogLevelFlags.LEVEL_WARNING, "%s", message)
+
+        def warningf(message: string, ...)
+            GLib.logv(_domain, LogLevelFlags.LEVEL_WARNING, message, va_list())
+
+        def message(message: string)
+            GLib.log(_domain, LogLevelFlags.LEVEL_MESSAGE, "%s", message)
+
+        def messagef(message: string, ...)
+            GLib.logv(_domain, LogLevelFlags.LEVEL_MESSAGE, message, va_list())
+
+        def info(message: string)
+            GLib.log(_domain, LogLevelFlags.LEVEL_INFO, "%s", message)
+
+        def infof(message: string, ...)
+            GLib.logv(_domain, LogLevelFlags.LEVEL_INFO, message, va_list())
+
+        def debug(message: string)
+            GLib.log(_domain, LogLevelFlags.LEVEL_DEBUG, "%s", message)
+            
+        def debugf(message: string, ...)
+            GLib.logv(_domain, LogLevelFlags.LEVEL_DEBUG, message, va_list())
             
         _handler_id: uint = 0
         _appender: Appender?
@@ -299,4 +320,4 @@ namespace Logging
             var now = new DateTime.now_local()
             return format.printf(now.format(_date_time_format), now.get_microsecond() / 1000, get_log_level_name(levels), domain, message)
 
-    _loggers: private dict of string, Logger
+    _loggers: dict of string, Logger

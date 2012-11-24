@@ -127,10 +127,12 @@ namespace Khovsgol.GUI
             _mode_box.append("repeat_shuffle", "Keep shuffling")
             _on_cursor_mode_id = _mode_box.combo_box.changed.connect(on_cursor_mode)
 
-            /*self.mode_combo_box = mode_box #.get_children()[1]
-            self.mode_combo_box.connect('changed', self.on_mode_changed)
-
-            style_box = self._create_style_combo_box(GroupByAlbums(), Compact(), Extended())*/
+            var style_box = new StyleComboBox()
+            style_box.append(new GroupByAlbums())
+            style_box.append(new Compact())
+            style_box.append(new Extended())
+            style_box.active_style_name = "group_by_albums"
+            style_box.changed.connect(on_style)
 
             var actions_button = new Button()
             actions_button.image = new Image.from_stock(Stock.EXECUTE, IconSize.BUTTON)
@@ -140,7 +142,7 @@ namespace Khovsgol.GUI
             
             var bottom_box = new Box(Orientation.HORIZONTAL, 5)
             bottom_box.pack_start(_mode_box)
-            //bottom_box.pack_start(style_box)
+            bottom_box.pack_start(style_box)
             bottom_box.pack_start(actions_button, false)
 
             // Assemble
@@ -205,7 +207,8 @@ namespace Khovsgol.GUI
                 _popup_empty.popup(null, null, null, e.button, e.time)
 
         def private on_key_pressed(e: Gdk.EventKey): bool
-            if e.keyval == Gdk.Key.Menu
+            var keyval = e.keyval
+            if keyval == Gdk.Key.Menu
                 iter: TreeIter
                 if _store.get_iter_first(out iter)
                     var selections = _tree_view.get_selection().count_selected_rows()
@@ -217,15 +220,17 @@ namespace Khovsgol.GUI
                         _popup_many.popup(null, null, null, 0, e.time)
                 else
                     _popup_empty.popup(null, null, null, 0, e.time)
+            else if keyval == Gdk.Key.Delete
+                on_delete()
             return false
  
         def private on_dragged(context: Gdk.DragContext, selection_data: SelectionData, info: uint, time: uint)
             var selection = _tree_view.get_selection()
             var tree_paths = selection.get_selected_rows(null)
-            iter: TreeIter
-            value: Value
             var target = selection_data.get_target()
             var target_name = target.name()
+            iter: TreeIter
+            value: Value
             if target_name == "JSON_NUMBER_ARRAY"
                 // Playlist positions moved within the playlist
                 var data = new Json.Array()
@@ -280,6 +285,7 @@ namespace Khovsgol.GUI
                 if text is not null
                     try
                         var tracks = from_array(text)
+                        //print array_to(tracks, true)
                         _instance.api.add_to_play_list(_instance.player, destination, tracks, true, true)
                         Gdk.drop_finish(context, true, time)
                         return
@@ -289,12 +295,16 @@ namespace Khovsgol.GUI
             Gdk.drop_finish(context, false, time)
 
         def private on_actions(e: Gdk.EventButton): bool
+            on_right_clicked(e)
             return false
             
         _on_cursor_mode_id: ulong
         def private on_cursor_mode()
             _instance.api.set_cursor_mode(_instance.player, (string) _mode_box.active)
         
+        def private on_style()
+            pass
+            
         def private on_play()
             pass
         
@@ -302,7 +312,17 @@ namespace Khovsgol.GUI
             pass
         
         def private on_delete()
-            pass
+            var selection = _tree_view.get_selection()
+            var tree_paths = selection.get_selected_rows(null)
+            iter: TreeIter
+            value: Value
+            var positions = new Json.Array()
+            for var tree_path in tree_paths
+                if _store.get_iter(out iter, tree_path)
+                    _store.get_value(iter, Column.POSITION, out value)
+                    positions.add_int_element((int) value)
+            if positions.get_length() > 0
+                _instance.api.remove_from_play_list(_instance.player, positions, true, true)
         
         def private on_clear()
             pass
@@ -349,7 +369,8 @@ namespace Khovsgol.GUI
                         var title_sort = get_string_member_or_null(track, "title_sort")
                         var position = get_int_member_or_min(track, "position")
                         _store.append(out iter)
-                        _store.set(iter, Column.TRACK, track, Column.SEARCH, title_sort, Column.MARKUP1, "%d\t%s".printf(position, title), Column.MARKUP2, null, Column.POSITION, position, -1)
+                        var markup = Markup.escape_text("%d\t%s".printf(position, title))
+                        _store.set(iter, Column.TRACK, track, Column.SEARCH, title_sort, Column.MARKUP1, markup, Column.MARKUP2, null, Column.POSITION, position, -1)
             
         def private on_position_in_play_list_changed(position_in_play_list: int, old_position_in_play_list: int)
             _position_in_play_list = position_in_play_list

@@ -2,9 +2,66 @@
 
 uses
     Gtk
+    JsonUtil
     Khovsgol
 
 namespace Khovsgol.GUI
+
+    class LibraryNode
+        construct(instance: Instance, tree_view: TreeView, store: TreeStore, iter: TreeIter? = null)
+            _instance = instance
+            _tree_view = tree_view
+            _store = store
+            _iter = iter
+        
+        prop readonly instance: Instance
+
+        prop is_frozen: bool
+        
+        prop readonly level: int
+            get
+                if _iter is not null
+                    return _store.iter_depth(_iter) + 1
+                else
+                    return 0
+        
+        prop readonly as_object: Json.Object?
+            get
+                value: Value
+                _store.get_value(_iter, Library.Column.NODE, out value)
+                return ((Json.Node) value).get_object()
+
+        prop readonly as_array: Json.Array
+            get
+                value: Value
+                _store.get_value(_iter, Library.Column.NODE, out value)
+                return ((Json.Node) value).get_array()
+
+        def append(node: Json.Node, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+            if !_is_frozen
+                _tree_view.freeze_child_notify()
+                _is_frozen = true
+            child_iter: TreeIter
+            _store.append(out child_iter, _iter)
+            _store.set(child_iter, Library.Column.NODE, node, Library.Column.SEARCH, search, Library.Column.MARKUP1, markup1, Library.Column.MARKUP2, markup2, -1)
+            if is_expandable
+                // Add placeholder
+                _store.append(out child_iter, child_iter)
+                _store.set(child_iter, Library.Column.NODE, null, -1)
+
+        def append_object(obj: Json.Object, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+            var node = new Json.Node(Json.NodeType.OBJECT)
+            node.set_object(obj)
+            append(node, search, markup1, markup2, is_expandable)
+
+        def append_array(arr: Json.Array, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+            var node = new Json.Node(Json.NodeType.ARRAY)
+            node.set_array(arr)
+            append(node, search, markup1, markup2, is_expandable)
+
+        _store: TreeStore
+        _tree_view: TreeView
+        _iter: TreeIter?
     
     class Library: Alignment
         construct(instance: Instance)
@@ -21,18 +78,18 @@ namespace Khovsgol.GUI
         
             // Top
             
-            var filter_box = new EntryBox("_Filter:")
+            _filter_box = new EntryBox("_Filter:")
             var clear_filter_button = new ControlButton(Stock.CLEAR, Gdk.Key.T, "Reset library filter\n<Alt>T", _accel_group)
             clear_filter_button.clicked.connect(on_clear_filter)
-            filter_box.pack_start(clear_filter_button, false)
-            filter_box.entry.activate.connect(on_filter)
+            _filter_box.pack_start(clear_filter_button, false)
+            _filter_box.entry.activate.connect(on_filter)
 
             var top_box = new Box(Orientation.HORIZONTAL, 5)
-            top_box.pack_start(filter_box)
+            top_box.pack_start(_filter_box)
 
             // Tree
             
-            _store = new TreeStore(4, typeof(Json.Object), typeof(string), typeof(string), typeof(string)) // node, search, markup1, markup2
+            _store = new TreeStore(4, typeof(Json.Node), typeof(string), typeof(string), typeof(string)) // node, search, markup1, markup2
             
             var renderer1 = new CellRendererText()
             renderer1.ellipsize = Pango.EllipsizeMode.END // This also mysteriously enables right alignment for RTL text
@@ -69,13 +126,14 @@ namespace Khovsgol.GUI
             
             // Bottom
             
-            var style_box = new StyleComboBox()
-            style_box.append(new ArtistsAndTheirAlbums())
-            style_box.append(new ArtistsAndTheirTracks())
-            style_box.append(new YearsAndAlbums())
-            style_box.append(new AllAlbums())
-            style_box.append(new CustomCompilations())
-            style_box.active_style_name = "artists_albums"
+            _style_box = new StyleComboBox()
+            _style_box.append(new ArtistsAndTheirAlbums())
+            _style_box.append(new ArtistsAndTheirTracks())
+            _style_box.append(new YearsAndAlbums())
+            _style_box.append(new AllAlbums())
+            _style_box.append(new CustomCompilations())
+            _style_box.active_style_name = "artists_albums"
+            _style_box.changed.connect(on_style)
 
             var actions_button = new Button()
             actions_button.image = new Image.from_stock(Stock.EXECUTE, IconSize.BUTTON)
@@ -84,7 +142,7 @@ namespace Khovsgol.GUI
             actions_button.button_press_event.connect(on_actions)
 
             var bottom_box = new Box(Orientation.HORIZONTAL, 5)
-            bottom_box.pack_start(style_box)
+            bottom_box.pack_start(_style_box)
             bottom_box.pack_start(actions_button, false)
 
             // Assemble
@@ -96,6 +154,8 @@ namespace Khovsgol.GUI
         
             add(box)
             set(0, 0, 1, 1)
+            
+            on_filter()
         
         prop readonly accel_group: AccelGroup
             
@@ -132,23 +192,65 @@ namespace Khovsgol.GUI
                 else
                     _popup.popup(null, null, null, 0, e.time)
             return false
-            
+        
         def private on_expanded(iter: TreeIter, path: TreePath): bool
-            return true
+            // Check for placeholder
+            placeholder_iter: TreeIter
+            if _store.iter_children(out placeholder_iter, iter)
+                value: Value
+                _store.get_value(placeholder_iter, Column.NODE, out value)
+                if (Json.Node) value == null
+                    // We found the placeholder, so use the active style to fill
+                    _store.remove(ref placeholder_iter)
+                    var style = _style_box.active_style
+                    if style is not null
+                        var node = new LibraryNode(_instance, _tree_view, _store, iter)
+                        ((LibraryStyle) style).fill(node)
+                        if node.is_frozen
+                            _tree_view.thaw_child_notify()
+            return false
  
         def private on_dragged(context: Gdk.DragContext, selection_data: SelectionData, info: uint, time: uint)
-            pass
+            var style = _style_box.active_style
+            if style is not null
+                var selection = _tree_view.get_selection()
+                var tree_paths = selection.get_selected_rows(null)
+                var target = selection_data.get_target()
+                var data = new Json.Array()
+                iter: TreeIter
+                for var tree_path in tree_paths
+                    if _store.get_iter(out iter, tree_path)
+                        var node = new LibraryNode(_instance, _tree_view, _store, iter)
+                        ((LibraryStyle) style).gather_tracks(node, ref data)
+                        /*_store.get_value(iter, Column.TRACK, out value)
+                        var track = (Json.Object) value
+                        if track is not null
+                            var path = get_string_member_or_null(track, "path")
+                            if path is not null
+                                data.add_string_element(path)*/
+                selection_data.@set(target, 8, array_to(data).data)
         
         def private on_dropped(context: Gdk.DragContext, x: int, y: int, selection_data: SelectionData, info: uint, time: uint)
             pass
 
         def private on_filter()
-            pass
+            _tree_view.freeze_child_notify()
+            _tree_view.model = null
+            _store.clear()
+            var style = _style_box.active_style
+            if style is not null
+                var node = new LibraryNode(_instance, _tree_view, _store)
+                node.is_frozen = true
+                ((LibraryStyle) style).fill(node)
+            _tree_view.model = _store
+            _tree_view.thaw_child_notify()
         
         def private on_clear_filter()
-            //filter_entry.set_text('')
-            //filter_entry.emit('activate')
-            pass
+            _filter_box.entry.text = ""
+            on_filter()
+
+        def private on_style()
+            on_filter()
 
         def private on_add()
             pass
@@ -168,7 +270,8 @@ namespace Khovsgol.GUI
             window.add(new Library(_instance))
             window.show_all()
 
-        def private on_actions(event: Gdk.EventButton): bool
+        def private on_actions(e: Gdk.EventButton): bool
+            on_right_clicked(e)
             return false
             
         def create_popup_menu(has_items: bool = false, is_compilation: bool = false): Gtk.Menu
@@ -196,6 +299,8 @@ namespace Khovsgol.GUI
         _instance: Instance
         _store: TreeStore
         _tree_view: ClickableDraggableTreeView
+        _filter_box: EntryBox
+        _style_box: StyleComboBox
         _popup_none: Gtk.Menu
         _popup: Gtk.Menu
         _popup_custom: Gtk.Menu

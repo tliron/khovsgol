@@ -58,7 +58,7 @@ namespace Nap
 
     def default_error_handler(conversation: Conversation, error: GLib.Error)
         conversation.status_code = StatusCode.INTERNAL_SERVER_ERROR
-        Logging.get_logger("nap").warning("%s (%s %s)", error.message, conversation.method, conversation.path)
+        Logging.get_logger("nap").warningf("%s (%s %s)", error.message, conversation.method, conversation.path)
 
     /*
      * Simplified implementation of URI templates:

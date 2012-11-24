@@ -92,7 +92,7 @@ namespace Khovsgol.Server
             
         def start()
             stdout.printf("Starting Khövsgöl server at port %d, %d threads\n", _arguments.port, _arguments.threads)
-            _logger.info("Starting Khövsgöl server at port %d, %d threads", _arguments.port, _arguments.threads)
+            _logger.infof("Starting Khövsgöl server at port %d, %d threads", _arguments.port, _arguments.threads)
             _server.start()
             _main_loop.run()
 

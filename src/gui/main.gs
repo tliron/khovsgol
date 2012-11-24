@@ -31,6 +31,7 @@ namespace Khovsgol.GUI
             border_width = 10
             
             set_position(WindowPosition.CENTER)
+            set_default_size(900, 600)
 
             add(main_box)
             add_accel_group(control_bar.accel_group)

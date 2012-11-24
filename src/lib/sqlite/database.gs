@@ -26,12 +26,12 @@ namespace SqliteUtil
         
         def assert_ok(result: int) raises SqliteUtil.Error
             if result != OK
-                _logger.warning("%d: %s", result, _db.errmsg())
+                _logger.warningf("%d: %s", result, _db.errmsg())
                 raise new SqliteUtil.Error.ERRMSG("Sqlite %d: %s", result, _db.errmsg())
 
         def assert_done(result: int) raises SqliteUtil.Error
             if result != DONE
-                _logger.warning("%d: %s", result, _db.errmsg())
+                _logger.warningf("%d: %s", result, _db.errmsg())
                 raise new SqliteUtil.Error.ERRMSG("Sqlite %d: %s", result, _db.errmsg())
                 
         def dump_table(name: string) raises SqliteUtil.Error

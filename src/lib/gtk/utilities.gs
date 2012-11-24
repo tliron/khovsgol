@@ -13,6 +13,6 @@ namespace GtkUtil
             Gtk.init(ref weak_arguments)
             _initialized = true
             var version = "GTK+ %u.%u.%u".printf(Gtk.get_major_version(), Gtk.get_minor_version(), Gtk.get_micro_version())
-            Logging.get_logger("gtk+").info("Initialized %s", version)
+            Logging.get_logger("gtk+").infof("Initialized %s", version)
 
     _initialized: private bool = false
