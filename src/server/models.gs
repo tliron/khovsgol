@@ -175,7 +175,7 @@ namespace Khovsgol
         prop artist_sort: string
         
         def to_json(): Json.Array
-            var json = new Json.Array()
+            var json = new Json.Array.sized(2)
             json.add_string_element(_artist)
             json.add_string_element(_artist_sort)
             return json
@@ -200,7 +200,10 @@ namespace Khovsgol
         prop libraries: dict of string, Library = new dict of string, Library
     
         def abstract initialize() raises GLib.Error
-    
+        def abstract begin() raises GLib.Error
+        def abstract commit() raises GLib.Error
+        def abstract rollback() raises GLib.Error
+
         // Tracks
         def abstract get_track(path: string): Track? raises GLib.Error
         def abstract save_track(track: Track) raises GLib.Error
@@ -265,18 +268,24 @@ namespace Khovsgol
                         destination = position
                 destination++
 
-            // Make room by moving the track pointers after us forward
-            move_track_pointers(album_path, (int) last + 1, destination)
-            
-            // Add the track pointers at the destination
-            for var i = 0 to last
-                var path = get_string_element_or_null(paths, i)
-                if path is not null
-                    var track_pointer = new TrackPointer()
-                    track_pointer.path = path
-                    track_pointer.album = album_path
-                    track_pointer.position = destination++
-                    save_track_pointer(track_pointer)
+            begin()
+            try
+                // Make room by moving the track pointers after us forward
+                move_track_pointers(album_path, (int) last + 1, destination)
+                
+                // Add the track pointers at the destination
+                for var i = 0 to last
+                    var path = get_string_element_or_null(paths, i)
+                    if path is not null
+                        var track_pointer = new TrackPointer()
+                        track_pointer.path = path
+                        track_pointer.album = album_path
+                        track_pointer.position = destination++
+                        save_track_pointer(track_pointer)
+            except e: GLib.Error
+                rollback()
+                raise e
+            commit()
         
         def remove(album_path: string, positions: Json.Array) raises GLib.Error
             var length = positions.get_length()
@@ -284,20 +293,26 @@ namespace Khovsgol
                 return
             var last = length - 1
 
-            for var i = 0 to last
-                var position = get_int_element_or_min(positions, i)
-                if position != int.MIN
-                    delete_track_pointer(album_path, position)
-            
-                    // Move positions back for all remaining track pointers
-                    move_track_pointers(album_path, -1, position + 1)
+            begin()
+            try
+                for var i = 0 to last
+                    var position = get_int_element_or_min(positions, i)
+                    if position != int.MIN
+                        delete_track_pointer(album_path, position)
                 
-                    // We need to also move back positions in the array
-                    if i < last
-                        for var ii = (i + 1) to last
-                            var p = get_int_element_or_min(positions, ii)
-                            if p > position
-                                positions.get_element(ii).set_int(p - 1)
+                        // Move positions back for all remaining track pointers
+                        move_track_pointers(album_path, -1, position + 1)
+                    
+                        // We need to also move back positions in the array
+                        if i < last
+                            for var ii = (i + 1) to last
+                                var p = get_int_element_or_min(positions, ii)
+                                if p > position
+                                    positions.get_element(ii).set_int(p - 1)
+            except e: GLib.Error
+                rollback()
+                raise e
+            commit()
         
         def move(album_path: string, destination: int, positions: Json.Array) raises GLib.Error
             var length = positions.get_length()
@@ -319,44 +334,47 @@ namespace Khovsgol
                 destination++
                 
             // Remove the track pointers
-            var paths = new list of string
-            for var i = 0 to last
-                var position = get_int_element_or_min(positions, i)
-                if position != int.MIN
-                    var track_pointer = get_track_pointer(album_path, position)
-                    paths.add(track_pointer.path)
-                    delete_track_pointer(album_path, position)
-            
-                    // Move positions back for all remaining track pointers
-                    move_track_pointers(album_path, -1, position + 1)
+            begin()
+            try
+                var paths = new list of string
+                for var i = 0 to last
+                    var position = get_int_element_or_min(positions, i)
+                    if position != int.MIN
+                        var track_pointer = get_track_pointer(album_path, position)
+                        paths.add(track_pointer.path)
+                        delete_track_pointer(album_path, position)
                 
-                    // We need to also move back positions in the array
-                    if i < last
-                        for var ii = (i + 1) to last
-                            var p = get_int_element_or_min(positions, ii)
-                            if p > position
-                                positions.get_element(ii).set_int(p - 1)
-                            
-                    // We need to also move back the destination position
-                    if destination > position
-                        destination--
+                        // Move positions back for all remaining track pointers
+                        move_track_pointers(album_path, -1, position + 1)
+                    
+                        // We need to also move back positions in the array
+                        if i < last
+                            for var ii = (i + 1) to last
+                                var p = get_int_element_or_min(positions, ii)
+                                if p > position
+                                    positions.get_element(ii).set_int(p - 1)
+                                
+                        // We need to also move back the destination position
+                        if destination > position
+                            destination--
 
-            // Make room by moving the remaining track pointers forward
-            move_track_pointers(album_path, paths.size, destination)
-            
-            // Add the removed track pointers at the destination
-            for var path in paths
-                var track_pointer = new TrackPointer()
-                track_pointer.path = path
-                track_pointer.album = album_path
-                track_pointer.position = destination++
-                save_track_pointer(track_pointer)
+                // Make room by moving the remaining track pointers forward
+                move_track_pointers(album_path, paths.size, destination)
+                
+                // Add the removed track pointers at the destination
+                for var path in paths
+                    var track_pointer = new TrackPointer()
+                    track_pointer.path = path
+                    track_pointer.album = album_path
+                    track_pointer.position = destination++
+                    save_track_pointer(track_pointer)
+            except e: GLib.Error
+                rollback()
+                raise e
+            commit()
 
         def to_json(): Json.Array
-            var json = new Json.Array()
-            for var library in _libraries.values
-                json.add_object_element(library.to_json())
-            return json
+            return to_object_array(_libraries.values)
     
     class Library: Object implements HasJsonObject
         prop crucible: Crucible
@@ -373,9 +391,7 @@ namespace Khovsgol
         def to_json(): Json.Object
             var json = new Json.Object()
             set_string_member_not_null(json, "name", _name)
-            directories: Json.Array = new Json.Array()
-            for var directory in _directories.values
-                directories.add_object_element(directory.to_json())
+            var directories = to_object_array(_directories.values)
             json.set_array_member("directories", directories)
             return json
 
@@ -551,10 +567,7 @@ namespace Khovsgol
             return player
 
         def to_json(): Json.Array
-            var json = new Json.Array()
-            for var player in _players.values
-                json.add_object_element(player.to_json())
-            return json
+            return to_object_array(_players.values)
     
     class abstract Player: Object implements HasJsonObject
         construct()
@@ -783,9 +796,7 @@ namespace Khovsgol
                 validate_tracks()
                 json.set_string_member("id", _id)
                 json.set_int_member("version", _version)
-                var tracks = new Json.Array()
-                for var track in _tracks
-                    tracks.add_object_element(track.to_json())
+                var tracks = to_object_array(_tracks)
                 json.set_array_member("tracks", tracks)
             except e: GLib.Error
                 Logging.get_logger("khovsgol.playlist").warning(e.message)
@@ -815,16 +826,28 @@ namespace Khovsgol
         def private validate_tracks() raises GLib.Error
             var stored_version = get_stored_version()
             if stored_version > _version
-                _tracks.clear()
+                var tracks = new list of Track
                 var args = new IterateForAlbumArgs()
                 args.album = _album_path
                 args.sort.add("position")
                 var iterator = _crucible.libraries.iterate_raw_track_pointers_in_album(args)
                 while iterator.has_next()
                     var track_pointer = iterator.get()
-                    var track = crucible.libraries.get_track(track_pointer.path)
+                    track: Track = null
+                    
+                    // We may have the track info in memory already
+                    for var t in _tracks
+                        if t.path == track_pointer.path
+                            track = t
+                            break
+                    if track is null
+                        track = crucible.libraries.get_track(track_pointer.path)
+                        
                     track.position = track_pointer.position
                     track.album_path = TrackIterator.get_album_path_dynamic(track)
-                    _tracks.add(track)
+                    tracks.add(track)
+                    
                     iterator.next()
+                    
                 _version = stored_version
+                _tracks = tracks

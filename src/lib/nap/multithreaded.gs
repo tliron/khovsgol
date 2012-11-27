@@ -3,11 +3,11 @@
 namespace Nap
 
     class ThreadPool: GLib.Object
-        construct(max_threads: int) raises ThreadError
-            _thread_pool = (GLib.ThreadPool of Context) create_thread_pool((ThreadPoolFunc) handle, max_threads, true)
+        construct(max_threads: uint) raises ThreadError
+            _thread_pool = (GLib.ThreadPool of Context) create_thread_pool((ThreadPoolFunc) handle, (int) max_threads, true)
             //_thread_pool = new GLib.ThreadPool.with_owned_data((ThreadPoolFunc) _handle, max_threads, true)
         
-        prop readonly max_threads: int
+        prop readonly max_threads: uint
             get
                 return _thread_pool.get_max_threads()
 

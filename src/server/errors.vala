@@ -1,6 +1,7 @@
 
 namespace Khovsgol {
     public errordomain Error {
-        DATABASE
+        DATABASE,
+        NETWORK
     }
 }

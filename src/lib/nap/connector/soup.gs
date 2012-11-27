@@ -73,7 +73,7 @@ namespace Nap.Connector._Soup
             entry.status_code = _soup_message.status_code
             if _response_text is not null
                 entry.size = _response_text.data.length
-            Logging.get_logger("nap.web").info(entry.to_string())
+            Logging.get_logger("nap.server.ncsa").info(entry.to_string())
 
         _soup_server: Soup.Server
         _soup_message: Soup.Message
@@ -134,10 +134,16 @@ namespace Nap.Connector._Soup
                     if i.has_next()
                         uri.append("&")
             
-            _soup_message = new Soup.Message(_method, uri.str)
+            var uri_str = uri.str
+            _soup_message = new Soup.Message(_method, uri_str)
             if _request_text is not null
                 _soup_message.set_request(_request_media_type, Soup.MemoryUse.COPY, _request_text.data)
+            var timer = new Timer()
             _status_code = _soup_session.send_message(_soup_message)
+            timer.stop()
+            var seconds = timer.elapsed()
+            Logging.get_logger("nap.client").debugf("%s (%f)", uri_str, seconds)
+            print "%s (%f)", uri_str, seconds
 
         def pause()
             pass
@@ -156,10 +162,10 @@ namespace Nap.Connector._Soup
     class Server: Object implements Nap.Server
         prop static delay: ulong = 0
 
-        construct(port: int, context: MainContext) raises Nap.Error
+        construct(port: uint, context: MainContext) raises Nap.Error
             _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
             if _soup_server is null
-                raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %d, is the port already in use?".printf(port))
+                raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %u, is the port already in use?".printf(port))
             
             _soup_server.add_handler(null, _handle)
             

@@ -233,7 +233,7 @@ namespace Khovsgol.GUI
             value: Value
             if target_name == "JSON_NUMBER_ARRAY"
                 // Playlist positions moved within the playlist
-                var data = new Json.Array()
+                var data = new Json.Array.sized(tree_paths.length())
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
                         _store.get_value(iter, Column.POSITION, out value)
@@ -242,7 +242,7 @@ namespace Khovsgol.GUI
                 
             else
                 // Track paths, likely to a custom compilation in the library pane
-                var data = new Json.Array()
+                var data = new Json.Array.sized(tree_paths.length())
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
                         _store.get_value(iter, Column.TRACK, out value)
@@ -316,7 +316,7 @@ namespace Khovsgol.GUI
             var tree_paths = selection.get_selected_rows(null)
             iter: TreeIter
             value: Value
-            var positions = new Json.Array()
+            var positions = new Json.Array.sized(tree_paths.length())
             for var tree_path in tree_paths
                 if _store.get_iter(out iter, tree_path)
                     _store.get_value(iter, Column.POSITION, out value)
@@ -325,8 +325,8 @@ namespace Khovsgol.GUI
                 _instance.api.remove_from_play_list(_instance.player, positions, true, true)
         
         def private on_clear()
-            pass
-        
+            _instance.api.set_play_list_paths(_instance.player, new Json.Array(), true, true)
+
         def private on_save_as_compilation()
             pass
         
@@ -358,19 +358,24 @@ namespace Khovsgol.GUI
             _play_mode = play_mode
                     
         def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
-            if (tracks is not null) && (tracks.get_length() > 0)
+            if tracks is not null
+                _tree_view.freeze_child_notify()
+                _tree_view.model = null
                 _store.clear()
                 iter: TreeIter
-                for var i = 0 to (tracks.get_length() - 1)
-                    var track = get_object_element_or_null(tracks, i)
-                    var path = get_string_member_or_null(track, "path")
-                    if path is not null
-                        var title = get_string_member_or_null(track, "title")
-                        var title_sort = get_string_member_or_null(track, "title_sort")
-                        var position = get_int_member_or_min(track, "position")
-                        _store.append(out iter)
-                        var markup = Markup.escape_text("%d\t%s".printf(position, title))
-                        _store.set(iter, Column.TRACK, track, Column.SEARCH, title_sort, Column.MARKUP1, markup, Column.MARKUP2, null, Column.POSITION, position, -1)
+                if tracks.get_length() > 0
+                    for var i = 0 to (tracks.get_length() - 1)
+                        var track = get_object_element_or_null(tracks, i)
+                        var path = get_string_member_or_null(track, "path")
+                        if path is not null
+                            var title = get_string_member_or_null(track, "title")
+                            var title_sort = get_string_member_or_null(track, "title_sort")
+                            var position = get_int_member_or_min(track, "position")
+                            _store.append(out iter)
+                            var markup = Markup.escape_text("%d\t%s".printf(position, title))
+                            _store.set(iter, Column.TRACK, track, Column.SEARCH, title_sort, Column.MARKUP1, markup, Column.MARKUP2, null, Column.POSITION, position, -1)
+                _tree_view.model = _store
+                _tree_view.thaw_child_notify()
             
         def private on_position_in_play_list_changed(position_in_play_list: int, old_position_in_play_list: int)
             _position_in_play_list = position_in_play_list

@@ -13,17 +13,17 @@ namespace Khovsgol.GUI
             realize.connect(on_realized)
             delete_event.connect(on_delete)
             
-            var control_bar = new ControlBar(_instance)
-            var play_list = new PlayList(_instance)
-            var library = new Library(_instance)
+            _control_bar = new ControlBar(_instance)
+            _play_list = new PlayList(_instance)
+            _library = new Library(_instance)
 
             _panes = new Paned(Orientation.HORIZONTAL)
-            _panes.pack1(play_list, true, true)
-            _panes.pack2(library, true, true)
+            _panes.pack1(_play_list, true, true)
+            _panes.pack2(_library, true, true)
             _panes.realize.connect(on_realize_panes)
 
             var main_box = new Box(Orientation.VERTICAL, 10)
-            main_box.pack_start(control_bar, false)
+            main_box.pack_start(_control_bar, false)
             main_box.pack_start(_panes)
             
             title = "Khövsgöl"
@@ -34,9 +34,9 @@ namespace Khovsgol.GUI
             set_default_size(900, 600)
 
             add(main_box)
-            add_accel_group(control_bar.accel_group)
-            add_accel_group(play_list.accel_group)
-            add_accel_group(library.accel_group)
+            add_accel_group(_control_bar.accel_group)
+            add_accel_group(_play_list.accel_group)
+            add_accel_group(_library.accel_group)
             /*if self.instance.configuration.is_boolean('ui', 'focus-on-library'):
                 self.library_pane.tree_view.grab_focus()
             else:
@@ -46,6 +46,10 @@ namespace Khovsgol.GUI
             
             configure_event.connect(on_configured)
             _panes.notify.connect(on_split)
+            
+        prop readonly control_bar: ControlBar
+        prop readonly play_list: PlayList
+        prop readonly library: Library
               
         def private on_realized()
             _instance.api.reset_watch()
@@ -62,7 +66,7 @@ namespace Khovsgol.GUI
             h: int
             get_position(out x, out y)
             get_size(out w, out h)
-            print "%d %d %d %d", x, y, w, h
+            //print "%d %d %d %d", x, y, w, h
             return false
         
         def private on_realize_panes()

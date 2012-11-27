@@ -7,6 +7,8 @@ uses
 
 namespace Khovsgol.Client
 
+    _logger: Logging.Logger
+    
     /*
      * String join for Gee.Iterable.
      */
@@ -37,9 +39,6 @@ namespace Khovsgol.Client
     class API: GLib.Object
         construct(host: string, port: uint) raises GLib.Error
             _client = new Nap.Connector._Soup.Client("http://%s:%u".printf(host, port))
-            _logger = Logging.get_logger("khovsgol.client")
-        
-        prop readonly logger: Logging.Logger
         
         prop watching_player: string?
             get
@@ -1084,6 +1083,9 @@ namespace Khovsgol.Client
         _position_in_track: double
         _play_list_id: string?
         _play_list_version: int64
+
+        init
+            _logger = Logging.get_logger("khovsgol.client")
         
         def private on_error(e: GLib.Error)
             // TODO: special handling for network errors

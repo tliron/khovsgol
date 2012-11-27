@@ -28,7 +28,7 @@ namespace Khovsgol.Server
                     _stop_daemon = true
                     _start_daemon = true
 
-                if _threads < 0
+                if _threads == -1
                     _threads = System.get_n_cpus()
                     
             except e: OptionError
@@ -36,9 +36,9 @@ namespace Khovsgol.Server
                 print "Use '%s --help' to see a full list of available command line options.\n", args[0]
                 Posix.exit(1)
     
-        prop readonly port: int = 8181
-        prop readonly threads: int = 0
-        prop readonly delay: int = 0
+        prop readonly port: int = int.MIN
+        prop readonly threads: int = int.MIN
+        prop readonly delay: int64 = int64.MIN
         
         prop readonly start_daemon: bool
         prop readonly stop_daemon: bool

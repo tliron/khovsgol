@@ -10,8 +10,8 @@ namespace Khovsgol.Sqlite
         def override initialize() raises GLib.Error
             if _db is not null
                 return
-        
-            _db = new SqliteUtil.Database("%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir()), "khovsgol.db")
+            
+            _db = new SqliteUtil.Database("%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir()))
             
             // Track table
             _db.execute("CREATE TABLE IF NOT EXISTS track (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, album TEXT COLLATE NOCASE, album_sort TEXT, position INTEGER, duration REAL, date INTEGER, type TEXT)")
@@ -44,6 +44,15 @@ namespace Khovsgol.Sqlite
             _db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp REAL)")
             
             //test()
+            
+        def override begin() raises GLib.Error
+            _db.execute("BEGIN")
+
+        def override commit() raises GLib.Error
+            _db.execute("COMMIT")
+
+        def override rollback() raises GLib.Error
+            _db.execute("ROLLBACK")
 
         //
         // Tracks

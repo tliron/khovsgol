@@ -12,12 +12,15 @@ namespace Khovsgol.GUI
             _window = new MainWindow(self)
             
         prop readonly api: Client.API
+
         prop player: string
             get
                 return _player
             set
                 if _player != value
                     _api.watching_player = _player = value
+
+        prop readonly window: MainWindow
     
         def start()
             _api.start_player_poll()
@@ -27,7 +30,6 @@ namespace Khovsgol.GUI
             Gtk.main_quit()
             _api.stop_player_poll(true)
         
-        _window: MainWindow
         _player: string
         
 init

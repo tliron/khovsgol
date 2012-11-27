@@ -175,7 +175,7 @@ namespace Khovsgol.GUI
             return false
 
         def private on_double_clicked(e: Gdk.EventButton)
-            pass
+            on_add()
 
         def private on_right_clicked(e: Gdk.EventButton)
             var selections = _tree_view.get_selection().count_selected_rows()
@@ -209,26 +209,11 @@ namespace Khovsgol.GUI
                         if node.is_frozen
                             _tree_view.thaw_child_notify()
             return false
- 
+        
         def private on_dragged(context: Gdk.DragContext, selection_data: SelectionData, info: uint, time: uint)
-            var style = _style_box.active_style
-            if style is not null
-                var selection = _tree_view.get_selection()
-                var tree_paths = selection.get_selected_rows(null)
-                var target = selection_data.get_target()
-                var data = new Json.Array()
-                iter: TreeIter
-                for var tree_path in tree_paths
-                    if _store.get_iter(out iter, tree_path)
-                        var node = new LibraryNode(_instance, _tree_view, _store, iter)
-                        ((LibraryStyle) style).gather_tracks(node, ref data)
-                        /*_store.get_value(iter, Column.TRACK, out value)
-                        var track = (Json.Object) value
-                        if track is not null
-                            var path = get_string_member_or_null(track, "path")
-                            if path is not null
-                                data.add_string_element(path)*/
-                selection_data.@set(target, 8, array_to(data).data)
+            var tracks = gather_selected_tracks()
+            if tracks is not null
+                selection_data.@set(selection_data.get_target(), 8, array_to(tracks).data)
         
         def private on_dropped(context: Gdk.DragContext, x: int, y: int, selection_data: SelectionData, info: uint, time: uint)
             pass
@@ -253,7 +238,9 @@ namespace Khovsgol.GUI
             on_filter()
 
         def private on_add()
-            pass
+            var tracks = gather_selected_tracks()
+            if tracks is not null
+                _instance.api.add_to_play_list(_instance.player, int.MIN, tracks, true, true)
 
         def private on_add_at()
             pass
@@ -274,6 +261,21 @@ namespace Khovsgol.GUI
             on_right_clicked(e)
             return false
             
+        def private gather_selected_tracks(): Json.Array?
+            var style = _style_box.active_style
+            if style is not null
+                var selection = _tree_view.get_selection()
+                var tree_paths = selection.get_selected_rows(null)
+                if tree_paths.length() > 0
+                    iter: TreeIter
+                    var data = new Json.Array.sized(tree_paths.length())
+                    for var tree_path in tree_paths
+                        if _store.get_iter(out iter, tree_path)
+                            var node = new LibraryNode(_instance, _tree_view, _store, iter)
+                            ((LibraryStyle) style).gather_tracks(node, ref data)
+                    return data
+            return null
+
         def create_popup_menu(has_items: bool = false, is_compilation: bool = false): Gtk.Menu
             var menu = new Gtk.Menu()
             item: Gtk.MenuItem

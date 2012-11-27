@@ -5,10 +5,10 @@ uses
 
 namespace JsonUtil
 
-    interface HasJsonObject
+    interface HasJsonObject: GLib.Object
         def abstract to_json(): Json.Object
 
-    interface HasJsonArray
+    interface HasJsonArray: GLib.Object
         def abstract to_json(): Json.Array
 
     //
@@ -154,16 +154,28 @@ namespace JsonUtil
         for var e in source.get_elements()
             destination.add_element(e)
 
-    def to_int_array(l: list of int): Json.Array
-        var arr = new Json.Array()
+    def to_int_array(l: Gee.Collection of int): Json.Array
+        var arr = new Json.Array.sized(l.size)
         for var e in l
             arr.add_int_element(e)
         return arr
 
-    def to_string_array(l: list of string): Json.Array
-        var arr = new Json.Array()
+    def to_string_array(l: Gee.Collection of string): Json.Array
+        var arr = new Json.Array.sized(l.size)
         for var e in l
             arr.add_string_element(e)
+        return arr
+
+    def to_object_array(l: Gee.Collection of HasJsonObject): Json.Array
+        var arr = new Json.Array.sized(l.size)
+        for var e in l
+            arr.add_object_element(e.to_json())
+        return arr
+
+    def to_array_array(l: Gee.Collection of HasJsonArray): Json.Array
+        var arr = new Json.Array.sized(l.size)
+        for var e in l
+            arr.add_array_element(e.to_json())
         return arr
 
     //

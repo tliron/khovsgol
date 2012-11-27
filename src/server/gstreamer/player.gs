@@ -139,5 +139,9 @@ namespace Khovsgol.GStreamer
             convert.link_many(resample, sink)
     
         _pipeline: GstUtil.Pipeline?
-        _logger: Logging.Logger = Logging.get_logger("khovsgol.gstreamer")
         _path: string?
+        
+        init
+            _logger = Logging.get_logger("khovsgol.gstreamer")
+    
+    _logger: Logging.Logger
