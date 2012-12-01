@@ -116,30 +116,6 @@ namespace Nap
         prop abstract base_url: string
 
         def abstract create_conversation(): Conversation raises GLib.Error
-        
-        /*def get_json_object(method: string, path: string, payload: Json.Object? = null): Json.Object?
-            payload_text: string? = null
-            if payload != null
-                payload_text = JsonUtil.object_to(payload)
-            var entity = handle(method, path, payload_text)
-            if entity is not null
-                try
-                    return JsonUtil.from_object(entity)
-                except e: JsonUtil.Error
-                    pass
-            return null
-
-        def get_json_array(method: string, path: string, payload: Json.Object? = null): Json.Array?
-            payload_text: string? = null
-            if payload != null
-                payload_text = JsonUtil.object_to(payload)
-            var entity = handle(method, path, payload_text)
-            if entity is not null
-                try
-                    return JsonUtil.from_array(entity)
-                except e: JsonUtil.Error
-                    pass
-            return null*/
 
     /*
      * Renders an NCSA Common Log entry.

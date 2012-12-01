@@ -7,62 +7,6 @@ uses
 
 namespace Khovsgol.GUI
 
-    class LibraryNode
-        construct(instance: Instance, tree_view: TreeView, store: TreeStore, iter: TreeIter? = null)
-            _instance = instance
-            _tree_view = tree_view
-            _store = store
-            _iter = iter
-        
-        prop readonly instance: Instance
-
-        prop is_frozen: bool
-        
-        prop readonly level: int
-            get
-                if _iter is not null
-                    return _store.iter_depth(_iter) + 1
-                else
-                    return 0
-        
-        prop readonly as_object: Json.Object?
-            get
-                value: Value
-                _store.get_value(_iter, Library.Column.NODE, out value)
-                return ((Json.Node) value).get_object()
-
-        prop readonly as_array: Json.Array
-            get
-                value: Value
-                _store.get_value(_iter, Library.Column.NODE, out value)
-                return ((Json.Node) value).get_array()
-
-        def append(node: Json.Node, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
-            if !_is_frozen
-                _tree_view.freeze_child_notify()
-                _is_frozen = true
-            child_iter: TreeIter
-            _store.append(out child_iter, _iter)
-            _store.set(child_iter, Library.Column.NODE, node, Library.Column.SEARCH, search, Library.Column.MARKUP1, markup1, Library.Column.MARKUP2, markup2, -1)
-            if is_expandable
-                // Add placeholder
-                _store.append(out child_iter, child_iter)
-                _store.set(child_iter, Library.Column.NODE, null, -1)
-
-        def append_object(obj: Json.Object, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
-            var node = new Json.Node(Json.NodeType.OBJECT)
-            node.set_object(obj)
-            append(node, search, markup1, markup2, is_expandable)
-
-        def append_array(arr: Json.Array, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
-            var node = new Json.Node(Json.NodeType.ARRAY)
-            node.set_array(arr)
-            append(node, search, markup1, markup2, is_expandable)
-
-        _store: TreeStore
-        _tree_view: TreeView
-        _iter: TreeIter?
-    
     class Library: Alignment
         construct(instance: Instance)
             _instance = instance
@@ -132,7 +76,11 @@ namespace Khovsgol.GUI
             _style_box.append(new YearsAndAlbums())
             _style_box.append(new AllAlbums())
             _style_box.append(new CustomCompilations())
-            _style_box.active_style_name = "artists_albums"
+            var style = _instance.configuration.get_library_style()
+            if style is not null
+                _style_box.active_style_name = style
+            else
+                _style_box.active_style_name = "artists_albums"
             _style_box.changed.connect(on_style)
 
             var actions_button = new Button()
@@ -172,6 +120,7 @@ namespace Khovsgol.GUI
             return false
         
         def private on_clicked(event: Gdk.EventButton): bool
+            // TODO: do we need this?
             return false
 
         def private on_double_clicked(e: Gdk.EventButton)
@@ -235,6 +184,10 @@ namespace Khovsgol.GUI
             on_filter()
 
         def private on_style()
+            var style = _style_box.active_style
+            if (style is not null) && (style.name != _instance.configuration.get_library_style())
+                _instance.configuration.set_library_style(style.name)
+                _instance.configuration.save()
             on_filter()
 
         def private on_add()
@@ -308,7 +261,7 @@ namespace Khovsgol.GUI
         _popup_custom: Gtk.Menu
 
         enum private Column
-            NODE = 0     // Json.Object
+            NODE = 0     // Json.Node
             SEARCH = 1   // string
             MARKUP1 = 2  // string
             MARKUP2 = 3  // string

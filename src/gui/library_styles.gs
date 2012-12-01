@@ -6,6 +6,9 @@ uses
     Khovsgol
 
 namespace Khovsgol.GUI
+
+    def is_lossless(file_type: string): bool
+        return (file_type == "flac") || (file_type == "ape") || (file_type == "wav") || (file_type == "wv") || (file_type == "tta")
     
     interface LibraryStyle: Style
         def abstract fill(node: LibraryNode)
@@ -51,7 +54,7 @@ namespace Khovsgol.GUI
                                     var file_type = get_string_member_or_null(album, "type")
                                     var markup = date != int.MIN ? "%d: %s".printf(date, title) : title
                                     markup = Markup.escape_text(markup)
-                                    if file_type != "flac"
+                                    if !is_lossless(file_type)
                                         markup = "<span color=\"#888888\">%s</span>".printf(markup)
                                     node.append_object(album, title_sort, markup, null, true)
 
@@ -75,7 +78,7 @@ namespace Khovsgol.GUI
                                     var position = get_int_member_or_min(track, "position")
                                     var markup = position != int.MIN ? "%d\t%s".printf(position, title) : title
                                     markup = Markup.escape_text(markup)
-                                    if file_type != "flac"
+                                    if !is_lossless(file_type)
                                         markup = "<span color=\"#888888\">%s</span>".printf(markup)
                                     node.append_object(track, title_sort, markup)
 

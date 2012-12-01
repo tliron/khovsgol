@@ -104,8 +104,8 @@ namespace Nap
             return s.str
 
         /*
-         * Renders a pattern, filling the variables by name from the
-         * dict.
+         * Renders a pattern, filling the variables (and URI-encoding
+         * them) by name from the dict.
          */
         def static renderd(pattern: string, variables: dict of string, string): string
             var s = new StringBuilder()
@@ -121,7 +121,7 @@ namespace Nap
                         s.append(pattern.slice(last, start))
                         var variable = pattern.slice(start + 1, end)
                         var value = variables[variable]
-                        s.append(value)
+                        s.append(Soup.URI.encode(Soup.URI.encode(value, null), null))
                         last = end + 1
                         start = pattern.index_of_char('{', last)
                     else

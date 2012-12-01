@@ -23,10 +23,10 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=18
-FILE_NAME_0=4761;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Finstance.gs;0;4
-FILE_NAME_1=2752;Sh;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fbuild;0;4
-FILE_NAME_2=3968;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fjson%2Fjson.gs;0;4
+current_page=31
+FILE_NAME_0=3499;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Finstance.gs;0;4
+FILE_NAME_1=2458;Sh;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fbuild;0;4
+FILE_NAME_2=5900;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fjson%2Fjson.gs;0;4
 FILE_NAME_3=2209;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fnap%2Fnap.gs;0;4
 FILE_NAME_4=290;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fnap%2Fresources.gs;0;4
 FILE_NAME_5=2479;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fnap%2Frouting.gs;0;4
@@ -39,24 +39,29 @@ FILE_NAME_11=612;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%
 FILE_NAME_12=23;Vala;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fnap%2Fmultithreaded_utitilies.vala;0;4
 FILE_NAME_13=19;Vala;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fjson%2Ferrors.vala;0;4
 FILE_NAME_14=74;Vala;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fnap%2Ferrors.vala;0;4
-FILE_NAME_15=4304;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Flogging%2Flogging.gs;0;4
+FILE_NAME_15=5265;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Flogging%2Flogging.gs;0;4
 FILE_NAME_16=53;Vala;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Ferrors.vala;0;4
-FILE_NAME_17=27528;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fmodels.gs;0;4
-FILE_NAME_18=840;Vala;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Fcontrolbar.gs;0;4
+FILE_NAME_17=28073;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fmodels.gs;0;4
+FILE_NAME_18=6492;Vala;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Fcontrolbar.gs;0;4
 FILE_NAME_19=2390;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fsqlite%2Fquerying.gs;0;4
-FILE_NAME_20=958;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fsqlite%2Fdatabase.gs;0;4
-FILE_NAME_21=3415;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fgstreamer%2Fplayer.gs;0;4
+FILE_NAME_20=1983;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fsqlite%2Fdatabase.gs;0;4
+FILE_NAME_21=2851;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fgstreamer%2Fplayer.gs;0;4
 FILE_NAME_22=19997;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fsqlite%2Flibrary.gs;0;4
 FILE_NAME_23=276;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fgstreamer%2Fgstreamer.gs;0;4
-FILE_NAME_24=13985;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fapi.gs;0;4
+FILE_NAME_24=28968;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fapi.gs;0;4
 FILE_NAME_25=87;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Ffilesystem%2Fdirectory.gs;0;4
-FILE_NAME_26=140;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Finstance.gs;0;4
+FILE_NAME_26=187;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Finstance.gs;0;4
 FILE_NAME_27=13274;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fcli%2Finstance.gs;0;4
-FILE_NAME_28=1634;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fconfiguration.gs;0;4
+FILE_NAME_28=386;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fconfiguration.gs;0;4
 FILE_NAME_29=39;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Farguments.gs;0;4
-FILE_NAME_30=0;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fapi.gs;0;4
-FILE_NAME_31=184;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Fmain.gs;0;4
+FILE_NAME_30=44337;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fapi.gs;0;4
+FILE_NAME_31=1347;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Fmain.gs;0;4
 FILE_NAME_32=408;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fgtk%2Futilities.gs;0;4
+FILE_NAME_33=589;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Futilities.gs;0;4
+FILE_NAME_34=21196;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Fplaylist.gs;0;4
+FILE_NAME_35=0;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Fplaylist_styles.gs;0;4
+FILE_NAME_36=0;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Flibrary_styles.gs;0;4
+FILE_NAME_37=76;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fgui%2Flibrary.gs;0;4
 
 [VTE]
 last_dir=/home/emblemparade
@@ -69,7 +74,7 @@ NF_00_LB=_Make
 NF_00_CM=make
 NF_00_WD=%d
 EX_00_LB=_Execute
-EX_00_CM=G_DEBUG=fatal_warnings GST_DEBUG=1 ./bin/khovsgol
+EX_00_CM=GST_DEBUG=1 ./bin/khovsgol
 EX_00_WD=%p
 GenieFT_01_LB=_Build
 GenieFT_01_CM=./build

@@ -10,6 +10,22 @@ namespace Khovsgol.GUI
         construct(instance: Instance)
             _instance = instance
             
+            var icon_file = File.new_for_path("/usr/share/pixmaps/khovsgol.svg")
+            if !icon_file.query_exists()
+                // Use system icon
+                icon_name = "khovsgol"
+            else
+                // Use icon directly from file
+                var base_dir = _instance.dir.get_parent()
+                if base_dir is not null
+                    icon_file = base_dir.get_child("resources").get_child("khovsgol.svg")
+                    if icon_file.query_exists()
+                        try
+                            if !set_icon_from_file(icon_file.get_path())
+                                _logger.warningf("Could not set icon: %s", icon_file.get_path())
+                        except e: GLib.Error
+                            _logger.warning(e.message)
+            
             realize.connect(on_realized)
             delete_event.connect(on_delete)
             
@@ -30,8 +46,19 @@ namespace Khovsgol.GUI
             deletable = false
             border_width = 10
             
-            set_position(WindowPosition.CENTER)
-            set_default_size(900, 600)
+            var x = _instance.configuration.x
+            var y = _instance.configuration.y
+            if (x != int.MIN) && (y != int.MIN)
+                move(x, y)
+            else
+                set_position(WindowPosition.CENTER)
+
+            var width = _instance.configuration.width
+            var height = _instance.configuration.height
+            if (width != int.MIN) && (height != int.MIN)
+                set_default_size(width, height)
+            else
+                set_default_size(900, 600)
 
             add(main_box)
             add_accel_group(_control_bar.accel_group)
@@ -62,20 +89,35 @@ namespace Khovsgol.GUI
         def private on_configured(event: Gdk.EventConfigure): bool
             x: int
             y: int
-            w: int
-            h: int
+            width: int
+            height: int
             get_position(out x, out y)
-            get_size(out w, out h)
-            //print "%d %d %d %d", x, y, w, h
+            get_size(out width, out height)
+            if (x != _instance.configuration.x) || (y != _instance.configuration.y) || (width != _instance.configuration.width) || (height != _instance.configuration.height)
+                _instance.configuration.x = x
+                _instance.configuration.y = y
+                _instance.configuration.width = width
+                _instance.configuration.height = height
+                _instance.configuration.save()
             return false
         
         def private on_realize_panes()
-            //panes.connect('realize', lambda widget: widget.set_position(self.instance.configuration.get_window_split() or widget.get_allocation().width / 2)) # Default to equal sized panes
-            _panes.position = _panes.get_allocated_width() / 2
+            var split = _instance.configuration.split
+            if split != int.MIN
+                _panes.position = split
+            else
+                _panes.position = _panes.get_allocated_width() / 2
 
         def private on_split(param_spec: ParamSpec)
-            print "split"
-            pass
+            var position = _panes.position
+            if position != _instance.configuration.split
+                _instance.configuration.split = position
+                _instance.configuration.save()
 
         _instance: Instance
         _panes: Paned
+
+        _logger: static Logging.Logger
+        
+        init
+            _logger = Logging.get_logger("khovsgol.client.main")

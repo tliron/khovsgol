@@ -8,10 +8,144 @@ namespace Khovsgol.GUI
     //def get_stock_icon_pixbuf(window, name):
       //  return window.render_icon(getattr(Gtk, 'STOCK_' + name), Gtk.IconSize.MENU, None)
 
+    def format_duration(duration: double): string
+        var seconds = (int) duration
+        var minutes = seconds / 60
+        var hours = seconds / 3600
+        seconds -= minutes * 60
+        minutes -= hours * 60
+        if hours > 0
+            return "%d:%02d:%02d".printf(hours, minutes, seconds)
+        else if minutes > 0
+            return "%d:%02d".printf(minutes, seconds)
+        else
+            return seconds.to_string()
+
+    /*
+     * Basic interface for library and playlist styles.
+     */
     interface Style: GLib.Object
         prop abstract readonly name: string
         prop abstract readonly label: string
+    
+    /*
+     * Represents a node in the PlayList pane, with a simplified API for
+     * accessing and modifying the node data.
+     */
+    class PlayListNode
+        construct(instance: Instance, tree_view: TreeView, store: ListStore, tracks: Json.Array, iter: TreeIter? = null)
+            _instance = instance
+            _tree_view = tree_view
+            _store = store
+            _tracks = tracks
+            _iter = iter
 
+        prop readonly instance: Instance
+        prop readonly tracks: Json.Array
+        prop is_frozen: bool
+        
+        prop readonly position: int
+            get
+                value: Value
+                _store.get_value(_iter, PlayList.Column.POSITION, out value)
+                return (int) value
+        
+        prop readonly as_object: Json.Object?
+            get
+                value: Value
+                _store.get_value(_iter, PlayList.Column.NODE, out value)
+                return ((Json.Node) value).get_object()
+
+        prop readonly as_array: Json.Array
+            get
+                value: Value
+                _store.get_value(_iter, PlayList.Column.NODE, out value)
+                return ((Json.Node) value).get_array()
+
+        def append(node: Json.Node?, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
+            if !_is_frozen
+                _tree_view.freeze_child_notify()
+                _is_frozen = true
+            iter: TreeIter
+            _store.append(out iter)
+            _store.set(iter, PlayList.Column.NODE, node, PlayList.Column.SEARCH, search, PlayList.Column.MARKUP1, markup1, PlayList.Column.MARKUP2, markup2, PlayList.Column.POSITION, position, -1)
+
+        def append_object(obj: Json.Object, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
+            var node = new Json.Node(Json.NodeType.OBJECT)
+            node.set_object(obj)
+            append(node, position, search, markup1, markup2)
+        
+        def append_array(arr: Json.Array, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
+            var node = new Json.Node(Json.NodeType.ARRAY)
+            node.set_array(arr)
+            append(node, position, search, markup1, markup2)
+
+        def append_separator()
+            append(null, PlayList.SEPARATOR_POSITION)
+
+        _tree_view: TreeView
+        _store: ListStore
+        _iter: TreeIter?
+
+    /*
+     * Represents a node in the Library pane, with a simplified API for
+     * accessing and modifying the node data.
+     */
+    class LibraryNode
+        construct(instance: Instance, tree_view: TreeView, store: TreeStore, iter: TreeIter? = null)
+            _instance = instance
+            _tree_view = tree_view
+            _store = store
+            _iter = iter
+        
+        prop readonly instance: Instance
+        prop is_frozen: bool
+        
+        prop readonly level: int
+            get
+                if _iter is not null
+                    return _store.iter_depth(_iter) + 1
+                else
+                    return 0
+        
+        prop readonly as_object: Json.Object?
+            get
+                value: Value
+                _store.get_value(_iter, Library.Column.NODE, out value)
+                return ((Json.Node) value).get_object()
+
+        prop readonly as_array: Json.Array
+            get
+                value: Value
+                _store.get_value(_iter, Library.Column.NODE, out value)
+                return ((Json.Node) value).get_array()
+
+        def append(node: Json.Node?, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+            if !_is_frozen
+                _tree_view.freeze_child_notify()
+                _is_frozen = true
+            child_iter: TreeIter
+            _store.append(out child_iter, _iter)
+            _store.set(child_iter, Library.Column.NODE, node, Library.Column.SEARCH, search, Library.Column.MARKUP1, markup1, Library.Column.MARKUP2, markup2, -1)
+            if is_expandable
+                // Add placeholder
+                _store.append(out child_iter, child_iter)
+                _store.set(child_iter, Library.Column.NODE, null, -1)
+
+        def append_object(obj: Json.Object, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+            var node = new Json.Node(Json.NodeType.OBJECT)
+            node.set_object(obj)
+            append(node, search, markup1, markup2, is_expandable)
+
+        def append_array(arr: Json.Array, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+            var node = new Json.Node(Json.NodeType.ARRAY)
+            node.set_array(arr)
+            append(node, search, markup1, markup2, is_expandable)
+
+        _tree_view: TreeView
+        _store: TreeStore
+        _iter: TreeIter?
+    
     class ControlButton: Button
         construct(id: string, alt_key: uint, tooltip: string, accel_group: AccelGroup)
             image = new Image.from_stock(id, IconSize.BUTTON)
@@ -31,6 +165,9 @@ namespace Khovsgol.GUI
             add_accelerator("clicked", accel_group, alt_key, Gdk.ModifierType.MOD1_MASK, AccelFlags.VISIBLE|AccelFlags.LOCKED)
             tooltip_text = tooltip
 
+    /*
+     * Entry with a Label in a box.
+     */
     class EntryBox: Box
         construct(label: string, name: string? = null, value: string? = null)
             orientation = Orientation.HORIZONTAL
@@ -50,6 +187,10 @@ namespace Khovsgol.GUI
         
         prop readonly entry: Entry
 
+    /*
+     * ComboBox with an optional Label, a single rendered text column
+     * plus an invisible Variant column for the active value.
+     */
     class SimpleComboBox: Box
         construct(name: string? = null, label: string? = null)
             orientation = Orientation.HORIZONTAL
@@ -103,6 +244,9 @@ namespace Khovsgol.GUI
             _store.append(out iter)
             _store.set(iter, 0, value, 1, label, -1)
 
+    /*
+     * A ComboBox for Style instances.
+     */
     class StyleComboBox: ComboBox
         construct()
             model = _store = new ListStore(2, typeof(Style), typeof(string))
@@ -149,6 +293,13 @@ namespace Khovsgol.GUI
             
         _store: ListStore
 
+    /*
+     * A TreeView that does not reset the selection when right-clicked
+     * or double-clicked.
+     * 
+     * Solving the annoying default behavior in GTK+ meant rewriting
+     * the entire click-handling logic.
+     */
     class ClickableDraggableTreeView: TreeView
         construct()
             get_selection().set_select_function(is_selectable)

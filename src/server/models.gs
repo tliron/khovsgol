@@ -391,8 +391,7 @@ namespace Khovsgol
         def to_json(): Json.Object
             var json = new Json.Object()
             set_string_member_not_null(json, "name", _name)
-            var directories = to_object_array(_directories.values)
-            json.set_array_member("directories", directories)
+            json.set_array_member("directories", to_object_array(_directories.values))
             return json
 
     class IterateForDateArgs
@@ -739,8 +738,18 @@ namespace Khovsgol
                 try
                     validate_tracks()
                 except e: GLib.Error
-                    Logging.get_logger("khovsgol.playlist").warning(e.message)
+                    _logger.warning(e.message)
                 return _tracks
+
+        prop readonly tracks_json: Json.Array
+            get
+                try
+                    validate_tracks()
+                except e: GLib.Error
+                    _logger.warning(e.message)
+                if _tracks_json is null
+                    _tracks_json = to_object_array(_tracks)
+                return _tracks_json
 
         def initialize() raises GLib.Error
             if _album_path is null
@@ -749,15 +758,17 @@ namespace Khovsgol
                 _id = DBus.generate_guid()
         
         def set_paths(paths: Json.Array) raises GLib.Error
-            // Stop player
-            player.position_in_play_list = int.MIN
-            
+            _player.position_in_play_list = int.MIN
             _crucible.libraries.delete_track_pointers(_album_path)
             add(0, paths)
+            _player.next()
             
         def add(position: int, paths: Json.Array) raises GLib.Error
+            var was_empty = tracks.size == 0
             _crucible.libraries.add(_album_path, position, paths)
             update_version()
+            if was_empty
+                _player.next()
         
         def remove(positions: Json.Array) raises GLib.Error
             var length = positions.get_length()
@@ -765,7 +776,7 @@ namespace Khovsgol
                 return
             var last = length - 1
         
-            // Stop player if we are removing its current track,
+            // Reset player if we are removing its current track,
             // or update its position if our removal will affect its number
             var position_in_play_list = _player.position_in_play_list
             var final_position_in_play_list = position_in_play_list
@@ -792,18 +803,14 @@ namespace Khovsgol
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            try
-                validate_tracks()
-                json.set_string_member("id", _id)
-                json.set_int_member("version", _version)
-                var tracks = to_object_array(_tracks)
-                json.set_array_member("tracks", tracks)
-            except e: GLib.Error
-                Logging.get_logger("khovsgol.playlist").warning(e.message)
+            json.set_string_member("id", _id)
+            json.set_int_member("version", _version)
+            json.set_array_member("tracks", tracks_json)
             return json
             
         _album_path: string
         _tracks: list of Track = new list of Track
+        _tracks_json: Json.Array?
 
         def private get_stored_version(): int64 raises GLib.Error
             var album = _crucible.libraries.get_album(_album_path)
@@ -832,22 +839,35 @@ namespace Khovsgol
                 args.sort.add("position")
                 var iterator = _crucible.libraries.iterate_raw_track_pointers_in_album(args)
                 while iterator.has_next()
+                    iterator.next()
                     var track_pointer = iterator.get()
-                    track: Track = null
                     
                     // We may have the track info in memory already
+                    track: Track = null
+                    var path = track_pointer.path
+                    if path is null
+                        _logger.warningf("Null track")
+                        continue
                     for var t in _tracks
-                        if t.path == track_pointer.path
+                        if t.path == path
                             track = t
                             break
                     if track is null
-                        track = crucible.libraries.get_track(track_pointer.path)
-                        
+                        track = crucible.libraries.get_track(path)
+                        if track is null
+                            _logger.warningf("Unknown track: %s", path)
+                            continue
+                    
+                    // Fix track to fit in playlist
                     track.position = track_pointer.position
                     track.album_path = TrackIterator.get_album_path_dynamic(track)
                     tracks.add(track)
                     
-                    iterator.next()
-                    
                 _version = stored_version
                 _tracks = tracks
+                _tracks_json = null
+
+        _logger: Logging.Logger
+
+        init
+            _logger = Logging.get_logger("khovsgol.playlist")

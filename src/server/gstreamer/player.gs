@@ -65,6 +65,8 @@ namespace Khovsgol.GStreamer
             set
                 if _pipeline is not null
                     var position = (int64)(value * 1000000000.0) // convert to nanoseconds
+                    if position < 0
+                        position = 0
                     _pipeline.pipeline.seek_simple(Format.TIME, SeekFlags.FLUSH, position)
         
         prop override ratio_in_track: double

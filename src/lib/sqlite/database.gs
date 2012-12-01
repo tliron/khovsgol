@@ -14,7 +14,7 @@ namespace SqliteUtil
     class Database: Object
         construct(path: string) raises SqliteUtil.Error
             assert_ok(Sqlite.Database.open_v2(path, out _db, OPEN_READWRITE|OPEN_CREATE))
-            _logger.infof("Opened %s", path)
+            _logger.messagef("Opened %s", path)
     
         prop readonly db: Sqlite.Database
         
@@ -49,6 +49,6 @@ namespace SqliteUtil
 
         init
             _logger = Logging.get_logger("sqlite")
-            _logger.infof("Initialized Sqlite %s", Sqlite.libversion())
+            _logger.messagef("Initialized Sqlite %s", Sqlite.libversion())
 
     _logger: Logging.Logger

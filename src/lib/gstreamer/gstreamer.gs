@@ -11,7 +11,7 @@ namespace GstUtil
             weak_arguments: weak array of string = arguments
             Gst.init(ref weak_arguments)
             _initialized = true
-            Logging.get_logger("gstreamer").infof("Initialized %s", Gst.version_string())
+            Logging.get_logger("gstreamer").messagef("Initialized %s", Gst.version_string())
 
     def list_element_factories()
         var l = ElementFactory.list_get_elements(ElementFactoryType.ANY, Rank.PRIMARY)

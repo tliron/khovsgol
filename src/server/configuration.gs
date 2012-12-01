@@ -9,7 +9,7 @@ namespace Khovsgol.Server
             try
                 _key_file.load_from_file(_file, KeyFileFlags.KEEP_COMMENTS)
             except e: FileError
-                _logger.info(e.message)
+                _logger.message(e.message)
         
         prop threads: uint
             get

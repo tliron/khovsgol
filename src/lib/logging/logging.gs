@@ -88,6 +88,7 @@ namespace Logging
                     Log.remove_handler(_domain, _handler_id)
                 _appender = value
                 if _appender is not null
+                    //Log.set_fatal_mask(_domain, 0)
                     _handler_id = Log.set_handler(_domain, _appender.levels, _appender.handle)
                 else
                     _handler_id = 0

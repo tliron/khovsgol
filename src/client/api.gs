@@ -1139,7 +1139,7 @@ namespace Khovsgol.Client
                         if in_gdk
                             position_in_track_change_gdk(position_in_track, _position_in_track, track_duration)
                         else
-                            new PositionInTrackChangeGdk(self, position_in_play_list, _position_in_play_list, track_duration)
+                            new PositionInTrackChangeGdk(self, position_in_track, _position_in_track, track_duration)
                         _position_in_track = position_in_track
 
                 var play_list = get_object_member_or_null(player, "playList")

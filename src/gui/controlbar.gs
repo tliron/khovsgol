@@ -146,15 +146,22 @@ namespace Khovsgol.GUI
         def private on_progress_clicked(e: Gdk.EventButton): bool
             var w = _progress.get_allocated_width()
             var ratio = (double) e.x / w
-            print "%f", ratio
+            _instance.api.set_ratio_in_track(_instance.player, ratio)
             return false
             
         def private on_progress_scrolled(e: Gdk.EventScroll): bool
-            var ratio = _progress.fraction
-            if (e.direction == Gdk.ScrollDirection.LEFT) || (e.direction == Gdk.ScrollDirection.DOWN)
-                print "left %f", ratio
-            else if (e.direction == Gdk.ScrollDirection.RIGHT) || (e.direction == Gdk.ScrollDirection.UP)
-                print "right %f", ratio
+            if _position_in_track != double.MIN
+                var step = (_track_duration != double.MIN) ? _track_duration * 0.1 : 10.0
+                position: double
+                if (e.direction == Gdk.ScrollDirection.LEFT) || (e.direction == Gdk.ScrollDirection.DOWN)
+                    position = _position_in_track - step
+                else // if (e.direction == Gdk.ScrollDirection.RIGHT) || (e.direction == Gdk.ScrollDirection.UP)
+                    position = _position_in_track + step
+                if position < 0
+                    position = 0
+                else if (_track_duration != double.MIN) && (position > _track_duration)
+                    position = _track_duration
+                _instance.api.set_position_in_track(_instance.player, position)
             return false
             
         def private on_visualization()
@@ -166,8 +173,17 @@ namespace Khovsgol.GUI
             SignalHandler.unblock(_toggle_pause, _on_toggle_pause_id)
  
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
-            pass
+            _position_in_track = position_in_track
+            _track_duration = track_duration
+            if (position_in_track != double.MIN) && (track_duration != double.MIN)
+                _progress.fraction = position_in_track / track_duration
+                _progress.text = "%s/%s".printf(format_duration(position_in_track), format_duration(track_duration))
+            else
+                _progress.fraction = 0.0
+                _progress.text = ""
 
         _instance: Instance
         _progress: ProgressBar
         _toggle_pause: ControlToggleToolButton
+        _position_in_track: double = double.MIN
+        _track_duration: double = double.MIN

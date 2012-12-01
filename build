@@ -117,3 +117,7 @@ compile khovsgol src/gui src/client src/lib/logging src/lib/nap src/lib/json src
 
 #ccode src/server src/lib
 #doc
+
+# Useful run options:
+#  G_DEBUG=fatal_warnings
+#  GST_DEBUG=1

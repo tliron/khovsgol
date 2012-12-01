@@ -73,7 +73,7 @@ namespace Nap.Connector._Soup
             entry.status_code = _soup_message.status_code
             if _response_text is not null
                 entry.size = _response_text.data.length
-            Logging.get_logger("nap.server.ncsa").info(entry.to_string())
+            Logging.get_logger("nap.server.ncsa").message(entry.to_string())
 
         _soup_server: Soup.Server
         _soup_message: Soup.Message
@@ -143,7 +143,7 @@ namespace Nap.Connector._Soup
             timer.stop()
             var seconds = timer.elapsed()
             Logging.get_logger("nap.client").debugf("%s (%f)", uri_str, seconds)
-            print "%s (%f)", uri_str, seconds
+            //print "%s (%f)", uri_str, seconds
 
         def pause()
             pass
