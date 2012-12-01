@@ -89,17 +89,22 @@ namespace Nap
             else
                 var last = 0
                 while start >= 0
-                    var end = pattern.index_of_char('}', start + 1)
+                    var after_start = start
+                    if !pattern.get_next_char(ref after_start, null)
+                        break
+                    var end = pattern.index_of_char('}', after_start)
                     if end >= 0
                         s.append(pattern.slice(last, start))
                         value: string = args.arg()
                         s.append(value)
-                        last = end + 1
+                        last = end
+                        if !pattern.get_next_char(ref last, null)
+                            break
                         start = pattern.index_of_char('{', last)
                     else
                         break
                 if last < pattern.length
-                    s.append(pattern.slice(last, pattern.length))
+                    s.append(pattern.substring(last))
 
             return s.str
 
@@ -116,18 +121,23 @@ namespace Nap
             else
                 var last = 0
                 while start >= 0
-                    var end = pattern.index_of_char('}', start + 1)
+                    var after_start = start
+                    if !pattern.get_next_char(ref after_start, null)
+                        break
+                    var end = pattern.index_of_char('}', after_start)
                     if end >= 0
                         s.append(pattern.slice(last, start))
-                        var variable = pattern.slice(start + 1, end)
+                        var variable = pattern.slice(after_start, end)
                         var value = variables[variable]
                         s.append(Soup.URI.encode(Soup.URI.encode(value, null), null))
-                        last = end + 1
+                        last = end
+                        if !pattern.get_next_char(ref last, null)
+                            break
                         start = pattern.index_of_char('{', last)
                     else
                         break
                 if last < pattern.length
-                    s.append(pattern.slice(last, pattern.length))
+                    s.append(pattern.substring(last))
 
             return s.str
 
@@ -137,7 +147,7 @@ namespace Nap
             
             wildcard: bool = false
             if p.has_suffix("*")
-                p = p.slice(0, pattern.length - 1)
+                p = p.substring(0, -1)
                 wildcard = true
                 
             var start = p.index_of_char('{')
@@ -146,20 +156,25 @@ namespace Nap
             else
                 var last = 0
                 while start >= 0
-                    var end = p.index_of_char('}', start + 1)
+                    var after_start = start
+                    if !pattern.get_next_char(ref after_start, null)
+                        break
+                    var end = p.index_of_char('}', after_start)
                     if end >= 0
                         regex.append(Regex.escape_string(p.slice(last, start)))
                         regex.append("(?<")
-                        var variable = p.slice(start + 1, end)
+                        var variable = p.slice(after_start, end)
                         _variables.add(variable)
                         regex.append(variable)
                         regex.append(">[^/]*)")
-                        last = end + 1
+                        last = end
+                        if !pattern.get_next_char(ref last, null)
+                            break
                         start = p.index_of_char('{', last)
                     else
                         break
                 if last < p.length
-                    regex.append(Regex.escape_string(p.slice(last, p.length)))
+                    regex.append(Regex.escape_string(p.substring(last)))
             
             if !wildcard
                 regex.append("$")

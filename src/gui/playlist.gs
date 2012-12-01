@@ -202,7 +202,7 @@ namespace Khovsgol.GUI
         def private on_right_clicked(e: Gdk.EventButton)
             iter: TreeIter
             if _store.get_iter_first(out iter)
-                var selections = _tree_view.get_selection().count_selected_rows()
+                var selections = get_selected_positions().get_length()
                 if selections == 0
                     _popup_none.popup(null, null, null, e.button, e.time)
                 else if selections == 1
@@ -217,7 +217,7 @@ namespace Khovsgol.GUI
             if keyval == Gdk.Key.Menu
                 iter: TreeIter
                 if _store.get_iter_first(out iter)
-                    var selections = _tree_view.get_selection().count_selected_rows()
+                    var selections = get_selected_positions().get_length()
                     if selections == 0
                         _popup_none.popup(null, null, null, 0, e.time)
                     else if selections == 1
@@ -469,9 +469,9 @@ namespace Khovsgol.GUI
         _popup_one: Gtk.Menu
         _popup_many: Gtk.Menu
         _play_mode: string
-        _position_in_play_list: int
-        _position_in_track: double
-        _track_duration: double
+        _position_in_play_list: int = int.MIN
+        _position_in_track: double = double.MIN
+        _track_duration: double = double.MIN
         _tracks: Json.Array?
         
         _logger: static Logging.Logger

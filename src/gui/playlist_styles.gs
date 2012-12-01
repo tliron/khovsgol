@@ -62,16 +62,19 @@ namespace Khovsgol.GUI
                         var title_sort = get_string_member_or_null(track, "title_sort")
                         var position = get_int_member_or_min(track, "position")
                         var duration = get_double_member_or_min(track, "duration")
+                        title = Markup.escape_text(title)
+                        title = format_annotation(title)
                         markup1: string
                         if show_artist
                             var artist = get_string_member_or_null(track, "artist")
                             if artist is not null
-                                markup1 = "%d\t%s - <i>%s</i>".printf(position, Markup.escape_text(title), Markup.escape_text(artist))
+                                artist = Markup.escape_text(artist)
+                                markup1 = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                             else
-                                markup1 = "%d\t%s".printf(position, Markup.escape_text(title))
+                                markup1 = "%d\t%s".printf(position, title)
                         else
-                            markup1 = "%d\t%s".printf(position, Markup.escape_text(title))
-                        var markup2 = Markup.escape_text(format_duration(duration))
+                            markup1 = "%d\t%s".printf(position, title)
+                        var markup2 = format_duration(duration)
                         node.append_object(track, position, title_sort, markup1, markup2)
                         if current_album_positions is not null
                             current_album_positions.add_int_element(position)
@@ -123,11 +126,14 @@ namespace Khovsgol.GUI
                         var position = get_int_member_or_min(track, "position")
                         var duration = get_double_member_or_min(track, "duration")
                         var artist = get_string_member_or_null(track, "artist")
+                        title = Markup.escape_text(title)
+                        title = format_annotation(title)
                         markup1: string
                         if artist is not null
-                            markup1 = "%d\t%s - <i>%s</i>".printf(position, Markup.escape_text(title), Markup.escape_text(artist))
+                            artist = Markup.escape_text(artist)
+                            markup1 = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                         else
-                            markup1 = "%d\t%s".printf(position, Markup.escape_text(title))
+                            markup1 = "%d\t%s".printf(position, title)
                         var markup2 = Markup.escape_text(format_duration(duration))
                         node.append_object(track, position, title_sort, markup1, markup2)
 
@@ -161,15 +167,22 @@ namespace Khovsgol.GUI
                         var duration = get_double_member_or_min(track, "duration")
                         var artist = get_string_member_or_null(track, "artist")
                         var album = get_string_member_or_null(track, "album")
+                        title = Markup.escape_text(title)
+                        title = format_annotation(title)
+                        if artist is not null
+                            artist = Markup.escape_text(artist)
+                        if album is not null
+                            album = Markup.escape_text(album)
+                            album = format_annotation(album)
                         markup1: string
                         if (artist is not null) and (album is not null)
-                            markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">In %s</span>".printf(position, Markup.escape_text(title), Markup.escape_text(artist), Markup.escape_text(album))
+                            markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">In %s</span>".printf(position, title, artist, album)
                         else if (artist is not null) and (album is null)
-                            markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>".printf(position, Markup.escape_text(title), Markup.escape_text(artist))
+                            markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>".printf(position, title, artist)
                         else if (artist is null) and (album is not null)
-                            markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position, Markup.escape_text(title), Markup.escape_text(album))
+                            markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position, title, album)
                         else
-                            markup1 = "%d\t%s".printf(position, Markup.escape_text(title))
+                            markup1 = "%d\t%s".printf(position, title)
                         var markup2 = Markup.escape_text(format_duration(duration))
                         node.append_object(track, position, title_sort, markup1, markup2)
 

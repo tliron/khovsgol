@@ -7,9 +7,6 @@ uses
 
 namespace Khovsgol.GUI
 
-    def is_lossless(file_type: string): bool
-        return (file_type == "flac") || (file_type == "ape") || (file_type == "wav") || (file_type == "wv") || (file_type == "tta")
-    
     interface LibraryStyle: Style
         def abstract fill(node: LibraryNode)
         def abstract gather_tracks(node: LibraryNode, ref tracks: Json.Array)
@@ -17,46 +14,38 @@ namespace Khovsgol.GUI
     class ArtistsAndTheirAlbums: GLib.Object implements Style, LibraryStyle
         prop readonly name: string = "artists_albums"
         prop readonly label: string = "Artists and their albums"
-
+        
         def fill(node: LibraryNode)
             var level = node.level
             if level == 0
                 // Album artists
-                var artists = node.instance.api.get_artists(true, "artist_sort")
-                if (artists is not null) && (artists.get_length() > 0)
-                    for var i = 0 to (artists.get_length() - 1)
-                        var artist = get_array_element_or_null(artists, i)
-                        if (artist is not null) && (artist.get_length() >= 2)
-                            var name = get_string_element_or_null(artist, 0)
-                            var name_sort = get_string_element_or_null(artist, 1)
-                            var markup = Markup.escape_text(name)
-                            if name is not null
-                                node.append_array(artist, name_sort, markup, null, true)
+                fill_artists(node.instance.api.get_artists(true, "artist_sort"), node)
+
+                // Compilation section
+                node.append_separator()
+                node.append_string("compilations", "compilations", "<b>Compilations</b>", null, true)
+                node.append_string("custom", "customcompilations", "<b>Custom Compilations</b>", null, true)
             
             else if level == 1
-                // Albums by artist
-                var artist = node.as_array
-                if (artist is not null) && (artist.get_length() > 0)
-                    var name = get_string_element_or_null(artist, 0)
-                    if name is not null
-                        var args = new Client.API.GetAlbumsArgs()
-                        args.by_artist = name
-                        args.sort.add("date")
-                        args.sort.add("title_sort")
-                        var albums = node.instance.api.get_albums(args)
-                        if (albums is not null) && (albums.get_length() > 0)
-                            for var i = 0 to (albums.get_length() - 1)
-                                var album = get_object_element_or_null(albums, i)
-                                if album is not null
-                                    var date = get_int_member_or_min(album, "date")
-                                    var title = get_string_member_or_null(album, "title")
-                                    var title_sort = get_string_member_or_null(album, "title_sort")
-                                    var file_type = get_string_member_or_null(album, "type")
-                                    var markup = date != int.MIN ? "%d: %s".printf(date, title) : title
-                                    markup = Markup.escape_text(markup)
-                                    if !is_lossless(file_type)
-                                        markup = "<span color=\"#888888\">%s</span>".printf(markup)
-                                    node.append_object(album, title_sort, markup, null, true)
+                var node_type = node.node_type
+                if node_type == Json.NodeType.ARRAY
+                    // Albums by artist
+                    var artist = node.as_array
+                    if (artist is not null) && (artist.get_length() > 0)
+                        var name = get_string_element_or_null(artist, 0)
+                        if name is not null
+                            var args = new Client.API.GetAlbumsArgs()
+                            args.by_artist = name
+                            args.sort.add("date")
+                            args.sort.add("title_sort")
+                            fill_albums(node.instance.api.get_albums(args), node)
+                else
+                    // Compilations
+                    var args = new Client.API.GetAlbumsArgs()
+                    args.compilation_type = node.as_string == "custom" ? 2 : 1
+                    args.sort.add("date")
+                    args.sort.add("title_sort")
+                    fill_albums(node.instance.api.get_albums(args), node)
 
             else if level == 2
                 // Tracks in album
@@ -67,54 +56,33 @@ namespace Khovsgol.GUI
                         var args = new Client.API.GetTracksArgs()
                         args.in_album = path
                         args.sort.add("position")
-                        var tracks = node.instance.api.get_tracks(args)
-                        if (tracks is not null) && (tracks.get_length() > 0)
-                            for var i = 0 to (tracks.get_length() - 1)
-                                var track = get_object_element_or_null(tracks, i)
-                                if track is not null
-                                    var title = get_string_member_or_null(track, "title")
-                                    var title_sort = get_string_member_or_null(track, "title_sort")
-                                    var file_type = get_string_member_or_null(album, "type")
-                                    var position = get_int_member_or_min(track, "position")
-                                    var markup = position != int.MIN ? "%d\t%s".printf(position, title) : title
-                                    markup = Markup.escape_text(markup)
-                                    if !is_lossless(file_type)
-                                        markup = "<span color=\"#888888\">%s</span>".printf(markup)
-                                    node.append_object(track, title_sort, markup)
-
+                        fill_tracks_in_album(node.instance.api.get_tracks(args), node)
+        
         def gather_tracks(node: LibraryNode, ref tracks: Json.Array)
             var level = node.level
             if level == 1
-                // Artist
-                var artist = node.as_array
-                if (artist is not null) && (artist.get_length() > 0)
-                    var name = get_string_element_or_null(artist, 0)
-                    if name is not null
-                        var args = new Client.API.GetAlbumsArgs()
-                        args.by_artist = name
-                        args.sort.add("date")
-                        args.sort.add("title_sort")
-                        var albums = node.instance.api.get_albums(args)
-                        if (albums is not null) && (albums.get_length() > 0)
-                            for var i = 0 to (albums.get_length() - 1)
-                                var album = get_object_element_or_null(albums, i)
-                                if album is not null
-                                    var path = get_string_member_or_null(album, "path")
-                                    if path is not null
-                                        var args2 = new Client.API.GetTracksArgs()
-                                        args2.in_album = path
-                                        args2.sort.add("position")
-                                        var tracks2 = node.instance.api.get_tracks(args2)
-                                        if (tracks2 is not null) && (tracks2.get_length() > 0)
-                                            for var i2 = 0 to (tracks2.get_length() - 1)
-                                                var track = get_object_element_or_null(tracks2, i2)
-                                                if track is not null
-                                                    var track_path = get_string_member_or_null(track, "path")
-                                                    if track_path is not null
-                                                        tracks.add_string_element(track_path)
+                var node_type = node.node_type
+                if node_type == Json.NodeType.ARRAY
+                    // All tracks for artist, one album at a time
+                    var artist = node.as_array
+                    if (artist is not null) && (artist.get_length() > 0)
+                        var name = get_string_element_or_null(artist, 0)
+                        if name is not null
+                            var args = new Client.API.GetAlbumsArgs()
+                            args.by_artist = name
+                            args.sort.add("date")
+                            args.sort.add("title_sort")
+                            gather_albums(node.instance.api.get_albums(args), node, ref tracks)
+                else
+                    // All tracks by compilation type, one album at a time
+                    var args = new Client.API.GetAlbumsArgs()
+                    args.compilation_type = node.as_string == "custom" ? 2 : 1
+                    args.sort.add("date")
+                    args.sort.add("title_sort")
+                    gather_albums(node.instance.api.get_albums(args), node, ref tracks)
 
             else if level == 2
-                // Album
+                // All tracks in album
                 var album = node.as_object
                 if album is not null
                     var path = get_string_member_or_null(album, "path")
@@ -132,19 +100,33 @@ namespace Khovsgol.GUI
                                         tracks.add_string_element(track_path)
 
             else if level == 3
-                // Track
+                // The track
                 var track = node.as_object
                 if track is not null
                     var path = get_string_member_or_null(track, "path")
                     if path is not null
                         tracks.add_string_element(path)
-     
+
     class ArtistsAndTheirTracks: GLib.Object implements Style, LibraryStyle
         prop readonly name: string = "artists_tracks"
         prop readonly label: string = "Artists and their tracks"
         
         def fill(node: LibraryNode)
-            pass
+            var level = node.level
+            if level == 0
+                // Artists
+                fill_artists(node.instance.api.get_artists(false, "artist_sort"), node)
+
+            else if level == 1
+                // Tracks with artist
+                var artist = node.as_array
+                if (artist is not null) && (artist.get_length() > 0)
+                    var name = get_string_element_or_null(artist, 0)
+                    if name is not null
+                        var args = new Client.API.GetTracksArgs()
+                        args.by_artist = name
+                        args.sort.add("title_sort")
+                        fill_tracks(node.instance.api.get_tracks(args), node)
 
         def gather_tracks(node: LibraryNode, ref tracks: Json.Array)
             pass
@@ -178,3 +160,106 @@ namespace Khovsgol.GUI
 
         def gather_tracks(node: LibraryNode, ref tracks: Json.Array)
             pass
+
+    def private fill_artists(artists: Json.Array?, node: LibraryNode)
+        if (artists is not null) && (artists.get_length() > 0)
+            current_letter: unichar = 0
+            for var i = 0 to (artists.get_length() - 1)
+                var artist = get_array_element_or_null(artists, i)
+                if (artist is not null) && (artist.get_length() >= 2)
+                    var name = get_string_element_or_null(artist, 0)
+                    if name is not null
+                        var name_sort = get_string_element_or_null(artist, 1)
+                        
+                        // Separate by first letter
+                        if (name_sort is not null) && (name_sort.length > 0)
+                            var letter = name_sort.get_char(0)
+                            if letter != current_letter
+                                current_letter = letter
+                                if i > 0
+                                    node.append_separator()
+                                    
+                        var markup = Markup.escape_text(name)
+                        node.append_array(artist, name_sort, markup, null, true)
+ 
+    def private fill_albums(albums: Json.Array?, node: LibraryNode)
+        if (albums is not null) && (albums.get_length() > 0)
+            for var i = 0 to (albums.get_length() - 1)
+                var album = get_object_element_or_null(albums, i)
+                if album is not null
+                    var title = get_string_member_or_null(album, "title")
+                    if title is not null
+                        var title_sort = get_string_member_or_null(album, "title_sort")
+                        var file_type = get_string_member_or_null(album, "type")
+                        var date = get_int_member_or_min(album, "date")
+                        title = Markup.escape_text(title)
+                        title = format_annotation(title)
+                        if !is_lossless(file_type)
+                            title = format_washed_out(title)
+                        var markup = date != int.MIN ? "%d: %s".printf(date, title) : title
+                        node.append_object(album, title_sort, markup, null, true)
+
+    def private fill_tracks_in_album(tracks: Json.Array?, node: LibraryNode)
+        if (tracks is not null) && (tracks.get_length() > 0)
+            for var i = 0 to (tracks.get_length() - 1)
+                var track = get_object_element_or_null(tracks, i)
+                if track is not null
+                    var title = get_string_member_or_null(track, "title")
+                    if title is not null
+                        var title_sort = get_string_member_or_null(track, "title_sort")
+                        var file_type = get_string_member_or_null(track, "type")
+                        var position = get_int_member_or_min(track, "position")
+                        var duration = get_double_member_or_min(track, "duration")
+                        title = Markup.escape_text(title)
+                        title = format_annotation(title)
+                        if !is_lossless(file_type)
+                            title = format_washed_out(title)
+                        var markup1 = position != int.MIN ? "%d\t%s".printf(position, title) : title
+                        var markup2 = duration != double.MIN ? format_duration(duration) : null
+                        node.append_object(track, title_sort, markup1, markup2)
+
+    def private fill_tracks(tracks: Json.Array?, node: LibraryNode)
+        if (tracks is not null) && (tracks.get_length() > 0)
+            current_letter: unichar = 0
+            for var i = 0 to (tracks.get_length() - 1)
+                var track = get_object_element_or_null(tracks, i)
+                if track is not null
+                    var title = get_string_member_or_null(track, "title")
+                    if title is not null
+                        var title_sort = get_string_member_or_null(track, "title_sort")
+                        var file_type = get_string_member_or_null(track, "type")
+                        var duration = get_double_member_or_min(track, "duration")
+                        title = Markup.escape_text(title)
+                        title = format_annotation(title)
+                        if !is_lossless(file_type)
+                            title = format_washed_out(title)
+
+                        // Separate by first letter
+                        if (title_sort is not null) && (title_sort.length > 0)
+                            var letter = title_sort.get_char(0)
+                            if letter != current_letter
+                                current_letter = letter
+                                if i > 0
+                                    node.append_separator()
+
+                        var markup2 = duration != double.MIN ? format_duration(duration) : null
+                        node.append_object(track, title_sort, title, markup2)
+
+    def gather_albums(albums: Json.Array?, node: LibraryNode, ref tracks: Json.Array)
+        if (albums is not null) && (albums.get_length() > 0)
+            for var i = 0 to (albums.get_length() - 1)
+                var album = get_object_element_or_null(albums, i)
+                if album is not null
+                    var path = get_string_member_or_null(album, "path")
+                    if path is not null
+                        var args2 = new Client.API.GetTracksArgs()
+                        args2.in_album = path
+                        args2.sort.add("position")
+                        var tracks2 = node.instance.api.get_tracks(args2)
+                        if (tracks2 is not null) && (tracks2.get_length() > 0)
+                            for var i2 = 0 to (tracks2.get_length() - 1)
+                                var track = get_object_element_or_null(tracks2, i2)
+                                if track is not null
+                                    var track_path = get_string_member_or_null(track, "path")
+                                    if track_path is not null
+                                        tracks.add_string_element(track_path)

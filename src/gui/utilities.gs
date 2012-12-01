@@ -8,8 +8,17 @@ namespace Khovsgol.GUI
     //def get_stock_icon_pixbuf(window, name):
       //  return window.render_icon(getattr(Gtk, 'STOCK_' + name), Gtk.IconSize.MENU, None)
 
+    /*
+     * True if the file type is known to be lossless.
+     */
+    def is_lossless(file_type: string): bool
+        return (file_type == "flac") || (file_type == "ape") || (file_type == "wav") || (file_type == "wv") || (file_type == "tta")
+    
+    /*
+     * Formats a duration in seconds as "hh:mm:ss".
+     */
     def format_duration(duration: double): string
-        var seconds = (int) duration
+        var seconds = (int) Math.round(duration)
         var minutes = seconds / 60
         var hours = seconds / 3600
         seconds -= minutes * 60
@@ -20,6 +29,23 @@ namespace Khovsgol.GUI
             return "%d:%02d".printf(minutes, seconds)
         else
             return seconds.to_string()
+
+    /*
+     * Adds markup for a washed-out effect.
+     */
+    def format_washed_out(text: string): string
+        return "<span color=\"#888888\">%s</span>".printf(text)
+
+    /*
+     * Adds markup for bracketed annotations.
+     */
+    def format_annotation(text: string): string
+        var length = text.char_count()
+        if (length > 0) && (text.get_char(length - 1) == ']')
+            var open = text.index_of_char('[')
+            if open != -1
+                return "%s<span size=\"smaller\">%s</span>".printf(text.substring(0, open), text.substring(open))
+        return text
 
     /*
      * Basic interface for library and playlist styles.
@@ -120,6 +146,18 @@ namespace Khovsgol.GUI
                 _store.get_value(_iter, Library.Column.NODE, out value)
                 return ((Json.Node) value).get_array()
 
+        prop readonly as_string: string
+            get
+                value: Value
+                _store.get_value(_iter, Library.Column.NODE, out value)
+                return ((Json.Node) value).get_string()
+
+        prop readonly node_type: Json.NodeType
+            get
+                value: Value
+                _store.get_value(_iter, Library.Column.NODE, out value)
+                return ((Json.Node) value).get_node_type()
+
         def append(node: Json.Node?, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
             if !_is_frozen
                 _tree_view.freeze_child_notify()
@@ -141,6 +179,15 @@ namespace Khovsgol.GUI
             var node = new Json.Node(Json.NodeType.ARRAY)
             node.set_array(arr)
             append(node, search, markup1, markup2, is_expandable)
+
+        def append_string(data: string, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+            var node = new Json.Node(Json.NodeType.VALUE)
+            node.set_string(data)
+            append(node, search, markup1, markup2, is_expandable)
+
+        def append_separator()
+            var node = new Json.Node(Json.NodeType.NULL)
+            append(node)
 
         _tree_view: TreeView
         _store: TreeStore

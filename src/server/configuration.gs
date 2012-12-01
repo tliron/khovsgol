@@ -73,7 +73,7 @@ namespace Khovsgol.Server
                 if _libraries.is_empty
                     for group in _key_file.get_groups()
                         if group.has_prefix("library.")
-                            var library = group.slice(8, group.length)
+                            var library = group.substring(8)
                             _libraries.add(library)
                 return _libraries
         

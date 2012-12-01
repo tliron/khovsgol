@@ -117,7 +117,9 @@ namespace Khovsgol.GUI
             pass
             
         def private on_row_separator(mode: TreeModel, iter: TreeIter): bool
-            return false
+            value: Value
+            _store.get_value(iter, Column.NODE, out value)
+            return ((Json.Node) value).get_node_type() == Json.NodeType.NULL
         
         def private on_clicked(event: Gdk.EventButton): bool
             // TODO: do we need this?
@@ -221,7 +223,7 @@ namespace Khovsgol.GUI
                 var tree_paths = selection.get_selected_rows(null)
                 if tree_paths.length() > 0
                     iter: TreeIter
-                    var data = new Json.Array.sized(tree_paths.length())
+                    var data = new Json.Array()
                     for var tree_path in tree_paths
                         if _store.get_iter(out iter, tree_path)
                             var node = new LibraryNode(_instance, _tree_view, _store, iter)
