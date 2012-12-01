@@ -659,7 +659,7 @@ namespace Khovsgol.Server
          * send {move: [int, ...]}
          * send {move: {to: int, positions: [int, ...]}}
          * send {add: [string, ...]}
-         * send {add: {position: int, paths: [string, ...]}}
+         * send {add: {to: int, paths: [string, ...]}}
          * send {remove: [int, ...]}
          * 
          * receive =get_play_list

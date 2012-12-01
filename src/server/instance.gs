@@ -16,7 +16,7 @@ namespace Khovsgol.Server
             if _arguments.start_daemon || _arguments.stop_daemon || _arguments.status_daemon
                 Daemonize.handle("khovsgol", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
             
-            initialize_logging()
+            initialize_logging(_arguments.console)
             
             _libraries = create_libraries()
             _libraries.initialize()
@@ -90,8 +90,6 @@ namespace Khovsgol.Server
             return play_list
         
         def start()
-            stdout.printf("Starting Khövsgöl server at port %u, %u threads\n", _configuration.port, _configuration.threads)
-            _logger.messagef("Starting Khövsgöl server at port %u, %u threads", _configuration.port, _configuration.threads)
             _server.start()
             _main_loop.run()
 
@@ -131,19 +129,23 @@ namespace Khovsgol.Server
 
     _logger: Logging.Logger
     
-    def private static initialize_logging() raises GLib.Error
+    def private static initialize_logging(console: bool) raises GLib.Error
         _logger = Logging.get_logger("khovsgol.server")
         
-        var appender = new Logging.FileAppender()
-        appender.deepest_level = LogLevelFlags.LEVEL_INFO
-        appender.set_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
-        Logging.get_logger().appender = appender
-        
-        appender = new Logging.FileAppender()
-        appender.deepest_level = LogLevelFlags.LEVEL_INFO
-        appender.set_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
-        appender.renderer = new Logging.SimpleRenderer()
-        Logging.get_logger("nap.server.ncsa").appender = appender
+        if !console
+            var appender = new Logging.FileAppender()
+            appender.deepest_level = LogLevelFlags.LEVEL_INFO
+            appender.set_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
+            Logging.get_logger().appender = appender
+            
+            appender = new Logging.FileAppender()
+            appender.deepest_level = LogLevelFlags.LEVEL_DEBUG
+            appender.set_path("%s/.khovsgol/log/web.log".printf(Environment.get_home_dir()))
+            appender.renderer = new Logging.SimpleRenderer()
+            Logging.get_logger("nap.server.ncsa").appender = appender
+        else
+            var appender = new Logging.StreamAppender()
+            Logging.get_logger().appender = appender
         
 init
     try

@@ -40,9 +40,8 @@ namespace Khovsgol.GUI
      * Adds markup for bracketed annotations.
      */
     def format_annotation(text: string): string
-        var length = text.char_count()
-        if (length > 0) && (text.get_char(length - 1) == ']')
-            var open = text.index_of_char('[')
+        if text.has_suffix("]")
+            var open = text.last_index_of_char('[')
             if open != -1
                 return "%s<span size=\"smaller\">%s</span>".printf(text.substring(0, open), text.substring(open))
         return text
@@ -152,6 +151,12 @@ namespace Khovsgol.GUI
                 _store.get_value(_iter, Library.Column.NODE, out value)
                 return ((Json.Node) value).get_string()
 
+        prop readonly as_int: int
+            get
+                value: Value
+                _store.get_value(_iter, Library.Column.NODE, out value)
+                return (int) ((Json.Node) value).get_int()
+
         prop readonly node_type: Json.NodeType
             get
                 value: Value
@@ -183,6 +188,11 @@ namespace Khovsgol.GUI
         def append_string(data: string, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
             var node = new Json.Node(Json.NodeType.VALUE)
             node.set_string(data)
+            append(node, search, markup1, markup2, is_expandable)
+
+        def append_int(data: int, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+            var node = new Json.Node(Json.NodeType.VALUE)
+            node.set_int(data)
             append(node, search, markup1, markup2, is_expandable)
 
         def append_separator()

@@ -107,37 +107,37 @@ namespace Logging
             GLib.logv(_domain, level, message, va_list())
 
         def error(message: string)
-            GLib.log(_domain, LogLevelFlags.LEVEL_ERROR, "%s", message)
+            g_log(_domain, LogLevelFlags.LEVEL_ERROR, "%s", message)
 
         def errorf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_ERROR, message, va_list())
 
         def critical(message: string)
-            GLib.log(_domain, LogLevelFlags.LEVEL_CRITICAL, "%s", message)
+            g_log(_domain, LogLevelFlags.LEVEL_CRITICAL, "%s", message)
 
         def criticalf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_CRITICAL, message, va_list())
 
         def warning(message: string)
-            GLib.log(_domain, LogLevelFlags.LEVEL_WARNING, "%s", message)
+            g_log(_domain, LogLevelFlags.LEVEL_WARNING, "%s", message)
 
         def warningf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_WARNING, message, va_list())
 
         def message(message: string)
-            GLib.log(_domain, LogLevelFlags.LEVEL_MESSAGE, "%s", message)
+            g_log(_domain, LogLevelFlags.LEVEL_MESSAGE, "%s", message)
 
         def messagef(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_MESSAGE, message, va_list())
 
         def info(message: string)
-            GLib.log(_domain, LogLevelFlags.LEVEL_INFO, "%s", message)
+            g_log(_domain, LogLevelFlags.LEVEL_INFO, "%s", message)
 
         def infof(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_INFO, message, va_list())
 
         def debug(message: string)
-            GLib.log(_domain, LogLevelFlags.LEVEL_DEBUG, "%s", message)
+            g_log(_domain, LogLevelFlags.LEVEL_DEBUG, "%s", message)
             
         def debugf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_DEBUG, message, va_list())
@@ -149,6 +149,9 @@ namespace Logging
      * Handles the actual appending of log messages to a log.
      */
     class abstract Appender: Object
+        construct()
+            deepest_level = LogLevelFlags.LEVEL_DEBUG
+    
         prop levels: LogLevelFlags
         prop deepest_level: LogLevelFlags
             set
@@ -179,7 +182,23 @@ namespace Logging
      * stream.
      */
     class StreamAppender: Appender
-        prop stream: FileOutputStream
+        prop stream: unowned FileStream = stdout
+        prop renderer: Renderer? = new ColorFormatRenderer()
+
+        def override handle(domain: string?, levels: LogLevelFlags, message: string)
+            if renderer is not null
+                var rendered = renderer.render(domain, levels, message)
+                if rendered is not null
+                    if _stream is not null
+                        _stream.puts(rendered)
+                        _stream.flush()
+    
+    /*
+     * Renders log messages into lines of text and appends them to a
+     * stream.
+     */
+    class OutputStreamAppender: Appender
+        prop stream: OutputStream
         prop renderer: Renderer? = new FormatRenderer()
 
         def override handle(domain: string?, levels: LogLevelFlags, message: string)
@@ -189,15 +208,18 @@ namespace Logging
                     try
                         if _stream is not null
                             _stream.write(rendered.data)
+                            _stream.write(NEWLINE)
                             _stream.flush()
                     except e: Error
                         stderr.printf("Error writing log message to stream: %s\n", e.message)
-    
+        
+        const NEWLINE: array of uint8 = {10}
+
     /*
      * A file stream appender that handles automatic rolling of log
      * files.
      */
-    class FileAppender: StreamAppender
+    class FileAppender: OutputStreamAppender
         prop max_file_size: int = 1000000 // 1MB
         prop max_older_files: int = 10
         prop readonly file: File
@@ -321,4 +343,35 @@ namespace Logging
             var now = new DateTime.now_local()
             return format.printf(now.format(_date_time_format), now.get_microsecond() / 1000, get_log_level_name(levels), domain, message)
 
+    /*
+     * Renders a log message using formats and console colors.
+     */
+    class ColorFormatRenderer: FormatRenderer
+        def override render(domain: string?, levels: LogLevelFlags, message: string): string?
+            var r = super.render(domain, levels, message)
+            
+            color: Console.Color = Console.Color.WHITE
+            if (levels & LogLevelFlags.LEVEL_ERROR) != 0
+                color = Console.Color.RED
+            else if (levels & LogLevelFlags.LEVEL_CRITICAL) != 0
+                color = Console.Color.RED
+            else if (levels & LogLevelFlags.LEVEL_WARNING) != 0
+                color = Console.Color.YELLOW
+            else if (levels & LogLevelFlags.LEVEL_MESSAGE) != 0
+                color = Console.Color.GREEN
+            else if (levels & LogLevelFlags.LEVEL_INFO) != 0
+                color = Console.Color.BLUE
+            else if (levels & LogLevelFlags.LEVEL_DEBUG) != 0
+                color = Console.Color.CYAN
+                
+            return Console.foreground(color) + r + Console.reset()
+
     _loggers: dict of string, Logger
+
+/*
+ * Unfortunately, the Vala binding for GLib.log has a [Diagnostics]
+ * annotation that forces the source code file and line number to be
+ * prepended. In order to override that, we need to call the C function
+ * directly. Note that GLib.logv does not have this annotation.
+ */
+def extern g_log(domain: string?, levels: LogLevelFlags, format: string, ...)

@@ -41,6 +41,22 @@ namespace Khovsgol
         prop duration: double
         prop date: int
         prop file_type: string
+        
+        def clone(): Track
+            var track = new Track()
+            track._path = _path
+            track._library = _library
+            track._title = _title
+            track._title_sort = _title_sort
+            track._artist = _artist
+            track._album = _album
+            track._album_sort = _album_sort
+            track._album_path = _album_path
+            track._position = _position
+            track._duration = _duration
+            track._date = _date
+            track._file_type = _file_type
+            return track
 
         def to_json(): Json.Object
             var json = new Json.Object()
@@ -271,7 +287,7 @@ namespace Khovsgol
             begin()
             try
                 // Make room by moving the track pointers after us forward
-                move_track_pointers(album_path, (int) last + 1, destination)
+                move_track_pointers(album_path, (int) length, destination)
                 
                 // Add the track pointers at the destination
                 for var i = 0 to last
@@ -760,7 +776,8 @@ namespace Khovsgol
         def set_paths(paths: Json.Array) raises GLib.Error
             _player.position_in_play_list = int.MIN
             _crucible.libraries.delete_track_pointers(_album_path)
-            add(0, paths)
+            _crucible.libraries.add(_album_path, 0, paths)
+            update_version()
             _player.next()
             
         def add(position: int, paths: Json.Array) raises GLib.Error
@@ -846,11 +863,11 @@ namespace Khovsgol
                     track: Track = null
                     var path = track_pointer.path
                     if path is null
-                        _logger.warningf("Null track")
+                        _logger.warning("Null track")
                         continue
                     for var t in _tracks
                         if t.path == path
-                            track = t
+                            track = t.clone()
                             break
                     if track is null
                         track = crucible.libraries.get_track(path)

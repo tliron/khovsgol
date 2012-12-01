@@ -398,12 +398,12 @@ namespace Khovsgol.Client
          * 
          * receive =get_album
          */
-        def create_album(path: string, title: string, library: string, tracks: Json.Array): Json.Object?
+        def create_album(path: string, title: string, library: string, paths: Json.Array): Json.Object?
             try
                 var payload = new Json.Object()
                 payload.set_string_member("title", title)
                 payload.set_string_member("library", library)
-                payload.set_array_member("tracks", tracks)
+                payload.set_array_member("tracks", paths)
 
                 var conversation = _client.create_conversation()
                 conversation.method = Method.PUT
@@ -979,7 +979,7 @@ namespace Khovsgol.Client
 
         /*
          * send {add: [string, ...]}
-         * send {add: {position: int, paths: [string, ...]}}
+         * send {add: {to: int, paths: [string, ...]}}
          * 
          * receive =get_play_list
          */
@@ -988,7 +988,7 @@ namespace Khovsgol.Client
                 var payload = new Json.Object()
                 if position != int.MIN
                     var add = new Json.Object()
-                    add.set_int_member("position", position)
+                    add.set_int_member("to", position)
                     add.set_array_member("paths", paths)
                     payload.set_object_member("add", add)
                 else

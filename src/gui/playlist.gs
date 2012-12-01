@@ -267,12 +267,10 @@ namespace Khovsgol.GUI
             if _tree_view.get_dest_row_at_pos(x, y, out tree_path, out drop_position)
                 iter: TreeIter
                 if _store.get_iter(out iter, tree_path)
-                    value: Value
-                    _store.get_value(iter, Column.POSITION, out value)
-                    destination = (int) value
+                    destination = get_first_position(iter)
                     if (drop_position == TreeViewDropPosition.AFTER) || (drop_position == TreeViewDropPosition.INTO_OR_AFTER)
                         destination++
-                    
+            
             var target_name = selection_data.get_target().name()
             if target_name == "JSON_NUMBER_ARRAY"
                 // Playlist positions moved within the playlist
@@ -332,7 +330,20 @@ namespace Khovsgol.GUI
             _instance.api.set_play_list_paths(_instance.player, new Json.Array(), true, true)
 
         def private on_save_as_compilation()
-            pass
+            if (_tracks is not null) && (_tracks.get_length() > 0)
+                var dialog = new CreateCustomCompilation(_instance.window)
+                if dialog.do()
+                    var title = dialog.compilation_name
+                    if title.length > 0
+                        var album_path = "*" + DBus.generate_guid()
+                        var paths = new Json.Array()
+                        for var i = 0 to (_tracks.get_length() - 1)
+                            var track = get_object_element_or_null(_tracks, i)
+                            if track is not null
+                                var path = get_string_member_or_null(track, "path")
+                                if path is not null
+                                    paths.add_string_element(path)
+                        _instance.api.create_album(album_path, title, "main", paths)
         
         def private on_import_xspf()
             pass
@@ -421,12 +432,16 @@ namespace Khovsgol.GUI
             iter: TreeIter
             for var tree_path in tree_paths
                 if _store.get_iter(out iter, tree_path)
-                    var style = _style_box.active_style
-                    if style is not null
-                        var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
-                        var position = ((PlayListStyle) style).get_first_position(node)
-                        if position != int.MIN
-                            return position
+                    return get_first_position(iter)
+            return int.MIN
+
+        def private get_first_position(iter: TreeIter): int
+            var style = _style_box.active_style
+            if style is not null
+                var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
+                var position = ((PlayListStyle) style).get_first_position(node)
+                if position != int.MIN
+                    return position
             return int.MIN
         
         def private create_import_menu(): Gtk.MenuItem
@@ -498,3 +513,50 @@ namespace Khovsgol.GUI
         const private DROP_TARGETS: array of TargetEntry = {
             {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, 0},
             {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1}}
+        
+        class private CreateCustomCompilation: Dialog
+            construct(parent: Window)
+                title = "Create Custom Compilation"
+                transient_for = parent
+                destroy_with_parent = true
+                modal = true
+                
+                _name = new EntryBox("Compilation _name:")
+                _name.entry.activate.connect(on_activate)
+                var library = new SimpleComboBox()
+                //for l in libraries:
+                //    library.append_text(l['name'])
+                //library.set_active(0)
+                var library_label = new Label.with_mnemonic("_Library:")
+                library_label.mnemonic_widget = library
+                var library_box = new Box(Orientation.HORIZONTAL, 5)
+                library_box.pack_start(library_label)
+                library_box.pack_start(library, true, true)
+                var box = new Box(Orientation.VERTICAL, 10)
+                box.pack_start(_name, true, true)
+                box.pack_start(library_box, true, true)
+                var alignment = new Alignment(0, 0, 1, 0)
+                alignment.set_padding(20, 20, 20, 20)
+                alignment.add(box)
+                get_content_area().pack_start(alignment, true, true)
+                set_default_size(400, -1)
+                set_default_response(ResponseType.OK)
+
+                add_button(Stock.CANCEL, ResponseType.CANCEL)
+                add_button(Stock.OK, ResponseType.OK)
+
+                show_all()
+                
+            prop readonly compilation_name: string
+
+            def do(): bool
+                var response = run()
+                if response == ResponseType.OK
+                    _compilation_name = _name.entry.text.strip()
+                destroy()
+                return response == ResponseType.OK
+            
+            def private on_activate()
+                response(ResponseType.OK)
+
+            _name: EntryBox

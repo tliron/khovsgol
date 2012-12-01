@@ -116,28 +116,3 @@ namespace Nap
         prop abstract base_url: string
 
         def abstract create_conversation(): Conversation raises GLib.Error
-
-    /*
-     * Renders an NCSA Common Log entry.
-     */
-    class NcsaCommonLogEntry
-        prop address: string?
-        prop user_identifier: string?
-        prop user_id: string?
-        prop timestamp: DateTime = new DateTime.now_local()
-        prop method: string
-        prop path: string
-        prop protocol: string
-        prop status_code: uint
-        prop size: uint
-        
-        def get_formatted_timestamp(): string
-            return _timestamp.format("%d/%b/%Y:%H:%M:%S %z")
-        
-        def to_string(): string
-            return "%s %s %s [%s] \"%s %s %s\" %u %u\n".printf(dash(_address), dash(_user_identifier), dash(_user_id), get_formatted_timestamp(), _method, _path, _protocol, _status_code, _size)
-                
-        def private dash(str: string?): string
-            if (str is null) || (str.length == 0)
-                return "-"
-            return str

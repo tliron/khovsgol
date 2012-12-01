@@ -73,11 +73,16 @@ namespace Nap.Connector._Soup
             entry.status_code = _soup_message.status_code
             if _response_text is not null
                 entry.size = _response_text.data.length
-            Logging.get_logger("nap.server.ncsa").message(entry.to_string())
+            _logger.debug(entry.to_string())
 
         _soup_server: Soup.Server
         _soup_message: Soup.Message
         _soup_client: Soup.ClientContext
+
+        _logger: static Logging.Logger
+
+        init
+            _logger = Logging.get_logger("nap.server.ncsa")
 
     /*
      * Soup implementation of a Nap client conversation.
@@ -142,7 +147,7 @@ namespace Nap.Connector._Soup
             _status_code = _soup_session.send_message(_soup_message)
             timer.stop()
             var seconds = timer.elapsed()
-            Logging.get_logger("nap.client").debugf("%s (%f)", uri_str, seconds)
+            _logger.debugf("%s (%f)", uri_str, seconds)
             //print "%s (%f)", uri_str, seconds
 
         def pause()
@@ -155,6 +160,11 @@ namespace Nap.Connector._Soup
         _soup_message: Soup.Message
         _base_url: string
 
+        _logger: static Logging.Logger
+
+        init
+            _logger = Logging.get_logger("nap.client")
+
     /*
      * An HTTP server using Soup. Accepts conversations coming in
      * through a specified port.
@@ -163,6 +173,7 @@ namespace Nap.Connector._Soup
         prop static delay: ulong = 0
 
         construct(port: uint, context: MainContext) raises Nap.Error
+            _port = port
             _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
             if _soup_server is null
                 raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %u, is the port already in use?".printf(port))
@@ -170,6 +181,7 @@ namespace Nap.Connector._Soup
             _soup_server.add_handler(null, _handle)
             
         prop thread_pool: ThreadPool?
+        prop readonly port: uint
 
         def get_handler(): unowned Handler?
             return _handler
@@ -184,6 +196,10 @@ namespace Nap.Connector._Soup
             _error_handler = handler
 
         def start()
+            if _thread_pool is null
+                _logger.messagef("Starting server at port %u (single-threaded)", _port)
+            else
+                _logger.messagef("Starting server at port %u (%u threads)", _port, _thread_pool.max_threads)
             _soup_server.run_async()
         
         def _handle(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?, client: Soup.ClientContext)
@@ -204,6 +220,11 @@ namespace Nap.Connector._Soup
         _soup_server: Soup.Server
         _handler: unowned Handler?
         _error_handler: unowned ErrorHandler? = default_error_handler
+
+        _logger: static Logging.Logger
+
+        init
+            _logger = Logging.get_logger("nap.server.soup")
 
     /*
      * An HTTP client using Soup.

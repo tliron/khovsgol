@@ -12,6 +12,11 @@ namespace Khovsgol.GUI
         def abstract gather_positions(node: PlayListNode, ref positions: Json.Array)
         def abstract get_first_position(node: PlayListNode): int
     
+    /*
+     * Uses header rows for all subsequent tracks of the same album,
+     * allowing for a clutter-free view for users who tend to listen
+     * to whole albums.
+     */
     class GroupByAlbums: GLib.Object implements Style, PlayListStyle
         const private ALBUM_POSITION: int = -2
 
@@ -43,12 +48,15 @@ namespace Khovsgol.GUI
                             
                             var title = get_string_member_or_null(album, "title")
                             if title is not null
+                                title = Markup.escape_text(title)
+                                title = format_annotation(title)
                                 var artist = get_string_member_or_null(album, "artist")
                                 markup1: string
                                 if artist is not null
-                                    markup1 = "%s - <i>%s</i>".printf(Markup.escape_text(title), Markup.escape_text(artist))
+                                    artist = Markup.escape_text(artist)
+                                    markup1 = "%s - <i>%s</i>".printf(title, artist)
                                 else
-                                    markup1 = Markup.escape_text(title)
+                                    markup1 = title
                                 markup1 = "<span size=\"smaller\" weight=\"bold\">%s</span>".printf(markup1)
                                 if i > 0
                                     node.append_separator()
@@ -110,7 +118,10 @@ namespace Khovsgol.GUI
                     return get_int_member_or_min(track, "position")
             
             return int.MIN
-     
+    
+    /*
+     * One line per track with minimal information.
+     */
     class Compact: GLib.Object implements Style, PlayListStyle
         prop readonly name: string = "compact"
         prop readonly label: string = "Compact"
@@ -150,7 +161,10 @@ namespace Khovsgol.GUI
                 return get_int_member_or_min(track, "position")
             else
                 return int.MIN
-            
+    
+    /*
+     * Three lines per track with extended information.
+     */
     class Extended: GLib.Object implements Style, PlayListStyle
         prop readonly name: string = "extended"
         prop readonly label: string = "Extended"
