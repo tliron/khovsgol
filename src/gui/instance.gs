@@ -13,8 +13,13 @@ namespace Khovsgol.GUI
             
             _dir = File.new_for_path(args[0]).get_parent()
             _api = new Client.API("localhost", 8181)
-            player = Environment.get_user_name()
             _window = new MainWindow(self)
+
+            player = Environment.get_user_name()
+            
+            add_plugin(new Plugins.MediaKeysPlugin())
+            add_plugin(new Plugins.NotificationsPlugin())
+            add_plugin(new Plugins.UnityPlugin())
             
         prop readonly configuration: Configuration
         prop readonly dir: File
@@ -27,16 +32,25 @@ namespace Khovsgol.GUI
             set
                 if _player != value
                     _api.watching_player = _player = value
+        
+        def add_plugin(plugin: Plugin)
+            plugin.instance = self
+            _plugins.add(plugin)
     
         def start()
-            _api.start_player_poll()
+            for var plugin in _plugins
+                plugin.start()
+            Gdk.threads_add_idle(_api.start_player_poll)
             Gtk.main()
         
         def stop()
-            Gtk.main_quit()
+            for var plugin in _plugins
+                plugin.stop()
             _api.stop_player_poll(true)
+            Gtk.main_quit()
         
         _player: string
+        _plugins: list of Plugin = new list of Plugin
         
     _logger: Logging.Logger
         

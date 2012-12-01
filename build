@@ -10,6 +10,7 @@
 # Gtk:    apt-get install libgtk-3-dev,        valac --pkg=gtk+-3.0
 # Daemon: apt-get install libdaemon-dev,       valac --pkg=libdaemon
 # Gst:    apt-get install libgstreamer1.0-dev, valac --pkg=gstreamer-1.0
+# Unity:  apt-get install libunity-dev,        valac --pkg=unity
 
 # gstreamer1.0-pulseaudio, gstreamer1.0-plugins-base
 
@@ -33,7 +34,8 @@ compile()
         --pkg=sqlite3 \
         --pkg=gtk+-3.0 \
         --pkg=libdaemon \
-        --pkg=gstreamer-1.0
+        --pkg=gstreamer-1.0 \
+        --pkg=unity
 
         #--enable-deprecated \
 }
@@ -111,9 +113,9 @@ vdoc()
 ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
 cd "$ROOT"
 
-compile khovsgold src/server src/lib
+#compile khovsgold src/server src/lib
 #compile khovsgolc src/cli src/client src/lib/logging src/lib/console src/lib/nap src/lib/json
-#compile khovsgol src/gui src/client src/lib/logging src/lib/console src/lib/nap src/lib/json src/lib/gtk
+compile khovsgol src/gui src/client src/lib/logging src/lib/console src/lib/nap src/lib/json src/lib/gtk
 
 #ccode src/server src/lib
 #doc

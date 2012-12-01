@@ -45,6 +45,14 @@ namespace Khovsgol.GUI
             if open != -1
                 return "%s<span size=\"smaller\">%s</span>".printf(text.substring(0, open), text.substring(open))
         return text
+    
+    /*
+     * Basic interface for plugins.
+     */
+    interface Plugin: GLib.Object
+        def abstract start()
+        def abstract stop()
+        prop abstract instance: Instance
 
     /*
      * Basic interface for library and playlist styles.

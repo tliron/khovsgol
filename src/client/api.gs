@@ -87,10 +87,11 @@ namespace Khovsgol.Client
             finally
                 _watching_player_lock.unlock()
             
-        def start_player_poll()
+        def start_player_poll(): bool
             AtomicInt.set(ref _is_poll_stopping, 0)
             AtomicInt.set(ref _is_polling, 1)
             _poll_thread = new Thread of bool("PollPlayer", poll)
+            return false
         
         def stop_player_poll(block: bool = false)
             AtomicInt.set(ref _is_poll_stopping, 1)
@@ -1101,6 +1102,20 @@ namespace Khovsgol.Client
                 if name != _watching_player
                     return
                     
+                var play_list = get_object_member_or_null(player, "playList")
+                if play_list is not null
+                    var id = get_string_member_or_null(play_list, "id")
+                    var version = get_int64_member_or_min(play_list, "version")
+                    if (id != _play_list_id) || (version != _play_list_version)
+                        var tracks = get_array_member_or_null(play_list, "tracks")
+                        play_list_change(id, version, _play_list_id, _play_list_version, tracks)
+                        if in_gdk
+                            play_list_change_gdk(id, version, _play_list_id, _play_list_version, tracks)
+                        else
+                            new PlayListChangeGdk(self, id, version, _play_list_id, _play_list_version, tracks)
+                        _play_list_id = id
+                        _play_list_version = version
+
                 var play_mode = get_string_member_or_null(player, "playMode")
                 if play_mode is not null
                     if play_mode != _play_mode
@@ -1141,32 +1156,18 @@ namespace Khovsgol.Client
                         else
                             new PositionInTrackChangeGdk(self, position_in_track, _position_in_track, track_duration)
                         _position_in_track = position_in_track
-
-                var play_list = get_object_member_or_null(player, "playList")
-                if play_list is not null
-                    var id = get_string_member_or_null(play_list, "id")
-                    var version = get_int64_member_or_min(play_list, "version")
-                    if (id != _play_list_id) || (version != _play_list_version)
-                        var tracks = get_array_member_or_null(play_list, "tracks")
-                        play_list_change(id, version, _play_list_id, _play_list_version, tracks)
-                        if in_gdk
-                            play_list_change_gdk(id, version, _play_list_id, _play_list_version, tracks)
-                        else
-                            new PlayListChangeGdk(self, id, version, _play_list_id, _play_list_version, tracks)
-                        _play_list_id = id
-                        _play_list_version = version
             finally
                 _watching_player_lock.unlock()
 
         def private poll(): bool
             while true
-                Thread.usleep(_poll_interval)
-            
                 // Should we stop polling?
                 if AtomicInt.get(ref _is_poll_stopping) == 1
                     break
                     
                 update()
+
+                Thread.usleep(_poll_interval)
             
             // We've stopped polling
             AtomicInt.set(ref _is_polling, 0)
