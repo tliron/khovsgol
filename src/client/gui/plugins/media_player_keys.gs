@@ -3,9 +3,14 @@
 namespace Khovsgol.GUI.Plugins
 
     /*
-     * GNOME Media Keys plugin.
+     * GNOME Media Player Keys plugin.
+     * 
+     * Grabs the media player keys for us and forwards commands to
+     * the current player.
+     * 
+     * Supports a fallback for the GNOME 2.20 interface.
      */
-    class MediaKeysPlugin: Object implements Khovsgol.GUI.Plugin
+    class MediaPlayerKeysPlugin: Object implements Khovsgol.GUI.Plugin
         prop instance: Khovsgol.GUI.Instance
         
         def start()
@@ -19,7 +24,7 @@ namespace Khovsgol.GUI.Plugins
                 try
                     _media_keys.GrabMediaPlayerKeys("Khövsgöl", 0)
                     _media_keys.MediaPlayerKeyPressed.connect(on_key_pressed)
-                    _logger.message("Grabbed media player keys")
+                    _logger.message("Started")
                 except e: IOError
                     _logger.warning(e.message)
         
@@ -28,14 +33,14 @@ namespace Khovsgol.GUI.Plugins
                 try
                     _media_keys.MediaPlayerKeyPressed.disconnect(on_key_pressed)
                     _media_keys.ReleaseMediaPlayerKeys("Khövsgöl")
-                    _logger.message("Released media player keys")
+                    _logger.message("Stopped")
                 except e: IOError
                     _logger.warning(e.message)
         
         _media_keys: MediaKeysWrapper
 
         def private on_key_pressed(application: string, key: string)
-            _logger.debugf("Pressed: %s", key)
+            _logger.infof("Pressed: %s", key)
             if key == "Play"
                 // For many keyboards the play button is identical to the play/pause button
                 _instance.api.set_play_mode(_instance.player, "toggle_paused")
@@ -51,7 +56,7 @@ namespace Khovsgol.GUI.Plugins
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.mediakeys")
+            _logger = Logging.get_logger("khovsgol.client.mediaplayerkeys")
 
     /*
      * Wrapper that fallbacks to legacy interface.

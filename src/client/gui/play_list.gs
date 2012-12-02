@@ -181,10 +181,10 @@ namespace Khovsgol.GUI
                 if (_position_in_track != double.MIN) && (_track_duration != double.MIN)
                     var percent = (_position_in_track / _track_duration) * 100.0
                     renderer.value = (int) percent
-                    renderer.text = _play_mode
+                    renderer.text = first_upper(_play_mode)
                 else
                     renderer.value = 0
-                    renderer.text = "stopped"
+                    renderer.text = "Stopped"
             else
                 renderer.visible = false
             

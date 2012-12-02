@@ -88,7 +88,6 @@ namespace Logging
                     Log.remove_handler(_domain, _handler_id)
                 _appender = value
                 if _appender is not null
-                    //Log.set_fatal_mask(_domain, 0)
                     _handler_id = Log.set_handler(_domain, _appender.levels, _appender.handle)
                 else
                     _handler_id = 0
@@ -99,6 +98,12 @@ namespace Logging
                 return get_logger(_domain.slice(0, dot))
             else
                 return get_logger()
+        
+        def can(level: LogLevelFlags): bool
+            if _appender is not null
+                return _appender.can(level)
+            else
+                return false
         
         def log(level: LogLevelFlags, message: string)
             GLib.log(_domain, level, "%s", message)
@@ -156,6 +161,9 @@ namespace Logging
         prop deepest_level: LogLevelFlags
             set
                 _levels = get_deepest_log_level_flags(value)
+        
+        def virtual can(level: LogLevelFlags): bool
+            return (_levels & level) != 0
 
         def virtual handle(domain: string?, levels: LogLevelFlags, message: string)
             pass
@@ -168,6 +176,13 @@ namespace Logging
             _parent = logger.get_parent()
             deepest_level = LogLevelFlags.LEVEL_DEBUG
         
+        def override can(level: LogLevelFlags): bool
+            var appender = _parent.appender
+            if appender is not null
+                return appender.can(level)
+            else
+                return false
+
         def override handle(domain: string?, levels: LogLevelFlags, message: string)
             // Note: GLib does not allow us to call log functions from within handlers,
             // so we must call the parent handler directly
@@ -191,6 +206,7 @@ namespace Logging
                 if rendered is not null
                     if _stream is not null
                         _stream.puts(rendered)
+                        _stream.putc('\n')
                         _stream.flush()
     
     /*
@@ -213,7 +229,7 @@ namespace Logging
                     except e: Error
                         stderr.printf("Error writing log message to stream: %s\n", e.message)
         
-        const NEWLINE: array of uint8 = {10}
+        const NEWLINE: array of uint8 = {'\n'}
 
     /*
      * A file stream appender that handles automatic rolling of log
@@ -336,7 +352,7 @@ namespace Logging
      * Renders a log message using formats.
      */
     class FormatRenderer: Renderer
-        prop format: string = "%s,%.3d: %8s [%s] %s\n"
+        prop format: string = "%s,%.3d: %8s [%s] %s"
         prop date_time_format: string = "%Y-%m-%d %H:%M:%S"
 
         def override render(domain: string?, levels: LogLevelFlags, message: string): string?

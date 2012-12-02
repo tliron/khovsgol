@@ -47,6 +47,17 @@ namespace Khovsgol.GUI
         return text
     
     /*
+     * Converts the first character to uppercase.
+     */
+    def first_upper(text: string): string
+        if text.length > 0
+            var first = text.get_char(0)
+            var second = 0
+            if text.get_next_char(ref second, null)
+                return first.toupper().to_string() + text.substring(second)
+        return text
+    
+    /*
      * Basic interface for plugins.
      */
     interface Plugin: GLib.Object

@@ -7,6 +7,9 @@ namespace Khovsgol.GUI.Plugins
 
     /*
      * FreeDesktop Notifications plugin.
+     * 
+     * Sends a desktop notification every time the current track
+     * changes.
      */
     class NotificationsPlugin: Object implements Khovsgol.GUI.Plugin
         prop instance: Khovsgol.GUI.Instance
@@ -17,12 +20,14 @@ namespace Khovsgol.GUI.Plugins
                     _notifications = Bus.get_proxy_sync(BusType.SESSION, "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
                     _instance.api.play_list_change.connect(on_play_list_changed)
                     _instance.api.position_in_play_list_change.connect(on_position_in_play_list_changed)
+                    _logger.message("Started")
                 except e: IOError
                     _logger.warning(e.message)
         
         def stop()
             _instance.api.position_in_play_list_change.disconnect(on_position_in_play_list_changed)
             _instance.api.play_list_change.disconnect(on_play_list_changed)
+            _logger.message("Stopped")
         
         _notifications: Notifications
         
@@ -59,7 +64,7 @@ namespace Khovsgol.GUI.Plugins
                                     
                                 try
                                     _notifications.Notify("Khövsgöl", position, "play", "Khövsgöl", markup, _actions, _hints, 3000)
-                                    _logger.debug("Notified new track")
+                                    _logger.info("Notified new track")
                                 except e: IOError
                                     _logger.warning(e.message)
                             break

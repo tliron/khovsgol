@@ -13,13 +13,13 @@ namespace Khovsgol.GUI
             
             _dir = File.new_for_path(args[0]).get_parent()
             _api = new Client.API("localhost", 8181)
-            _window = new MainWindow(self)
-
             player = Environment.get_user_name()
+            _window = new MainWindow(self)
             
-            add_plugin(new Plugins.MediaKeysPlugin())
+            add_plugin(new Plugins.MediaPlayerKeysPlugin())
             add_plugin(new Plugins.NotificationsPlugin())
             add_plugin(new Plugins.UnityPlugin())
+            add_plugin(new Plugins.Mpris2Plugin())
             
         prop readonly configuration: Configuration
         prop readonly dir: File

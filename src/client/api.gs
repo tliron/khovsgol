@@ -195,7 +195,7 @@ namespace Khovsgol.Client
          *  ...
          * ]
          */
-        def get_artists(album_artists: bool = false, sort: string?): Json.Array?
+        def get_artists(album_artists: bool = false, sort: string? = null): Json.Array?
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET

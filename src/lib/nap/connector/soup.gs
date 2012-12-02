@@ -113,20 +113,21 @@ namespace Nap.Connector._Soup
             _soup_server.unpause_message(_soup_message)
 
         def private log()
-            var entry = new NcsaCommonLogEntry()
-            entry.address = _soup_client.get_address().get_physical()
-            entry.user_identifier = _soup_client.get_auth_user()
-            entry.method = _soup_message.method
-            var query = _soup_message.get_uri().get_query()
-            if (query is not null) && (query.length > 0)
-                entry.path = "%s?%s".printf(_path, query)
-            else
-                entry.path = _path
-            entry.protocol = _soup_message.get_http_version() == Soup.HTTPVersion.1_1 ? "HTTP/1.1" : "HTTP/1.0"
-            entry.status_code = _soup_message.status_code
-            if _response_text is not null
-                entry.size = _response_text.data.length
-            _logger.debug(entry.as_string)
+            if _logger.can(LogLevelFlags.LEVEL_INFO)
+                var entry = new NcsaCommonLogEntry()
+                entry.address = _soup_client.get_address().get_physical()
+                entry.user_identifier = _soup_client.get_auth_user()
+                entry.method = _soup_message.method
+                var query = _soup_message.get_uri().get_query()
+                if (query is not null) && (query.length > 0)
+                    entry.path = "%s?%s".printf(_path, query)
+                else
+                    entry.path = _path
+                entry.protocol = _soup_message.get_http_version() == Soup.HTTPVersion.1_1 ? "HTTP/1.1" : "HTTP/1.0"
+                entry.status_code = _soup_message.status_code
+                if _response_text is not null
+                    entry.size = _response_text.data.length
+                _logger.info(entry.as_string)
 
         _soup_server: Soup.Server
         _soup_message: Soup.Message
@@ -246,10 +247,12 @@ namespace Nap.Connector._Soup
                 _soup_message.set_request(_request_media_type, Soup.MemoryUse.COPY, _request_text.data)
             var timer = new Timer()
             _status_code = _soup_session.send_message(_soup_message)
-            timer.stop()
-            var seconds = timer.elapsed()
-            _logger.debugf("%s (%f)", uri_str, seconds)
-            //print "%s (%f)", uri_str, seconds
+
+            if _logger.can(LogLevelFlags.LEVEL_DEBUG)
+                timer.stop()
+                var seconds = timer.elapsed()
+                _logger.debugf("%s (%f)", uri_str, seconds)
+                //print "%s (%f)", uri_str, seconds
 
         def pause()
             pass
