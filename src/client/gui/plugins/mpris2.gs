@@ -2,6 +2,7 @@
 
 uses
     JsonUtil
+    DbusUtil
 
 namespace Khovsgol.GUI.Plugins
 
@@ -219,7 +220,7 @@ namespace Khovsgol.GUI.Plugins
         
         _instance: Khovsgol.GUI.Instance
         _position_in_track: double = double.MIN
-        _tracks: Json.Array?
+        _tracks: IterableOfTrack
         _Shuffle: bool
         _PlaybackStatus: string = "Stopped"
         _LoopStatus: string = "None"
@@ -278,84 +279,30 @@ namespace Khovsgol.GUI.Plugins
             _properties.set("Position", _Position)
             _properties.emit_changes()
 
-        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
+        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
             _tracks = tracks
 
         def private on_position_in_play_list_changed(position_in_play_list: int, old_position_in_play_list: int)
-            if (_tracks is not null) && (_tracks.get_length() > 0)
-                for var i = 0 to (_tracks.get_length() - 1)
-                    var track = get_object_element_or_null(_tracks, i)
-                    if track is not null
-                        var position = get_int_member_or_min(track, "position")
-                        if position == position_in_play_list
-                            var path = get_string_member_or_null(track, "path")
-                            if path is not null
-                                var title = get_string_member_or_null(track, "title")
-                                var artist = get_string_member_or_null(track, "artist")
-                                var album = get_string_member_or_null(track, "album")
-                                var duration = get_double_member_or_min(track, "duration")
-                                
-                                _Metadata.remove_all()
-                                _Metadata.@set("mpris:trackid", path)
-                                _Metadata.@set("xesam:title", title)
-                                _Metadata.@set("xesam:artist", artist)
-                                _Metadata.@set("xesam:album", album)
-                                if duration != double.MIN
-                                    _Metadata.@set("mpris:length", (int) duration * 1000000)
-                                    
-                                _properties.set("Metadata", _Metadata)
-                                _properties.emit_changes()
-                                break
+            for var track in _tracks
+                var position = track.position
+                if position == position_in_play_list
+                    var path = track.path
+                    if path is not null
+                        var title = track.title
+                        var artist = track.artist
+                        var album = track.album
+                        var duration = track.duration
+                        
+                        _Metadata.remove_all()
+                        _Metadata.@set("mpris:trackid", path)
+                        _Metadata.@set("xesam:title", title)
+                        _Metadata.@set("xesam:artist", artist)
+                        _Metadata.@set("xesam:album", album)
+                        if duration != double.MIN
+                            _Metadata.@set("mpris:length", (int) duration * 1000000)
+                            
+                        _properties.set("Metadata", _Metadata)
+                        _properties.emit_changes()
+                        break
         
         _properties: Properties
-    
-    /*
-     * Holds a DBus connection.
-     */
-    class ConnectionHolder
-        prop connection: DBusConnection?
-
-    /*
-     * Tracks DBus property changes.
-     */
-    class Properties
-        construct(connection_holder: ConnectionHolder, object_path: string, interface_name: string)
-            _connection_holder = connection_holder
-            _object_path = object_path
-            _interface_name = interface_name
-
-        def set(name: string, value: Variant)
-            var existing = _properties[name]
-            if existing is not null
-                // Containers are not comparable, so we'll just consider
-                // them always to have changed
-                if value.is_container() || (existing.compare(value) != 0)
-                    _changes[name] = value
-                    _properties[name] = value
-            else
-                _changes[name] = value
-                _properties[name] = value
-        
-        def emit_changes()
-            var connection = _connection_holder.connection
-            if (connection is not null) && (!_changes.is_empty)
-                // Changes array
-                var builder = new VariantBuilder(VariantType.ARRAY)
-                for var name in _changes.keys
-                    builder.add("{sv}", name, _changes[name])
-                _changes.clear()
-                
-                // Invalid array
-                var invalid_builder = new VariantBuilder(new VariantType("as"))
-                
-                var arguments = new Variant("(sa{sv}as)", _interface_name, builder, invalid_builder)
-                try
-                    connection.emit_signal(null, _object_path, "org.freedesktop.DBus.Properties", "PropertiesChanged", arguments)
-                except e: GLib.Error
-                    print e.message
-
-        _connection_holder: ConnectionHolder
-        _object_path: string
-        _interface_name: string
-        _properties: dict of string, Variant = new dict of string, Variant
-        _changes: dict of string, Variant = new dict of string, Variant

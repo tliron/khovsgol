@@ -91,14 +91,10 @@ namespace Khovsgol.CLI
                 pass
 
             else if command == "albums"
-                var albums = _api.get_albums()
-                if (albums is not null) && (albums.get_length() > 0)
-                    for var i = 0 to (albums.get_length() - 1)
-                        var album = get_object_element_or_null(albums, i)
-                        if album is not null
-                            var path = get_string_member_or_null(album, "path")
-                            if path is not null
-                                stdout.printf("%s\n", path)
+                for var album in _api.get_albums()
+                    var path = album.path
+                    if path is not null
+                        stdout.printf("%s\n", path)
 
             else if command == "albumsby"
                 if _arguments.args.length < 3
@@ -106,14 +102,10 @@ namespace Khovsgol.CLI
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.by_artist = _arguments.args[2]
-                var albums = _api.get_albums(args)
-                if (albums is not null) && (albums.get_length() > 0)
-                    for var i = 0 to (albums.get_length() - 1)
-                        var album = get_object_element_or_null(albums, i)
-                        if album is not null
-                            var path = get_string_member_or_null(album, "path")
-                            if path is not null
-                                stdout.printf("%s\n", path)
+                for var album in _api.get_albums(args)
+                    var path = album.path
+                    if path is not null
+                        stdout.printf("%s\n", path)
 
             else if command == "albumswith"
                 if _arguments.args.length < 3
@@ -121,14 +113,10 @@ namespace Khovsgol.CLI
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.with_artist = _arguments.args[2]
-                var albums = _api.get_albums(args)
-                if (albums is not null) && (albums.get_length() > 0)
-                    for var i = 0 to (albums.get_length() - 1)
-                        var album = get_object_element_or_null(albums, i)
-                        if album is not null
-                            var path = get_string_member_or_null(album, "path")
-                            if path is not null
-                                stdout.printf("%s\n", path)
+                for var album in _api.get_albums(args)
+                    var path = album.path
+                    if path is not null
+                        stdout.printf("%s\n", path)
 
             else if command == "albumsat"
                 if _arguments.args.length < 3
@@ -136,51 +124,33 @@ namespace Khovsgol.CLI
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.at_date = int.parse(_arguments.args[2])
-                var albums = _api.get_albums(args)
-                if (albums is not null) && (albums.get_length() > 0)
-                    for var i = 0 to (albums.get_length() - 1)
-                        var album = get_object_element_or_null(albums, i)
-                        if album is not null
-                            var path = get_string_member_or_null(album, "path")
-                            if path is not null
-                                stdout.printf("%s\n", path)
+                for var album in _api.get_albums(args)
+                    var path = album.path
+                    if path is not null
+                        stdout.printf("%s\n", path)
 
             else if command == "compilations"
                 var args = new Client.API.GetAlbumsArgs()
                 args.compilation_type = 1
-                var albums = _api.get_albums(args)
-                if (albums is not null) && (albums.get_length() > 0)
-                    for var i = 0 to (albums.get_length() - 1)
-                        var album = get_object_element_or_null(albums, i)
-                        if album is not null
-                            var path = get_string_member_or_null(album, "path")
-                            if path is not null
-                                stdout.printf("%s\n", path)
+                for var album in _api.get_albums(args)
+                    var path = album.path
+                    if path is not null
+                        stdout.printf("%s\n", path)
 
             else if command == "album"
                 pass
 
             else if command == "artists"
-                var artists = _api.get_artists()
-                if (artists is not null) && (artists.get_length() > 0)
-                    for var i = 0 to (artists.get_length() - 1)
-                        var artist = get_array_element_or_null(artists, i)
-                        if artist is not null
-                            if artist.get_length() > 0
-                                var name = get_string_element_or_null(artist, 0)
-                                if name is not null
-                                    stdout.printf("%s\n", name)
+                for var artist in _api.get_artists()
+                    var name = artist.name
+                    if name is not null
+                        stdout.printf("%s\n", name)
 
             else if command == "albumartists"
-                var artists = _api.get_artists(true)
-                if (artists is not null) && (artists.get_length() > 0)
-                    for var i = 0 to (artists.get_length() - 1)
-                        var artist = get_array_element_or_null(artists, i)
-                        if artist is not null
-                            if artist.get_length() > 0
-                                var name = get_string_element_or_null(artist, 0)
-                                if name is not null
-                                    stdout.printf("%s\n", name)
+                for var artist in _api.get_artists(true)
+                    var name = artist.name
+                    if name is not null
+                        stdout.printf("%s\n", name)
 
             else if command == "dates"
                 var dates = _api.get_dates()
@@ -273,21 +243,18 @@ namespace Khovsgol.CLI
                             stdout.printf("Currently %s\n", play_mode)
                             
                     if play_list is not null
-                        var tracks = get_array_member_or_null(play_list, "tracks")
-                        if (tracks is not null) && (tracks.get_length() > 0)
-                            for var i = 0 to (tracks.get_length() - 1)
-                                var track = get_object_element_or_null(tracks, i)
-                                var position = get_int_member_or_min(track, "position")
-                                var path = get_string_member_or_null(track, "path")
-                                if path is not null
-                                    indent(2)
-                                    if position != int.MIN
-                                        if position == position_in_play_list
-                                            stdout.printf(">%d: %s\n", position, path)
-                                        else
-                                            stdout.printf(" %d: %s\n", position, path)
+                        for var track in new JsonTracks(get_array_member_or_null(play_list, "tracks"))
+                            var position = track.position
+                            var path = track.path
+                            if path is not null
+                                indent(2)
+                                if position != int.MIN
+                                    if position == position_in_play_list
+                                        stdout.printf(">%d: %s\n", position, path)
                                     else
-                                        stdout.printf("%s\n", path)
+                                        stdout.printf(" %d: %s\n", position, path)
+                                else
+                                    stdout.printf("%s\n", path)
 
     def get_help(): string
         var s = new StringBuilder()

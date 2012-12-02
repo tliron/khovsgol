@@ -232,8 +232,7 @@ namespace Nap.Connector._Soup
             if !_query.is_empty
                 uri.append("?")
                 var i = _query.keys.iterator()
-                while i.has_next()
-                    i.next()
+                while i.next()
                     var key = i.get()
                     uri.append(key)
                     uri.append("=")

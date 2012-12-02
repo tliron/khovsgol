@@ -77,7 +77,7 @@ namespace Khovsgol.GUI
      * accessing and modifying the node data.
      */
     class PlayListNode
-        construct(instance: Instance, tree_view: TreeView, store: ListStore, tracks: Json.Array, iter: TreeIter? = null)
+        construct(instance: Instance, tree_view: TreeView, store: ListStore, tracks: IterableOfTrack, iter: TreeIter? = null)
             _instance = instance
             _tree_view = tree_view
             _store = store
@@ -85,7 +85,7 @@ namespace Khovsgol.GUI
             _iter = iter
 
         prop readonly instance: Instance
-        prop readonly tracks: Json.Array
+        prop readonly tracks: IterableOfTrack
         prop is_frozen: bool
         
         prop readonly position: int

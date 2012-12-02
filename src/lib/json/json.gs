@@ -133,18 +133,26 @@ namespace JsonUtil
     def set_string_member_not_null(obj: Json.Object, key: string, value: string?)
         if value is not null
             obj.set_string_member(key, value)
+        else
+            obj.remove_member(key)
 
     def set_int64_member_not_min(obj: Json.Object, key: string, value: int64)
         if value != int64.MIN
             obj.set_int_member(key, value)
+        else
+            obj.remove_member(key)
 
     def set_int_member_not_min(obj: Json.Object, key: string, value: int)
         if value != int.MIN
             obj.set_int_member(key, value)
+        else
+            obj.remove_member(key)
 
     def set_double_member_not_min(obj: Json.Object, key: string, value: double)
         if value != double.MIN
             obj.set_double_member(key, value)
+        else
+            obj.remove_member(key)
         
     //
     // Arrays
@@ -177,6 +185,16 @@ namespace JsonUtil
         for var e in l
             arr.add_array_element(e.to_json())
         return arr
+    
+    def foreach_object_in_json_array(arr: Json.Array, do_on_json_object: DoOnJsonObject)
+        var l = arr.get_length()
+        if l > 0
+            for var i = 0 to (l - 1)
+                var obj = get_object_element_or_null(arr, i)
+                if obj is not null
+                    do_on_json_object(obj)
+
+    delegate DoOnJsonObject(obj: Json.Object)
 
     //
     // Text conversion

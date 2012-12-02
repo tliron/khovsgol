@@ -9,7 +9,21 @@ namespace Khovsgol
     
     def to_sortable(text: string): string
         return text.down()
+
+    def get_album_path_dynamic(obj: Json.Object)
+        var track = new Track.from_json(obj)
+        track.album_path = File.new_for_path(track.path).get_parent().get_path()
+
+    class static AlbumPathConstant
+        construct(album_path: string)
+            _album_path = album_path
     
+        def do_on_json_object(obj: Json.Object)
+            var track = new Track.from_json(obj)
+            track.album_path = _album_path
+            
+        _album_path: string
+
     //
     // Crucible
     //
@@ -22,191 +36,6 @@ namespace Khovsgol
         def abstract create_directory(): Directory
         def abstract create_player(): Player
         def abstract create_play_list(): PlayList
-
-    //
-    // Track
-    //
-
-    class Track: Object implements HasJsonObject
-        prop path: string
-        prop library: string
-        prop title: string
-        prop title_sort: string
-        prop artist: string
-        prop artist_sort: string
-        prop album: string
-        prop album_sort: string
-        prop album_path: string
-        prop position: int
-        prop duration: double
-        prop date: int
-        prop file_type: string
-        
-        def clone(): Track
-            var track = new Track()
-            track._path = _path
-            track._library = _library
-            track._title = _title
-            track._title_sort = _title_sort
-            track._artist = _artist
-            track._album = _album
-            track._album_sort = _album_sort
-            track._album_path = _album_path
-            track._position = _position
-            track._duration = _duration
-            track._date = _date
-            track._file_type = _file_type
-            return track
-
-        def to_json(): Json.Object
-            var json = new Json.Object()
-            set_string_member_not_null(json, "path", _path)
-            set_string_member_not_null(json, "library", _library)
-            set_string_member_not_null(json, "title", _title)
-            set_string_member_not_null(json, "title_sort", _title_sort)
-            set_string_member_not_null(json, "artist", _artist)
-            set_string_member_not_null(json, "artist_sort", _artist_sort)
-            set_string_member_not_null(json, "album", _album)
-            set_string_member_not_null(json, "album_sort", _album_sort)
-            set_string_member_not_null(json, "album_path", _album_path)
-            set_int_member_not_min(json, "position", _position)
-            set_double_member_not_min(json, "duration", _duration)
-            set_int_member_not_min(json, "date", _date == 0 ? int.MIN : _date)
-            set_string_member_not_null(json, "type", _file_type)
-            return json
-    
-    class abstract TrackIterator: Object implements HasJsonArray
-        def abstract has_next(): bool
-        def abstract next(): bool
-        def abstract new get(): Track
-        
-        prop get_album_path: unowned GetAlbumPath?
-        
-        def to_json(): Json.Array
-            var json = new Json.Array()
-            while has_next()
-                next()
-                var track = get()
-                var obj = track.to_json()
-                if get_album_path is not null
-                    set_string_member_not_null(obj, "album_path", _get_album_path(track))
-                json.add_object_element(obj)
-            return json
-
-        delegate GetAlbumPath(track: Track): string
-
-        def static get_album_path_dynamic(track: Track): string
-            var path = File.new_for_path(track.path)
-            return path.get_parent().get_path()
-
-        class static AlbumPathConstant
-            construct(album_path: string)
-                _album_path = album_path
-        
-            def get_album_path(track: Track): string
-                return _album_path
-                
-            _album_path: string
-    
-    //
-    // TrackPointer
-    //
-
-    class TrackPointer: Object implements HasJsonObject
-        prop path: string
-        prop position: int
-        prop album: string
-
-        def to_json(): Json.Object
-            var json = new Json.Object()
-            set_string_member_not_null(json, "path", _path)
-            set_int_member_not_min(json, "position", _position)
-            set_string_member_not_null(json, "album", _album)
-            return json
-
-    class abstract TrackPointerIterator: Object implements HasJsonArray
-        def abstract has_next(): bool
-        def abstract next(): bool
-        def abstract new get(): TrackPointer
-        
-        def to_json(): Json.Array
-            var json = new Json.Array()
-            while has_next()
-                next()
-                json.add_object_element(get().to_json())
-            return json
-            
-    //
-    // Album
-    //
-    
-    enum CompilationType
-        ANY = -1
-        NOT = 0
-        COMPILATION = 1
-        CUSTOM_COMPILATION = 2
-
-    class Album: Object implements HasJsonObject
-        prop path: string
-        prop library: string
-        prop title: string
-        prop title_sort: string
-        prop artist: string
-        prop artist_sort: string
-        prop date: int64 = int64.MIN
-        prop compilation_type: CompilationType
-        prop file_type: string
-        
-        def to_json(): Json.Object
-            var json = new Json.Object()
-            set_string_member_not_null(json, "path", _path)
-            set_string_member_not_null(json, "library", _library)
-            set_string_member_not_null(json, "title", _title)
-            set_string_member_not_null(json, "title_sort", _title_sort)
-            set_string_member_not_null(json, "artist", _artist)
-            set_string_member_not_null(json, "artist_sort", _artist_sort)
-            set_int64_member_not_min(json, "date", _date == 0 ? int64.MIN : _date)
-            set_int_member_not_min(json, "compilation", _compilation_type)
-            set_string_member_not_null(json, "type", _file_type)
-            return json
-
-    class abstract AlbumIterator: Object implements HasJsonArray
-        def abstract has_next(): bool
-        def abstract next(): bool
-        def abstract new get(): Album
-        
-        def to_json(): Json.Array
-            var json = new Json.Array()
-            while has_next()
-                next()
-                json.add_object_element(get().to_json())
-            return json
-    
-    //
-    // Artist
-    //
-    
-    class Artist: Object implements HasJsonArray
-        prop artist: string
-        prop artist_sort: string
-        
-        def to_json(): Json.Array
-            var json = new Json.Array.sized(2)
-            json.add_string_element(_artist)
-            json.add_string_element(_artist_sort)
-            return json
-    
-    class abstract ArtistIterator: Object implements HasJsonArray
-        def abstract has_next(): bool
-        def abstract next(): bool
-        def abstract new get(): Artist
-        
-        def to_json(): Json.Array
-            var json = new Json.Array()
-            while has_next()
-                next()
-                json.add_array_element(get().to_json())
-            return json
 
     //
     // Library
@@ -238,28 +67,28 @@ namespace Khovsgol
         def abstract delete_album(path: string) raises GLib.Error
 
         // Iterate tracks
-        def abstract iterate_tracks(args: IterateTracksArgs): TrackIterator raises GLib.Error
-        def abstract iterate_tracks_in_album(args: IterateForAlbumArgs): TrackIterator raises GLib.Error
-        def abstract iterate_tracks_by_artist(args: IterateForArtistArgs): TrackIterator raises GLib.Error
-        def abstract iterate_track_paths(path: string): Khovsgol.StringIterator raises GLib.Error
+        def abstract iterate_tracks(args: IterateTracksArgs): IterableOfTrack raises GLib.Error
+        def abstract iterate_tracks_in_album(args: IterateForAlbumArgs): IterableOfTrack raises GLib.Error
+        def abstract iterate_tracks_by_artist(args: IterateForArtistArgs): IterableOfTrack raises GLib.Error
+        def abstract iterate_track_paths(path: string): IterableOfString raises GLib.Error
         
         // Iterate track pointers
-        def abstract iterate_raw_track_pointers_in_album(args: IterateForAlbumArgs): TrackPointerIterator raises GLib.Error
-        def abstract iterate_track_pointers_in_album(args: IterateForAlbumArgs): Khovsgol.TrackIterator raises GLib.Error
-        def abstract iterate_track_pointers(args: IterateTracksArgs): Khovsgol.TrackIterator raises GLib.Error
+        def abstract iterate_raw_track_pointers_in_album(args: IterateForAlbumArgs): IterableOfTrackPointer raises GLib.Error
+        def abstract iterate_track_pointers_in_album(args: IterateForAlbumArgs): IterableOfTrack raises GLib.Error
+        def abstract iterate_track_pointers(args: IterateTracksArgs): IterableOfTrack raises GLib.Error
         
         // Iterate albums
-        def abstract iterate_albums(args: IterateAlbumsArgs): Khovsgol.AlbumIterator raises GLib.Error
-        def abstract iterate_album_paths(path: string): Khovsgol.StringIterator raises GLib.Error
-        def abstract iterate_albums_with_artist(args: IterateForArtistArgs): Khovsgol.AlbumIterator raises GLib.Error
-        def abstract iterate_albums_by_artist(args: IterateForArtistArgs): Khovsgol.AlbumIterator raises GLib.Error
-        def abstract iterate_albums_at(args: IterateForDateArgs): Khovsgol.AlbumIterator raises GLib.Error
+        def abstract iterate_albums(args: IterateAlbumsArgs): IterableOfAlbum raises GLib.Error
+        def abstract iterate_album_paths(path: string): IterableOfString raises GLib.Error
+        def abstract iterate_albums_with_artist(args: IterateForArtistArgs): IterableOfAlbum raises GLib.Error
+        def abstract iterate_albums_by_artist(args: IterateForArtistArgs): IterableOfAlbum raises GLib.Error
+        def abstract iterate_albums_at(args: IterateForDateArgs): IterableOfAlbum raises GLib.Error
         
         // Iterate artists
-        def abstract iterate_artists(args: IterateByAlbumsOrTracksArgs): Khovsgol.ArtistIterator raises GLib.Error
+        def abstract iterate_artists(args: IterateByAlbumsOrTracksArgs): IterableOfArtist raises GLib.Error
 
         // Iterate dates
-        def abstract iterate_dates(args: IterateByAlbumsOrTracksArgs): Khovsgol.IntIterator raises GLib.Error
+        def abstract iterate_dates(args: IterateByAlbumsOrTracksArgs): IterableOfInt raises GLib.Error
         
         // Timestamps
         def abstract get_timestamp(path: string): double raises GLib.Error
@@ -276,10 +105,8 @@ namespace Khovsgol
                 destination = 0
                 var args = new IterateForAlbumArgs()
                 args.album = album_path
-                var iterator = iterate_raw_track_pointers_in_album(args)
-                while iterator.has_next()
-                    iterator.next()
-                    var position = iterator.get().position
+                for var track_pointer in iterate_raw_track_pointers_in_album(args)
+                    var position = track_pointer.position
                     if position > destination
                         destination = position
                 destination++
@@ -341,10 +168,8 @@ namespace Khovsgol
                 destination = 0
                 var args = new IterateForAlbumArgs()
                 args.album = album_path
-                var iterator = iterate_raw_track_pointers_in_album(args)
-                while iterator.has_next()
-                    iterator.next()
-                    var position = iterator.get().position
+                for var track_pointer in iterate_raw_track_pointers_in_album(args)
+                    var position = track_pointer.position
                     if position > destination
                         destination = position
                 destination++
@@ -443,30 +268,6 @@ namespace Khovsgol
         prop libraries: list of string = new list of string
         prop sort: list of string = new list of string
 
-    class abstract StringIterator: Object implements HasJsonArray
-        def abstract has_next(): bool
-        def abstract next(): bool
-        def abstract new get(): string
-
-        def to_json(): Json.Array
-            var json = new Json.Array()
-            while has_next()
-                next()
-                json.add_string_element(get())
-            return json
-
-    class abstract IntIterator: Object implements HasJsonArray
-        def abstract has_next(): bool
-        def abstract next(): bool
-        def abstract new get(): int
-
-        def to_json(): Json.Array
-            var json = new Json.Array()
-            while has_next()
-                next()
-                json.add_int_element(get())
-            return json
-    
     //
     // Directory
     //
@@ -854,11 +655,7 @@ namespace Khovsgol
                 var args = new IterateForAlbumArgs()
                 args.album = _album_path
                 args.sort.add("position")
-                var iterator = _crucible.libraries.iterate_raw_track_pointers_in_album(args)
-                while iterator.has_next()
-                    iterator.next()
-                    var track_pointer = iterator.get()
-                    
+                for var track_pointer in _crucible.libraries.iterate_raw_track_pointers_in_album(args)
                     // We may have the track info in memory already
                     track: Track = null
                     var path = track_pointer.path
@@ -877,7 +674,7 @@ namespace Khovsgol
                     
                     // Fix track to fit in playlist
                     track.position = track_pointer.position
-                    track.album_path = TrackIterator.get_album_path_dynamic(track)
+                    get_album_path_dynamic(track.to_json())
                     tracks.add(track)
                     
                 _version = stored_version

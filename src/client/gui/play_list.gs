@@ -239,15 +239,13 @@ namespace Khovsgol.GUI
             value: Value
             if target_name == "JSON_NUMBER_ARRAY"
                 // Playlist positions moved within the playlist
-                var data = new Json.Array.sized(tree_paths.length())
-                for var tree_path in tree_paths
-                    if _store.get_iter(out iter, tree_path)
-                        _store.get_value(iter, Column.POSITION, out value)
-                        data.add_int_element((int) value)
+                var data = get_selected_positions()
                 selection_data.@set(target, 8, array_to(data).data)
                 
             else
                 // Track paths, likely to a custom compilation in the library pane
+                
+                // TODO: from style
                 var data = new Json.Array.sized(tree_paths.length())
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
@@ -330,19 +328,17 @@ namespace Khovsgol.GUI
             _instance.api.set_play_list_paths(_instance.player, new Json.Array(), true, true)
 
         def private on_save_as_compilation()
-            if (_tracks is not null) && (_tracks.get_length() > 0)
+            if _tracks.to_json().get_length() > 0
                 var dialog = new CreateCustomCompilation(_instance.window)
                 if dialog.do()
                     var title = dialog.compilation_name
                     if title.length > 0
                         var album_path = "*" + DBus.generate_guid()
                         var paths = new Json.Array()
-                        for var i = 0 to (_tracks.get_length() - 1)
-                            var track = get_object_element_or_null(_tracks, i)
-                            if track is not null
-                                var path = get_string_member_or_null(track, "path")
-                                if path is not null
-                                    paths.add_string_element(path)
+                        for var track in _tracks
+                            var path = track.path
+                            if path is not null
+                                paths.add_string_element(path)
                         _instance.api.create_album(album_path, title, "main", paths)
         
         def private on_import_xspf()
@@ -373,7 +369,7 @@ namespace Khovsgol.GUI
             _play_mode = play_mode
             refresh_row(_position_in_play_list)
                     
-        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
+        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
             _tracks = tracks
             update()
         
@@ -487,7 +483,7 @@ namespace Khovsgol.GUI
         _position_in_play_list: int = int.MIN
         _position_in_track: double = double.MIN
         _track_duration: double = double.MIN
-        _tracks: Json.Array?
+        _tracks: IterableOfTrack?
         
         _logger: static Logging.Logger
         

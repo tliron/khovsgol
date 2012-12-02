@@ -119,9 +119,9 @@ vdoc()
 ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
 cd "$ROOT"
 
-#compile khovsgold src/server src/lib
-#compile khovsgolc src/client/api.gs src/client/cli src/lib/logging src/lib/console src/lib/nap src/lib/json
-compile khovsgol src/client/api.gs src/client/gui src/lib/logging src/lib/console src/lib/nap src/lib/json src/lib/gtk
+#compile khovsgold src/models.gs src/server src/lib
+#compile khovsgolc src/models.gs src/client/api.gs src/client/utilities.gs src/client/cli src/lib/logging src/lib/console src/lib/nap src/lib/json
+compile khovsgol src/models.gs src/client/api.gs src/client/utilities.gs src/client/gui src/lib/logging src/lib/console src/lib/nap src/lib/json src/lib/dbus src/lib/gtk
 
 #ccode src/server src/lib
 #doc

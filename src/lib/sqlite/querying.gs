@@ -11,8 +11,7 @@ namespace SqliteUtil
     def static join(sep: string, items: Gee.Iterable of string): string
         var str = new StringBuilder()
         var i = items.iterator()
-        while i.has_next()
-            i.next()
+        while i.next()
             str.append(i.get())
             if i.has_next()
                 str.append(sep)
@@ -42,7 +41,7 @@ namespace SqliteUtil
      * values by name.
      */
     class Row
-        construct(iterator: Iterator, columns: int)
+        construct(iterator: RowIterator, columns: int)
             _iterator = iterator
             for var c = 0 to (columns - 1)
                 _column_names[iterator.statement.column_name(c)] = c
@@ -59,13 +58,13 @@ namespace SqliteUtil
         def get_double(name: string): double
             return _iterator.statement.column_double(_column_names[name])
     
-        _iterator: Iterator
+        _iterator: RowIterator
         _column_names: dict of string, int = new dict of string, int
     
     /*
      * Row iterator for Sqlite.Statement.
      */
-    class Iterator
+    class RowIterator: Object implements Gee.Iterator of Row
         construct(db: Database, query: Query) raises SqliteUtil.Error
             db.prepare(out _statement, query.as_sql)
             var index = 1
@@ -75,29 +74,33 @@ namespace SqliteUtil
                 else if binding.holds(typeof(int))
                     _statement.bind_int(index++, (int) binding)
 
-            _done = false
+            _first = true
             _columns = _statement.column_count()
             _query = query
             
         prop readonly statement: Statement
         prop readonly query: Query
-
-        def get(): Row
-            return new Row(self, _columns)
-        
-        def has_next(): bool
-            if !_done
-                _result = _statement.step()
-                _done = true
-            return _result == ROW
         
         def next(): bool
-            _done = false
+            _first = false
+            _result = _statement.step()
             return _result == ROW
+        
+        def new @get(): Row
+            return new Row(self, _columns)
+        
+        def first(): bool
+            return _first
+
+        def has_next(): bool
+            return true // TODO
+        
+        def remove()
+            pass
             
         _columns: int
         _result: int
-        _done: bool
+        _first: bool
     
     /*
      * SQL query builder.
@@ -138,5 +141,5 @@ namespace SqliteUtil
                 _fields.add(arg)
                 arg = args.arg()
         
-        def execute(db: Database): Iterator raises SqliteUtil.Error
-            return new Iterator(db, self)
+        def execute(db: Database): RowIterator raises SqliteUtil.Error
+            return new RowIterator(db, self)

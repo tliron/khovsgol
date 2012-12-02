@@ -15,12 +15,10 @@ namespace Khovsgol.Server
         conversation.status_code = StatusCode.NOT_FOUND
         return false
     
-    def set_response_json_array_or_not_found(has_json: HasJsonArray?, conversation: Conversation): bool
-        if has_json is not null
-            var json = has_json.to_json()
-                if json.get_length() > 0
-                    conversation.response_json_array = json
-                    return true
+    def set_response_json_array_or_not_found(json: Json.Array?, conversation: Conversation): bool
+        if json.get_length() > 0
+            conversation.response_json_array = json
+            return true
         conversation.status_code = StatusCode.NOT_FOUND
         return false
 
@@ -71,9 +69,9 @@ namespace Khovsgol.Server
                 args.like = conversation.query["like"] == "true"
                 args.libraries.add_all(get_list_of_libraries(conversation))
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-                var iterator = _crucible.libraries.iterate_tracks_by_artist(args)
-                iterator.get_album_path = TrackIterator.get_album_path_dynamic
-                set_response_json_array_or_not_found(iterator, conversation)
+                var json = _crucible.libraries.iterate_tracks_by_artist(args).to_json()
+                foreach_object_in_json_array(json, get_album_path_dynamic)
+                set_response_json_array_or_not_found(json, conversation)
                 return
 
             // Tracks in album
@@ -82,16 +80,15 @@ namespace Khovsgol.Server
                 var args = new IterateForAlbumArgs()
                 args.album = album
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-                iterator: TrackIterator
+                json: Json.Array
                 if album.has_prefix("*")
                     // Custom compilation magic prefix
-                    iterator = _crucible.libraries.iterate_track_pointers_in_album(args)
+                    json = _crucible.libraries.iterate_track_pointers_in_album(args).to_json()
                 else
-                    iterator = _crucible.libraries.iterate_tracks_in_album(args)
-                
-                var album_path_constant = new TrackIterator.AlbumPathConstant(album)
-                iterator.get_album_path = album_path_constant.get_album_path
-                set_response_json_array_or_not_found(iterator, conversation)
+                    json = _crucible.libraries.iterate_tracks_in_album(args).to_json()
+                    
+                foreach_object_in_json_array(json, new AlbumPathConstant(album).do_on_json_object)
+                set_response_json_array_or_not_found(json, conversation)
                 return
             
             // Search tracks
@@ -111,8 +108,8 @@ namespace Khovsgol.Server
             // Note: custom compilation tracks are always put *after* regular tracks, whatever the sort order
             if compilation_type != CompilationType.CUSTOM_COMPILATION
                 var iterator = _crucible.libraries.iterate_tracks(args)
-                iterator.get_album_path = TrackIterator.get_album_path_dynamic
                 json = iterator.to_json()
+                foreach_object_in_json_array(json, get_album_path_dynamic)
             if (compilation_type == CompilationType.ANY) || (compilation_type == CompilationType.CUSTOM_COMPILATION)
                 var json2 = _crucible.libraries.iterate_track_pointers(args).to_json()
                 if json is null
@@ -137,7 +134,7 @@ namespace Khovsgol.Server
                 args.like = conversation.query["like"] == "true"
                 args.libraries.add_all(get_list_of_libraries(conversation))
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_with_artist(args), conversation)
+                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_with_artist(args).to_json(), conversation)
                 return
             
             // Albums by artist
@@ -148,7 +145,7 @@ namespace Khovsgol.Server
                 args.like = conversation.query["like"] == "true"
                 args.libraries.add_all(get_list_of_libraries(conversation))
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_by_artist(args), conversation)
+                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_by_artist(args).to_json(), conversation)
                 return
             
             // Albums at date
@@ -159,7 +156,7 @@ namespace Khovsgol.Server
                 args.like = conversation.query["like"] == "true"
                 args.libraries.add_all(get_list_of_libraries(conversation))
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_at(args), conversation)
+                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_at(args).to_json(), conversation)
                 return
             
             // All albums
@@ -169,7 +166,7 @@ namespace Khovsgol.Server
             var compilation = conversation.query["compilation"]
             if compilation is not null
                 args.compilation_type = (CompilationType) int.parse(compilation)
-            set_response_json_array_or_not_found(_crucible.libraries.iterate_albums(args), conversation)
+            set_response_json_array_or_not_found(_crucible.libraries.iterate_albums(args).to_json(), conversation)
 
         /*
          * receive [
@@ -185,7 +182,7 @@ namespace Khovsgol.Server
             args.libraries.add_all(get_list_of_libraries(conversation))
             args.album_artist = conversation.query["album"] == "true"
             args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-            set_response_json_array_or_not_found(_crucible.libraries.iterate_artists(args), conversation)
+            set_response_json_array_or_not_found(_crucible.libraries.iterate_artists(args).to_json(), conversation)
         
         /*
          * receive [int, ...]
@@ -195,7 +192,7 @@ namespace Khovsgol.Server
             args.libraries.add_all(get_list_of_libraries(conversation))
             args.album_artist = conversation.query["album"] == "true"
             args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-            set_response_json_array_or_not_found(_crucible.libraries.iterate_dates(args), conversation)
+            set_response_json_array_or_not_found(_crucible.libraries.iterate_dates(args).to_json(), conversation)
 
         /*
          * receive {
@@ -526,7 +523,7 @@ namespace Khovsgol.Server
          * receive [=get_player, ...]
          */
         def get_players(conversation: Conversation) raises GLib.Error
-            set_response_json_array_or_not_found(_crucible.players, conversation)
+            set_response_json_array_or_not_found(_crucible.players.to_json(), conversation)
 
         /* receive {
          *  name: string,

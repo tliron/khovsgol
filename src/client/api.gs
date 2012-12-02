@@ -15,8 +15,7 @@ namespace Khovsgol.Client
     def static join(sep: string, items: Gee.Iterable of string): string
         var str = new StringBuilder()
         var i = items.iterator()
-        while i.has_next()
-            i.next()
+        while i.next()
             str.append(i.get())
             if i.has_next()
                 str.append(sep)
@@ -66,8 +65,8 @@ namespace Khovsgol.Client
         event position_in_play_list_change_gdk(position_in_play_list: int, old_position_in_play_list: int)
         event position_in_track_change(position_in_track: double, old_position_in_track: double, track_duration: double)
         event position_in_track_change_gdk(position_in_track: double, old_position_in_track: double, track_duration: double)
-        event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
-        event play_list_change_gdk(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
+        event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
+        event play_list_change_gdk(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
 
         def new connect(host: string, port: uint)
             _client.base_url = "http://%s:%u".printf(host, port)
@@ -125,7 +124,7 @@ namespace Khovsgol.Client
         /*
          * receive [=get_track, ...]
          */
-        def get_tracks(args: GetTracksArgs): Json.Array?
+        def get_tracks(args: GetTracksArgs): IterableOfTrack
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
@@ -149,10 +148,10 @@ namespace Khovsgol.Client
                 if !args.sort.is_empty
                     conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
-                return conversation.response_json_array
+                return new JsonTracks(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
-                return null
+                return new JsonTracks()
         
         class GetAlbumsArgs
             prop by_artist: string?
@@ -164,7 +163,7 @@ namespace Khovsgol.Client
         /*
          * receive [=get_album, ...]
          */
-        def get_albums(args: GetAlbumsArgs? = null): Json.Array?
+        def get_albums(args: GetAlbumsArgs? = null): IterableOfAlbum
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
@@ -181,10 +180,10 @@ namespace Khovsgol.Client
                     if !args.sort.is_empty
                         conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
-                return conversation.response_json_array
+                return new JsonAlbums(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
-                return null
+                return new JsonAlbums()
 
         /*
          * receive [
@@ -195,7 +194,7 @@ namespace Khovsgol.Client
          *  ...
          * ]
          */
-        def get_artists(album_artists: bool = false, sort: string? = null): Json.Array?
+        def get_artists(album_artists: bool = false, sort: string? = null): IterableOfArtist
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
@@ -205,10 +204,10 @@ namespace Khovsgol.Client
                 if sort is not null
                     conversation.query["sort"] = sort
                 conversation.commit()
-                return conversation.response_json_array
+                return new JsonArtists(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
-                return null
+                return new JsonArtists()
 
         /*
          * receive [int, ...]
@@ -240,14 +239,18 @@ namespace Khovsgol.Client
          *  type: string
          * }
          */
-        def get_track(path: string): Json.Object?
+        def get_track(path: string): Track?
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/track/{path}/"
                 conversation.variables["path"] = path
                 conversation.commit()
-                return conversation.response_json_object
+                var obj = conversation.response_json_object
+                if obj is not null
+                    return new Track.from_json(obj)
+                else
+                    return null
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -265,14 +268,18 @@ namespace Khovsgol.Client
          *  type: string
          * }
          */
-        def get_album(path: string): Json.Object?
+        def get_album(path: string): Album?
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
                 conversation.commit()
-                return conversation.response_json_object
+                var obj = conversation.response_json_object
+                if obj is not null
+                    return new Album.from_json(obj)
+                else
+                    return null
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -1007,7 +1014,7 @@ namespace Khovsgol.Client
                     var id = get_string_member_or_null(play_list, "id")
                     var version = get_int64_member_or_min(play_list, "version")
                     if (id != _play_list_id) || (version != _play_list_version)
-                        var tracks = get_array_member_or_null(play_list, "tracks")
+                        var tracks = new JsonTracks(get_array_member_or_null(play_list, "tracks"))
                         play_list_change(id, version, _play_list_id, _play_list_version, tracks)
                         if in_gdk
                             play_list_change_gdk(id, version, _play_list_id, _play_list_version, tracks)
@@ -1145,7 +1152,7 @@ namespace Khovsgol.Client
             return false
 
     class PlayListChangeGdk: GLib.Object
-        construct(api: API, id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
+        construct(api: API, id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
             _api = api
             _id = id
             _version = version
@@ -1160,7 +1167,7 @@ namespace Khovsgol.Client
         _version: int64
         _old_id: string?
         _old_version: int64
-        _tracks: Json.Array?
+        _tracks: IterableOfTrack
 
         def private idle(): bool
             _api.play_list_change_gdk(_id, _version, _old_id, _old_version, _tracks)
