@@ -32,16 +32,21 @@ namespace Nap
         
         prop abstract request_media_type: string?
         prop abstract request_text: string?
+            owned get
         prop abstract request_json_object: Json.Object?
+            owned get
         prop abstract request_json_array: Json.Array?
+            owned get
         
         prop abstract status_code: uint
         prop abstract response_media_type: string?
         prop abstract response_text: string?
+            owned get
         prop abstract response_json_object: Json.Object?
+            owned get
         prop abstract response_json_array: Json.Array?
+            owned get
         
-        def abstract get_entity(): string?
         def abstract commit()
         def abstract pause()
         def abstract unpause()
@@ -58,19 +63,46 @@ namespace Nap
         prop readonly variables: dict of string, string = new dict of string, string
 
         prop request_media_type: string?
+        
         prop request_text: string?
+            owned get
+                return _request_text
+            set
+                _request_text = value
+                
         prop request_json_object: Json.Object?
+            owned get
+                return _request_json_object
+            set
+                _request_json_object = value
+                
         prop request_json_array: Json.Array?
+            owned get
+                return _request_json_array
+            set
+                _request_json_array = value
         
         prop status_code: uint
         prop response_media_type: string?
-        prop response_text: string?
-        prop response_json_object: Json.Object?
-        prop response_json_array: Json.Array?
-            
-        def get_entity(): string?
-            return null
         
+        prop response_text: string?
+            owned get
+                return _response_text
+            set
+                _response_text = value
+                
+        prop response_json_object: Json.Object?
+            owned get
+                return _response_object
+            set
+                _response_object = value
+                
+        prop response_json_array: Json.Array?
+            owned get
+                return _response_array
+            set
+                _response_array = value
+            
         def commit()
             pass
             
@@ -79,7 +111,14 @@ namespace Nap
             
         def unpause()
             pass
-                    
+        
+        _request_text: string?
+        _request_json_object: Json.Object?
+        _request_json_array: Json.Array?
+        _response_text: string?
+        _response_object: Json.Object?
+        _response_array: Json.Array?
+
     /*
      * A RESTful conversation handler.
      */

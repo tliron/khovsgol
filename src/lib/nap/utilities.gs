@@ -5,57 +5,6 @@ uses
 
 namespace Nap
 
-    def set_json_object_or_not_found(has_json: HasJsonObject?, conversation: Conversation): bool
-        if has_json is not null
-            var json = has_json.to_json()
-            if json.get_size() > 0
-                conversation.response_json_object = json
-                return true
-        conversation.status_code = StatusCode.NOT_FOUND
-        return false
-    
-    def set_json_array_or_not_found(has_json: HasJsonArray?, conversation: Conversation): bool
-        if has_json is not null
-            var json = has_json.to_json()
-                if json.get_length() > 0
-                    conversation.response_json_array = json
-                    return true
-        conversation.status_code = StatusCode.NOT_FOUND
-        return false
-
-    def get_json_object_or_bad_request(conversation: Conversation): Json.Object?
-        var entity = conversation.get_entity()
-        if entity is null
-            conversation.status_code = StatusCode.BAD_REQUEST
-            return null
-        try
-            return JsonUtil.from_object(entity)
-        except e: JsonUtil.Error
-            conversation.status_code = StatusCode.BAD_REQUEST
-            return null
-
-    def response_json_to_text(conversation: Conversation)
-        if (conversation.response_json_object is not null) or (conversation.response_json_array is not null)
-            var jsonp = conversation.query["jsonp"]
-            var human = jsonp is null && conversation.query["human"] == "true"
-            if conversation.response_json_object is not null
-                conversation.response_text = JsonUtil.object_to(conversation.response_json_object, human)
-            else
-                conversation.response_text = JsonUtil.array_to(conversation.response_json_array, human)
-            if jsonp is not null
-                conversation.response_text = "%s(%s)".printf(jsonp, conversation.response_text)
-            if conversation.response_media_type is null
-                conversation.response_media_type = "application/json"
-
-    def request_json_to_text(conversation: Conversation)
-        if (conversation.request_json_object is not null) or (conversation.request_json_array is not null)
-            if conversation.request_json_object is not null
-                conversation.request_text = JsonUtil.object_to(conversation.request_json_object)
-            else
-                conversation.request_text = JsonUtil.array_to(conversation.request_json_array)
-            if conversation.request_media_type is null
-                conversation.request_media_type = "application/json"
-
     def default_error_handler(conversation: Conversation, error: GLib.Error)
         conversation.status_code = StatusCode.INTERNAL_SERVER_ERROR
         Logging.get_logger("nap").warningf("%s (%s %s)", error.message, conversation.method, conversation.path)
@@ -227,13 +176,15 @@ namespace Nap
         prop status_code: uint
         prop size: uint
         
-        def get_formatted_timestamp(): string
-            return _timestamp.format("%d/%b/%Y:%H:%M:%S %z")
+        prop readonly formatted_timestamp: string
+            owned get
+                return _timestamp.format("%d/%b/%Y:%H:%M:%S %z")
         
-        def to_string(): string
-            return "%s %s %s [%s] \"%s %s %s\" %u %u".printf(dash(_address), dash(_user_identifier), dash(_user_id), get_formatted_timestamp(), _method, _path, _protocol, _status_code, _size)
+        prop readonly as_string: string
+            owned get
+                return "%s %s %s [%s] \"%s %s %s\" %u %u".printf(dash(_address), dash(_user_identifier), dash(_user_id), formatted_timestamp, _method, _path, _protocol, _status_code, _size)
                 
-        def private dash(str: string?): string
+        def private static dash(str: string?): string
             if (str is null) || (str.length == 0)
                 return "-"
             return str

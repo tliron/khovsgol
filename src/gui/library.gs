@@ -76,7 +76,7 @@ namespace Khovsgol.GUI
             _style_box.append(new YearsAndAlbums())
             _style_box.append(new AllAlbums())
             _style_box.append(new CustomCompilations())
-            var style = _instance.configuration.get_library_style()
+            var style = _instance.configuration.library_style
             if style is not null
                 _style_box.active_style_name = style
             else
@@ -187,8 +187,8 @@ namespace Khovsgol.GUI
 
         def private on_style()
             var style = _style_box.active_style
-            if (style is not null) && (style.name != _instance.configuration.get_library_style())
-                _instance.configuration.set_library_style(style.name)
+            if (style is not null) && (style.name != _instance.configuration.library_style)
+                _instance.configuration.library_style = style.name
                 _instance.configuration.save()
             on_filter()
 

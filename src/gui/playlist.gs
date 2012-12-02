@@ -131,7 +131,7 @@ namespace Khovsgol.GUI
             _style_box.append(new GroupByAlbums())
             _style_box.append(new Compact())
             _style_box.append(new Extended())
-            var style = _instance.configuration.get_play_list_style()
+            var style = _instance.configuration.play_list_style
             if style is not null
                 _style_box.active_style_name = style
             else
@@ -308,8 +308,8 @@ namespace Khovsgol.GUI
         
         def private on_style()
             var style = _style_box.active_style
-            if (style is not null) && (style.name != _instance.configuration.get_play_list_style())
-                _instance.configuration.set_play_list_style(style.name)
+            if (style is not null) && (style.name != _instance.configuration.play_list_style)
+                _instance.configuration.play_list_style = style.name
                 _instance.configuration.save()
             update()
             

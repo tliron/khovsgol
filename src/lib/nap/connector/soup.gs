@@ -25,25 +25,78 @@ namespace Nap.Connector._Soup
         prop readonly variables: dict of string, string = new dict of string, string
 
         prop request_media_type: string?
+        
         prop request_text: string?
+            owned get
+                var entity = (string) _soup_message.request_body.data
+                if (entity is not null) && (entity.length > 0)
+                    return entity
+                return null
+            set
+                pass
+                
         prop request_json_object: Json.Object?
+            owned get
+                var entity = request_text
+                if entity is null
+                    return null
+                try
+                    return JsonUtil.from_object(entity)
+                except e: JsonUtil.Error
+                    return null
+            set
+                pass
+                
         prop request_json_array: Json.Array?
+            owned get
+                var entity = request_text
+                if entity is null
+                    return null
+                try
+                    return JsonUtil.from_array(entity)
+                except e: JsonUtil.Error
+                    return null
+            set
+                pass
         
         prop status_code: uint = StatusCode.OK
         prop response_media_type: string?
+        
         prop response_text: string?
+            owned get
+                return _response_text
+            set
+                _response_text = value
+                
         prop response_json_object: Json.Object?
+            owned get
+                return _response_object
+            set
+                _response_object = value
+                if value is not null
+                    var jsonp = _query["jsonp"]
+                    var human = jsonp is null && _query["human"] == "true"
+                    _response_text = JsonUtil.object_to(value, human)
+                    if jsonp is not null
+                        _response_text = "%s(%s)".printf(jsonp, _response_text)
+                    if _response_media_type is null
+                        _response_media_type = "application/json"
+                
         prop response_json_array: Json.Array?
-            
-        def get_entity(): string?
-            var entity = (string) _soup_message.request_body.data
-            if (entity is not null) && (entity.length > 0)
-                return entity
-            return null
+            owned get
+                return _response_array
+            set
+                _response_array = value
+                if value is not null
+                    var jsonp = _query["jsonp"]
+                    var human = jsonp is null && _query["human"] == "true"
+                    _response_text = JsonUtil.array_to(value, human)
+                    if jsonp is not null
+                        _response_text = "%s(%s)".printf(jsonp, _response_text)
+                    if _response_media_type is null
+                        _response_media_type = "application/json"
         
         def commit()
-            response_json_to_text(self)
-
             _soup_message.set_status(_status_code)
             
             if _response_text is not null
@@ -73,11 +126,14 @@ namespace Nap.Connector._Soup
             entry.status_code = _soup_message.status_code
             if _response_text is not null
                 entry.size = _response_text.data.length
-            _logger.debug(entry.to_string())
+            _logger.debug(entry.as_string)
 
         _soup_server: Soup.Server
         _soup_message: Soup.Message
         _soup_client: Soup.ClientContext
+        _response_text: string?
+        _response_object: Json.Object?
+        _response_array: Json.Array?
 
         _logger: static Logging.Logger
 
@@ -98,26 +154,71 @@ namespace Nap.Connector._Soup
         prop readonly variables: dict of string, string = new dict of string, string
 
         prop request_media_type: string?
+        
         prop request_text: string?
+            owned get
+                return _request_text
+            set
+                _request_text = value
+                
         prop request_json_object: Json.Object?
+            owned get
+                return _request_json_object
+            set
+                _request_json_object = value
+                if value is not null
+                    _request_text = JsonUtil.object_to(value)
+                    if _request_media_type is null
+                        _request_media_type = "application/json"
+                
         prop request_json_array: Json.Array?
+            owned get
+                return _request_json_array
+            set
+                _request_json_array = value
+                if value is not null
+                    _request_text = JsonUtil.array_to(value)
+                    if _request_media_type is null
+                        _request_media_type = "application/json"
         
         prop status_code: uint
         prop response_media_type: string?
-        prop response_text: string?
-        prop response_json_object: Json.Object?
-        prop response_json_array: Json.Array?
         
-        def get_entity(): string?
-            if _soup_message is not null
-                var entity = (string) _soup_message.response_body.data
-                if (entity is not null) && (entity.length > 0)
-                    return entity
-            return null
+        prop response_text: string?
+            owned get
+                if _soup_message is not null
+                    var entity = (string) _soup_message.response_body.data
+                    if (entity is not null) && (entity.length > 0)
+                        return entity
+                return null
+            set
+                pass
+                
+        prop response_json_object: Json.Object?
+            owned get
+                var entity = response_text
+                if entity is null
+                    return null
+                try
+                    return JsonUtil.from_object(entity)
+                except e: JsonUtil.Error
+                    return null
+            set
+                pass
+                
+        prop response_json_array: Json.Array?
+            owned get
+                var entity = response_text
+                if entity is null
+                    return null
+                try
+                    return JsonUtil.from_array(entity)
+                except e: JsonUtil.Error
+                    return null
+            set
+                pass
         
         def commit()
-            request_json_to_text(self)
-            
             // If we have variables, render as template
             var p = _path
             if !_variables.is_empty
@@ -159,6 +260,9 @@ namespace Nap.Connector._Soup
         _soup_session: Soup.Session
         _soup_message: Soup.Message
         _base_url: string
+        _request_text: string?
+        _request_json_object: Json.Object?
+        _request_json_array: Json.Array?
 
         _logger: static Logging.Logger
 

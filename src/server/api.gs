@@ -6,6 +6,24 @@ uses
     
 namespace Khovsgol.Server
 
+    def set_response_json_object_or_not_found(has_json: HasJsonObject?, conversation: Conversation): bool
+        if has_json is not null
+            var json = has_json.to_json()
+            if json.get_size() > 0
+                conversation.response_json_object = json
+                return true
+        conversation.status_code = StatusCode.NOT_FOUND
+        return false
+    
+    def set_response_json_array_or_not_found(has_json: HasJsonArray?, conversation: Conversation): bool
+        if has_json is not null
+            var json = has_json.to_json()
+                if json.get_length() > 0
+                    conversation.response_json_array = json
+                    return true
+        conversation.status_code = StatusCode.NOT_FOUND
+        return false
+
     def get_list_of_string(str: string?): list of string
         var strings = new list of string
         if str is not null
@@ -55,7 +73,7 @@ namespace Khovsgol.Server
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
                 var iterator = _crucible.libraries.iterate_tracks_by_artist(args)
                 iterator.get_album_path = TrackIterator.get_album_path_dynamic
-                set_json_array_or_not_found(iterator, conversation)
+                set_response_json_array_or_not_found(iterator, conversation)
                 return
 
             // Tracks in album
@@ -73,7 +91,7 @@ namespace Khovsgol.Server
                 
                 var album_path_constant = new TrackIterator.AlbumPathConstant(album)
                 iterator.get_album_path = album_path_constant.get_album_path
-                set_json_array_or_not_found(iterator, conversation)
+                set_response_json_array_or_not_found(iterator, conversation)
                 return
             
             // Search tracks
@@ -119,7 +137,7 @@ namespace Khovsgol.Server
                 args.like = conversation.query["like"] == "true"
                 args.libraries.add_all(get_list_of_libraries(conversation))
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-                set_json_array_or_not_found(_crucible.libraries.iterate_albums_with_artist(args), conversation)
+                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_with_artist(args), conversation)
                 return
             
             // Albums by artist
@@ -130,7 +148,7 @@ namespace Khovsgol.Server
                 args.like = conversation.query["like"] == "true"
                 args.libraries.add_all(get_list_of_libraries(conversation))
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-                set_json_array_or_not_found(_crucible.libraries.iterate_albums_by_artist(args), conversation)
+                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_by_artist(args), conversation)
                 return
             
             // Albums at date
@@ -141,7 +159,7 @@ namespace Khovsgol.Server
                 args.like = conversation.query["like"] == "true"
                 args.libraries.add_all(get_list_of_libraries(conversation))
                 args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-                set_json_array_or_not_found(_crucible.libraries.iterate_albums_at(args), conversation)
+                set_response_json_array_or_not_found(_crucible.libraries.iterate_albums_at(args), conversation)
                 return
             
             // All albums
@@ -151,7 +169,7 @@ namespace Khovsgol.Server
             var compilation = conversation.query["compilation"]
             if compilation is not null
                 args.compilation_type = (CompilationType) int.parse(compilation)
-            set_json_array_or_not_found(_crucible.libraries.iterate_albums(args), conversation)
+            set_response_json_array_or_not_found(_crucible.libraries.iterate_albums(args), conversation)
 
         /*
          * receive [
@@ -167,7 +185,7 @@ namespace Khovsgol.Server
             args.libraries.add_all(get_list_of_libraries(conversation))
             args.album_artist = conversation.query["album"] == "true"
             args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-            set_json_array_or_not_found(_crucible.libraries.iterate_artists(args), conversation)
+            set_response_json_array_or_not_found(_crucible.libraries.iterate_artists(args), conversation)
         
         /*
          * receive [int, ...]
@@ -177,7 +195,7 @@ namespace Khovsgol.Server
             args.libraries.add_all(get_list_of_libraries(conversation))
             args.album_artist = conversation.query["album"] == "true"
             args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-            set_json_array_or_not_found(_crucible.libraries.iterate_dates(args), conversation)
+            set_response_json_array_or_not_found(_crucible.libraries.iterate_dates(args), conversation)
 
         /*
          * receive {
@@ -196,7 +214,7 @@ namespace Khovsgol.Server
          * }
          */
         def get_track(conversation: Conversation) raises GLib.Error
-            set_json_object_or_not_found(_crucible.libraries.get_track(conversation.variables["path"]), conversation)
+            set_response_json_object_or_not_found(_crucible.libraries.get_track(conversation.variables["path"]), conversation)
         
         /*
          * receive {
@@ -212,7 +230,7 @@ namespace Khovsgol.Server
          * }
          */
         def get_album(conversation: Conversation) raises GLib.Error
-            set_json_object_or_not_found(_crucible.libraries.get_album(conversation.variables["path"]), conversation)
+            set_response_json_object_or_not_found(_crucible.libraries.get_album(conversation.variables["path"]), conversation)
 
         /*
          * send {move: [int, ...]}
@@ -233,8 +251,9 @@ namespace Khovsgol.Server
             if album is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var entity = get_json_object_or_bad_request(conversation)
+            var entity = conversation.request_json_object
             if entity is null
+                conversation.status_code = StatusCode.BAD_REQUEST
                 return
                 
             var processed = false
@@ -287,7 +306,7 @@ namespace Khovsgol.Server
                 processed = true
             
             if processed
-                set_json_object_or_not_found(album, conversation)
+                set_response_json_object_or_not_found(album, conversation)
             else
                 conversation.status_code = StatusCode.BAD_REQUEST
 
@@ -302,8 +321,9 @@ namespace Khovsgol.Server
                 // Must have custom compilation magic prefix
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
-            var entity = get_json_object_or_bad_request(conversation)
+            var entity = conversation.request_json_object
             if entity is null
+                conversation.status_code = StatusCode.BAD_REQUEST
                 return
                 
             // Create a new custom compilation
@@ -332,7 +352,7 @@ namespace Khovsgol.Server
                             track_pointer.position = position++
                             _crucible.libraries.save_track_pointer(track_pointer)
 
-                set_json_object_or_not_found(album, conversation)
+                set_response_json_object_or_not_found(album, conversation)
             else
                 conversation.status_code = StatusCode.BAD_REQUEST
 
@@ -357,7 +377,7 @@ namespace Khovsgol.Server
          */
         def get_library(conversation: Conversation) raises GLib.Error
             var library = _crucible.libraries.libraries[conversation.variables["library"]]
-            set_json_object_or_not_found(library, conversation)
+            set_response_json_object_or_not_found(library, conversation)
 
         /*
          * send {add: string}
@@ -372,8 +392,9 @@ namespace Khovsgol.Server
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var entity = get_json_object_or_bad_request(conversation)
+            var entity = conversation.request_json_object
             if entity is null
+                conversation.status_code = StatusCode.BAD_REQUEST
                 return
 
             var processed = false
@@ -416,7 +437,7 @@ namespace Khovsgol.Server
                     processed = true
 
             if processed
-                set_json_object_or_not_found(library, conversation)
+                set_response_json_object_or_not_found(library, conversation)
             else
                 conversation.status_code = StatusCode.BAD_REQUEST
         
@@ -428,7 +449,7 @@ namespace Khovsgol.Server
             var library = _crucible.create_library()
             library.name = name
             _crucible.libraries.libraries[name] = library
-            set_json_object_or_not_found(library, conversation)
+            set_response_json_object_or_not_found(library, conversation)
 
         def delete_library(conversation: Conversation) raises GLib.Error
             var library = conversation.variables["library"]
@@ -449,7 +470,7 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
             var directory = library.directories[conversation.variables["path"]]
-            set_json_object_or_not_found(directory, conversation)
+            set_response_json_object_or_not_found(directory, conversation)
 
         /*
          * send {action: string}
@@ -465,8 +486,9 @@ namespace Khovsgol.Server
             if directory is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var entity = get_json_object_or_bad_request(conversation)
+            var entity = conversation.request_json_object
             if entity is null
+                conversation.status_code = StatusCode.BAD_REQUEST
                 return
             
             var action = get_string_member_or_null(entity, "action")
@@ -487,7 +509,7 @@ namespace Khovsgol.Server
             var directory = _crucible.create_directory()
             directory.path = path
             library.directories[path] = directory
-            set_json_object_or_not_found(directory, conversation)
+            set_response_json_object_or_not_found(directory, conversation)
 
         def delete_directory(conversation: Conversation) raises GLib.Error
             var library = _crucible.libraries.libraries[conversation.variables["library"]]
@@ -504,7 +526,7 @@ namespace Khovsgol.Server
          * receive [=get_player, ...]
          */
         def get_players(conversation: Conversation) raises GLib.Error
-            set_json_array_or_not_found(_crucible.players, conversation)
+            set_response_json_array_or_not_found(_crucible.players, conversation)
 
         /* receive {
          *  name: string,
@@ -521,7 +543,7 @@ namespace Khovsgol.Server
          */
         def get_player(conversation: Conversation) raises GLib.Error
             var player = _crucible.players.get_or_create_player(conversation.variables["player"])
-            set_json_object_or_not_found(player, conversation)
+            set_response_json_object_or_not_found(player, conversation)
 
         /*
          * send {playMode: string}
@@ -540,8 +562,9 @@ namespace Khovsgol.Server
             if player is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var entity = get_json_object_or_bad_request(conversation)
+            var entity = conversation.request_json_object
             if entity is null
+                conversation.status_code = StatusCode.BAD_REQUEST
                 return
 
             var processed = false
@@ -619,7 +642,7 @@ namespace Khovsgol.Server
                 return
             
             if processed
-                set_json_object_or_not_found(player, conversation)
+                set_response_json_object_or_not_found(player, conversation)
             else
                 conversation.status_code = StatusCode.BAD_REQUEST
 
@@ -650,9 +673,9 @@ namespace Khovsgol.Server
                 return
 
             if conversation.query["fullrepresentation"] == "true"
-                set_json_object_or_not_found(player, conversation)
+                set_response_json_object_or_not_found(player, conversation)
             else
-                set_json_object_or_not_found(player.play_list, conversation)
+                set_response_json_object_or_not_found(player.play_list, conversation)
 
         /*
          * send {paths: [string, ...]}
@@ -669,8 +692,9 @@ namespace Khovsgol.Server
             if player is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var entity = get_json_object_or_bad_request(conversation)
+            var entity = conversation.request_json_object
             if entity is null
+                conversation.status_code = StatusCode.BAD_REQUEST
                 return
                 
             update_play_list(player, entity, conversation)
@@ -730,9 +754,9 @@ namespace Khovsgol.Server
 
             if processed
                 if conversation.query["fullrepresentation"] == "true"
-                    set_json_object_or_not_found(player, conversation)
+                    set_response_json_object_or_not_found(player, conversation)
                 else
-                    set_json_object_or_not_found(player.play_list, conversation)
+                    set_response_json_object_or_not_found(player.play_list, conversation)
             else
                 conversation.status_code = StatusCode.BAD_REQUEST
 

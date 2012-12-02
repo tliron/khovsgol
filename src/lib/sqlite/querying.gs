@@ -67,7 +67,7 @@ namespace SqliteUtil
      */
     class Iterator
         construct(db: Database, query: Query) raises SqliteUtil.Error
-            db.prepare(out _statement, query.to_sql())
+            db.prepare(out _statement, query.as_sql)
             var index = 1
             for var binding in query.bindings
                 if binding.holds(typeof(string))
@@ -111,23 +111,24 @@ namespace SqliteUtil
         prop readonly sort: list of string = new list of string
         prop constraint: string? = null
         
-        def to_sql(): string
-            var query = new StringBuilder()
-            query.append("SELECT ")
-            if (constraint is not null) && (constraint.length > 0)
-                query.append(constraint)
-                query.append(" ")
-            query.append(join(",", fields))
-            query.append(" FROM ")
-            query.append(table)
-            if !requirements.is_empty
-                query.append(" WHERE ")
-                query.append(join(" AND ", requirements))
-            if !sort.is_empty
-                query.append(" ORDER BY ")
-                query.append(join(",", sort))
+        prop readonly as_sql: string
+            owned get
+                var query = new StringBuilder()
+                query.append("SELECT ")
+                if (constraint is not null) && (constraint.length > 0)
+                    query.append(constraint)
+                    query.append(" ")
+                query.append(join(",", fields))
+                query.append(" FROM ")
+                query.append(table)
+                if !requirements.is_empty
+                    query.append(" WHERE ")
+                    query.append(join(" AND ", requirements))
+                if !sort.is_empty
+                    query.append(" ORDER BY ")
+                    query.append(join(",", sort))
 
-            return query.str
+                return query.str
         
         def add_fields(first: string, ...)
             _fields.add(first)

@@ -56,23 +56,23 @@ namespace Khovsgol.GUI
             set
                 _key_file.set_integer("ui", "split", value)
 
-        def get_play_list_style(): string
-            try
-                return _key_file.get_string("ui", "playlist-style")
-            except e: KeyFileError
-                return "group_by_albums"
+        prop play_list_style: string
+            owned get
+                try
+                    return _key_file.get_string("ui", "playlist-style")
+                except e: KeyFileError
+                    return "group_by_albums"
+            set
+                _key_file.set_string("ui", "playlist-style", value)
 
-        def set_play_list_style(value: string)
-            _key_file.set_string("ui", "playlist-style", value)
-
-        def get_library_style(): string
-            try
-                return _key_file.get_string("ui", "library-style")
-            except e: KeyFileError
-                return "artists_albums"
-
-        def set_library_style(value: string)
-            _key_file.set_string("ui", "library-style", value)
+        prop library_style: string
+            owned get
+                try
+                    return _key_file.get_string("ui", "library-style")
+                except e: KeyFileError
+                    return "artists_albums"
+            set
+                _key_file.set_string("ui", "library-style", value)
 
         /*
          * Saves the configuration.

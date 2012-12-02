@@ -107,11 +107,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.GET
                 conversation.path = "/libraries/"
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_array(entity)
-                else
-                    return null
+                return conversation.response_json_array
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -153,11 +149,7 @@ namespace Khovsgol.Client
                 if !args.sort.is_empty
                     conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_array(entity)
-                else
-                    return null
+                return conversation.response_json_array
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -189,11 +181,7 @@ namespace Khovsgol.Client
                     if !args.sort.is_empty
                         conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_array(entity)
-                else
-                    return null
+                return conversation.response_json_array
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -217,11 +205,7 @@ namespace Khovsgol.Client
                 if sort is not null
                     conversation.query["sort"] = sort
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_array(entity)
-                else
-                    return null
+                return conversation.response_json_array
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -235,11 +219,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.GET
                 conversation.path = "/libraries/dates/"
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_array(entity)
-                else
-                    return null
+                return conversation.response_json_array
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -267,11 +247,7 @@ namespace Khovsgol.Client
                 conversation.path = "/libraries/track/{path}/"
                 conversation.variables["path"] = path
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -296,11 +272,7 @@ namespace Khovsgol.Client
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -328,11 +300,7 @@ namespace Khovsgol.Client
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -360,11 +328,7 @@ namespace Khovsgol.Client
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -385,11 +349,7 @@ namespace Khovsgol.Client
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -412,11 +372,7 @@ namespace Khovsgol.Client
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -444,11 +400,7 @@ namespace Khovsgol.Client
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -469,11 +421,7 @@ namespace Khovsgol.Client
                 conversation.variables["library"] = name
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -494,11 +442,7 @@ namespace Khovsgol.Client
                 conversation.variables["library"] = name
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -520,11 +464,7 @@ namespace Khovsgol.Client
                 conversation.variables["library"] = name
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -539,11 +479,7 @@ namespace Khovsgol.Client
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -572,11 +508,7 @@ namespace Khovsgol.Client
                 conversation.variables["library"] = name
                 conversation.variables["path"] = path
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -599,11 +531,7 @@ namespace Khovsgol.Client
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -619,11 +547,7 @@ namespace Khovsgol.Client
                 conversation.variables["library"] = name
                 conversation.variables["path"] = path
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_object(entity)
-                else
-                    return null
+                return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -648,11 +572,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.GET
                 conversation.path = "/players/"
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    return from_array(entity)
-                else
-                    return null
+                return conversation.response_json_array
             except e: GLib.Error
                 on_error(e)
                 return null
@@ -677,9 +597,8 @@ namespace Khovsgol.Client
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    var player_object = from_object(entity)
+                var player_object = conversation.response_json_object
+                if player_object is not null
                     process_player(player_object, in_gdk)
                     return player_object
                 else
@@ -704,9 +623,8 @@ namespace Khovsgol.Client
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    var player_object = from_object(entity)
+                var player_object = conversation.response_json_object
+                if player_object is not null
                     process_player(player_object, in_gdk)
                     return player_object
                 else
@@ -731,9 +649,8 @@ namespace Khovsgol.Client
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    var player_object = from_object(entity)
+                var player_object = conversation.response_json_object
+                if player_object is not null
                     process_player(player_object, in_gdk)
                     return player_object
                 else
@@ -760,9 +677,8 @@ namespace Khovsgol.Client
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    var player_object = from_object(entity)
+                var player_object = conversation.response_json_object
+                if player_object is not null
                     process_player(player_object, in_gdk)
                     return player_object
                 else
@@ -789,9 +705,8 @@ namespace Khovsgol.Client
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    var player_object = from_object(entity)
+                var player_object = conversation.response_json_object
+                if player_object is not null
                     process_player(player_object, in_gdk)
                     return player_object
                 else
@@ -818,9 +733,8 @@ namespace Khovsgol.Client
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    var player_object = from_object(entity)
+                var player_object = conversation.response_json_object
+                if player_object is not null
                     process_player(player_object, in_gdk)
                     return player_object
                 else
@@ -847,9 +761,8 @@ namespace Khovsgol.Client
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
-                if entity is not null
-                    var player_object = from_object(entity)
+                var player_object = conversation.response_json_object
+                if player_object is not null
                     process_player(player_object, in_gdk)
                     return player_object
                 else
@@ -893,14 +806,11 @@ namespace Khovsgol.Client
                 if full
                     conversation.query["fullrepresentation"] = "true"
                 conversation.commit()
-                var entity = conversation.get_entity()
+                var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        var player_object = from_object(entity)
-                        process_player(player_object, in_gdk)
-                        return player_object
-                    else
-                        return from_object(entity)
+                        process_player(entity, in_gdk)
+                    return entity
                 else
                     return null
             except e: GLib.Error
@@ -925,14 +835,11 @@ namespace Khovsgol.Client
                     conversation.query["fullrepresentation"] = "true"
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
+                var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        var player_object = from_object(entity)
-                        process_player(player_object, in_gdk)
-                        return player_object
-                    else
-                        return from_object(entity)
+                        process_player(entity, in_gdk)
+                    return entity
                 else
                     return null
             except e: GLib.Error
@@ -964,14 +871,11 @@ namespace Khovsgol.Client
                     conversation.query["fullrepresentation"] = "true"
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
+                var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        var player_object = from_object(entity)
-                        process_player(player_object, in_gdk)
-                        return player_object
-                    else
-                        return from_object(entity)
+                        process_player(entity, in_gdk)
+                    return entity
                 else
                     return null
             except e: GLib.Error
@@ -1003,14 +907,11 @@ namespace Khovsgol.Client
                     conversation.query["fullrepresentation"] = "true"
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
+                var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        var player_object = from_object(entity)
-                        process_player(player_object, in_gdk)
-                        return player_object
-                    else
-                        return from_object(entity)
+                        process_player(entity, in_gdk)
+                    return entity
                 else
                     return null
             except e: GLib.Error
@@ -1035,14 +936,11 @@ namespace Khovsgol.Client
                     conversation.query["fullrepresentation"] = "true"
                 conversation.request_json_object = payload
                 conversation.commit()
-                var entity = conversation.get_entity()
+                var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        var player_object = from_object(entity)
-                        process_player(player_object, in_gdk)
-                        return player_object
-                    else
-                        return from_object(entity)
+                        process_player(entity, in_gdk)
+                    return entity
                 else
                     return null
             except e: GLib.Error
