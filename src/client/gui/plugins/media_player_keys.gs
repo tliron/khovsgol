@@ -33,6 +33,7 @@ namespace Khovsgol.GUI.Plugins
                 try
                     _media_keys.MediaPlayerKeyPressed.disconnect(on_key_pressed)
                     _media_keys.ReleaseMediaPlayerKeys("Khövsgöl")
+                    _media_keys = null
                     _logger.message("Stopped")
                 except e: IOError
                     _logger.warning(e.message)
@@ -56,7 +57,7 @@ namespace Khovsgol.GUI.Plugins
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.mediaplayerkeys")
+            _logger = Logging.get_logger("khovsgol.client.media-player-keys")
 
     /*
      * Wrapper that fallbacks to legacy interface.

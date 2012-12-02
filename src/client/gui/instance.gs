@@ -16,10 +16,12 @@ namespace Khovsgol.GUI
             player = Environment.get_user_name()
             _window = new MainWindow(self)
             
-            add_plugin(new Plugins.MediaPlayerKeysPlugin())
             add_plugin(new Plugins.NotificationsPlugin())
-            add_plugin(new Plugins.UnityPlugin())
+            add_plugin(new Plugins.MediaPlayerKeysPlugin())
             add_plugin(new Plugins.Mpris2Plugin())
+            add_plugin(new Plugins.MusicIndicatorPlugin())
+            add_plugin(new Plugins.UnityPlugin())
+            add_plugin(new Plugins.PurplePlugin())
             
         prop readonly configuration: Configuration
         prop readonly dir: File
@@ -40,7 +42,8 @@ namespace Khovsgol.GUI
         def start()
             for var plugin in _plugins
                 plugin.start()
-            Gdk.threads_add_idle(_api.start_player_poll)
+            //Gdk.threads_add_idle(_api.start_player_poll)
+            _api.start_player_poll()
             Gtk.main()
         
         def stop()

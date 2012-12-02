@@ -993,6 +993,8 @@ namespace Khovsgol.Client
         def private process_player(player: Json.Object?, in_gdk: bool = false)
             if player is null
                 return
+            if !is_polling
+                return
             
             _watching_player_lock.lock()
             try
@@ -1059,13 +1061,13 @@ namespace Khovsgol.Client
 
         def private poll(): bool
             while true
-                // Should we stop polling?
-                if AtomicInt.get(ref _is_poll_stopping) == 1
-                    break
-                    
                 update()
 
                 Thread.usleep(_poll_interval)
+
+                // Should we stop polling?
+                if AtomicInt.get(ref _is_poll_stopping) == 1
+                    break
             
             // We've stopped polling
             AtomicInt.set(ref _is_polling, 0)

@@ -25,11 +25,13 @@ namespace Khovsgol.GUI.Plugins
                     _logger.warning(e.message)
         
         def stop()
-            _instance.api.position_in_play_list_change.disconnect(on_position_in_play_list_changed)
-            _instance.api.play_list_change.disconnect(on_play_list_changed)
-            _logger.message("Stopped")
+            if _notifications is not null
+                _instance.api.position_in_play_list_change.disconnect(on_position_in_play_list_changed)
+                _instance.api.play_list_change.disconnect(on_play_list_changed)
+                _notifications = null
+                _logger.message("Stopped")
         
-        _notifications: Notifications
+        _notifications: Notifications?
         
         def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: Json.Array?)
             _tracks = tracks
@@ -63,7 +65,7 @@ namespace Khovsgol.GUI.Plugins
                                     markup = title
                                     
                                 try
-                                    _notifications.Notify("Khövsgöl", position, "play", "Khövsgöl", markup, _actions, _hints, 3000)
+                                    _notifications.Notify("Khövsgöl", position, "stock_media-play", "Khövsgöl", markup, _actions, _hints, 3000)
                                     _logger.info("Notified new track")
                                 except e: IOError
                                     _logger.warning(e.message)

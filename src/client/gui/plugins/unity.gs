@@ -28,10 +28,12 @@ namespace Khovsgol.GUI.Plugins
                     _logger.warning("Could not connect to Launcher")
         
         def stop()
-            _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
-            _logger.message("Stopped")
+            if _launcher_entry is not null
+                _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
+                _launcher_entry = null
+                _logger.message("Stopped")
         
-        _launcher_entry: Unity.LauncherEntry
+        _launcher_entry: Unity.LauncherEntry?
 
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             if _launcher_entry is not null
