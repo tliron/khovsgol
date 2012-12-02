@@ -100,16 +100,16 @@ namespace Khovsgol.Client
         /*
          * receive [=get_library, ...]
          */
-        def get_libraries(): Json.Array?
+        def get_libraries(): IterableOfJsonObject
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/"
                 conversation.commit()
-                return conversation.response_json_array
+                return new JsonObjects(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
-                return null
+                return new JsonObjects()
 
         class GetTracksArgs
             prop by_artist: string?
@@ -212,16 +212,16 @@ namespace Khovsgol.Client
         /*
          * receive [int, ...]
          */
-        def get_dates(): Json.Array?
+        def get_dates(): IterableOfInt
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/dates/"
                 conversation.commit()
-                return conversation.response_json_array
+                return new JsonInts(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
-                return null
+                return new JsonInts()
 
         /*
          * receive {
@@ -573,16 +573,16 @@ namespace Khovsgol.Client
         /*
          * receive [=get_player, ...]
          */
-        def get_players(): Json.Array?
+        def get_players(): IterableOfJsonObject
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/players/"
                 conversation.commit()
-                return conversation.response_json_array
+                return new JsonObjects(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
-                return null
+                return new JsonObjects()
 
         /* receive {
          *  name: string,

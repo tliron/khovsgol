@@ -149,21 +149,19 @@ namespace Khovsgol.GUI
             var level = node.level
             if level == 0
                 // Dates
-                var dates = node.instance.api.get_dates()
-                if (dates is not null) && (dates.get_length() > 0)
-                    current_decade: int = int.MIN
-                    for var i = 0 to (dates.get_length() - 1)
-                        var date = get_int_element_or_min(dates, i)
-                        if date != int.MIN
-                            // Seperate by decade
-                            var decade = date / 10
-                            if decade != current_decade
-                                current_decade = decade
-                                if i > 0
-                                    node.append_separator()
-                        
-                            var date_string = date.to_string()
-                            node.append_int(date, date_string, date_string, null, true)
+                current_decade: int = int.MIN
+                first: bool = true
+                for var date in node.instance.api.get_dates()
+                    // Seperate by decade
+                    var decade = date / 10
+                    if decade != current_decade
+                        current_decade = decade
+                        if !first
+                            node.append_separator()
+                
+                    var date_string = date.to_string()
+                    node.append_int(date, date_string, date_string, null, true)
+                    first = false
 
             else if level == 1
                 // Albums at date

@@ -184,3 +184,127 @@ namespace Khovsgol
         _json: Json.Array?
         _index: int = -1
         _length: uint
+
+    //
+    // Primitives
+    //
+
+    class JsonStrings: IterableOfString
+        construct(json: Json.Array? = null)
+            _json = json
+        
+        prop override readonly element_type: Type
+            get
+                return typeof(string)
+            
+        def override iterator(): Gee.Iterator of string?
+            return new JsonStringIterator(_json)
+
+        def override to_json(): Json.Array
+            return _json
+        
+        _json: Json.Array?
+
+    class JsonStringIterator: Object implements Gee.Iterator of string?
+        construct(json: Json.Array? = null)
+            _json = json
+            _length = _json is not null ? _json.get_length() : 0
+
+        def next(): bool
+            return ++_index < _length
+        
+        def new @get(): string?
+            return get_string_element_or_null(_json, _index)
+        
+        def first(): bool
+            return _index == 0
+        
+        def has_next(): bool
+            return _index < _length - 1
+        
+        def remove()
+            pass
+        
+        _json: Json.Array?
+        _index: int = -1
+        _length: uint
+    
+    class JsonInts: IterableOfInt
+        construct(json: Json.Array? = null)
+            _json = json
+        
+        prop override readonly element_type: Type
+            get
+                return typeof(int)
+            
+        def override iterator(): Gee.Iterator of int
+            return new JsonIntIterator(_json)
+
+        def override to_json(): Json.Array
+            return _json
+        
+        _json: Json.Array?
+
+    class JsonIntIterator: Object implements Gee.Iterator of int
+        construct(json: Json.Array? = null)
+            _json = json
+            _length = _json is not null ? _json.get_length() : 0
+
+        def next(): bool
+            return ++_index < _length
+        
+        def new @get(): int
+            return get_int_element_or_min(_json, _index)
+        
+        def first(): bool
+            return _index == 0
+        
+        def has_next(): bool
+            return _index < _length - 1
+        
+        def remove()
+            pass
+        
+        _json: Json.Array?
+        _index: int = -1
+        _length: uint
+
+    class JsonObjects: IterableOfJsonObject
+        construct(json: Json.Array? = null)
+            _json = json
+        
+        prop override readonly element_type: Type
+            get
+                return typeof(Json.Object)
+            
+        def override iterator(): Gee.Iterator of Json.Object?
+            return new JsonObjectIterator(_json)
+
+        def override to_json(): Json.Array
+            return _json
+        
+        _json: Json.Array?
+
+    class JsonObjectIterator: Object implements Gee.Iterator of Json.Object?
+        construct(json: Json.Array? = null)
+            _json = json
+            _length = _json is not null ? _json.get_length() : 0
+
+        def next(): bool
+            return ++_index < _length
+        
+        def new @get(): Json.Object?
+            return get_object_element_or_null(_json, _index)
+        
+        def first(): bool
+            return _index == 0
+        
+        def has_next(): bool
+            return _index < _length - 1
+        
+        def remove()
+            pass
+        
+        _json: Json.Array?
+        _index: int = -1
+        _length: uint

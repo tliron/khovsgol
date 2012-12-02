@@ -219,7 +219,7 @@ namespace Khovsgol.Sqlite
             get
                 return typeof(string)
                 
-        def override iterator(): Gee.Iterator of string
+        def override iterator(): Gee.Iterator of string?
             return _iterator
         
         def override to_json(): Json.Array
@@ -230,7 +230,7 @@ namespace Khovsgol.Sqlite
             
         _iterator: SqlStringIterator
 
-    class private SqlStringIterator: Object implements Gee.Iterator of string
+    class private SqlStringIterator: Object implements Gee.Iterator of string?
         construct(iterator: RowIterator, name: string)
             _iterator = iterator
             _name = name
@@ -238,7 +238,7 @@ namespace Khovsgol.Sqlite
         def next(): bool
             return _iterator.next()
 
-        def new @get(): string
+        def new @get(): string?
             var row = _iterator.get()
             return row.get_text(_name)
 

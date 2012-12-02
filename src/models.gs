@@ -278,7 +278,7 @@ namespace Khovsgol
     // Primitives
     //
 
-    class abstract IterableOfString: Object implements JsonUtil.HasJsonArray, Gee.Iterable of string
+    class abstract IterableOfString: Object implements JsonUtil.HasJsonArray, Gee.Iterable of string?
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of string
         def abstract to_json(): Json.Array
@@ -286,4 +286,9 @@ namespace Khovsgol
     class abstract IterableOfInt: Object implements JsonUtil.HasJsonArray, Gee.Iterable of int
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of int
+        def abstract to_json(): Json.Array
+
+    class abstract IterableOfJsonObject: Object implements JsonUtil.HasJsonArray, Gee.Iterable of Json.Object?
+        prop abstract readonly element_type: Type
+        def abstract iterator(): Gee.Iterator of Json.Object
         def abstract to_json(): Json.Array

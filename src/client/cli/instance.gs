@@ -153,42 +153,31 @@ namespace Khovsgol.CLI
                         stdout.printf("%s\n", name)
 
             else if command == "dates"
-                var dates = _api.get_dates()
-                if (dates is not null) && (dates.get_length() > 0)
-                    for var i = 0 to (dates.get_length() - 1)
-                        var date = get_int_element_or_min(dates, i)
-                        if date is not int.MIN
-                            stdout.printf("%d\n", date)
+                for var date in _api.get_dates()
+                    stdout.printf("%d\n", date)
 
             else if command == "players"
-                var players = _api.get_players()
-                if (players is not null) && (players.get_length() > 0)
-                    for var i = 0 to (players.get_length() - 1)
-                        var player = get_object_element_or_null(players, i)
-                        if player is not null
-                            print_player(player)
+                for var player in _api.get_players()
+                    print_player(player)
 
             else if command == "libraries"
-                var libraries = _api.get_libraries()
-                if (libraries is not null) && (libraries.get_length() > 0)
-                    for var i = 0 to (libraries.get_length() - 1)
-                        var library = get_object_element_or_null(libraries, i)
-                        var name = get_string_member_or_null(library, "name")
-                        if name is not null
-                            stdout.printf("Library: %s\n", name)
-                            var directories = get_array_member_or_null(library, "directories")
-                            if directories is not null
-                                for var ii = 0 to (directories.get_length() - 1)
-                                    var directory = get_object_element_or_null(directories, ii)
-                                    if directory is not null
-                                        var path = get_string_member_or_null(directory, "path")
-                                        var scanning = get_bool_member_or_false(directory, "scanning")
-                                        if path is not null
-                                            stdout.printf("  Directory: %s", path)
-                                            if scanning
-                                                stdout.printf(" (currently scanning)\n")
-                                            else
-                                                stdout.printf("\n")
+                for var library in _api.get_libraries()
+                    var name = get_string_member_or_null(library, "name")
+                    if name is not null
+                        stdout.printf("Library: %s\n", name)
+                        var directories = get_array_member_or_null(library, "directories")
+                        if directories is not null
+                            for var ii = 0 to (directories.get_length() - 1)
+                                var directory = get_object_element_or_null(directories, ii)
+                                if directory is not null
+                                    var path = get_string_member_or_null(directory, "path")
+                                    var scanning = get_bool_member_or_false(directory, "scanning")
+                                    if path is not null
+                                        stdout.printf("  Directory: %s", path)
+                                        if scanning
+                                            stdout.printf(" (currently scanning)\n")
+                                        else
+                                            stdout.printf("\n")
             
             else
                 stderr.printf("Unknown command: %s\n", command)
