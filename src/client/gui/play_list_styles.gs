@@ -56,7 +56,7 @@ namespace Khovsgol.GUI
                             markup1 = "<span size=\"smaller\" weight=\"bold\">%s</span>".printf(markup1)
                             if !first
                                 node.append_separator()
-                            node.append_object(album.to_json(), ALBUM_POSITION, null, markup1)
+                            node.append_object(album.to_json(), ALBUM_POSITION, album.title, markup1)
                             
                             current_album_positions = new Json.Array()
                             album.to_json().set_array_member("positions", current_album_positions)
@@ -64,7 +64,6 @@ namespace Khovsgol.GUI
                         
                 var title = track.title
                 if title is not null
-                    var title_sort = track.title_sort
                     var position = track.position
                     var duration = track.duration
                     title = Markup.escape_text(title)
@@ -80,7 +79,7 @@ namespace Khovsgol.GUI
                     else
                         markup1 = "%d\t%s".printf(position, title)
                     var markup2 = format_duration(duration)
-                    node.append_object(track.to_json(), position, title_sort, markup1, markup2)
+                    node.append_object(track.to_json(), position, track.title, markup1, markup2)
                     if current_album_positions is not null
                         current_album_positions.add_int_element(position)
                         
@@ -127,7 +126,6 @@ namespace Khovsgol.GUI
             for var track in node.tracks
                 var title = track.title
                 if title is not null
-                    var title_sort = track.title_sort
                     var position = track.position
                     var duration = track.duration
                     var artist = track.artist
@@ -140,7 +138,7 @@ namespace Khovsgol.GUI
                     else
                         markup1 = "%d\t%s".printf(position, title)
                     var markup2 = Markup.escape_text(format_duration(duration))
-                    node.append_object(track.to_json(), position, title_sort, markup1, markup2)
+                    node.append_object(track.to_json(), position, track.title, markup1, markup2)
 
         def gather_positions(node: PlayListNode, ref positions: Json.Array)
             var track = node.as_object
@@ -167,7 +165,6 @@ namespace Khovsgol.GUI
             for var track in node.tracks
                 var title = track.title
                 if title is not null
-                    var title_sort = track.title_sort
                     var position = track.position
                     var duration = track.duration
                     var artist = track.artist
@@ -189,7 +186,7 @@ namespace Khovsgol.GUI
                     else
                         markup1 = "%d\t%s".printf(position, title)
                     var markup2 = Markup.escape_text(format_duration(duration))
-                    node.append_object(track.to_json(), position, title_sort, markup1, markup2)
+                    node.append_object(track.to_json(), position, track.title, markup1, markup2)
 
         def gather_positions(node: PlayListNode, ref positions: Json.Array)
             var track = node.as_object

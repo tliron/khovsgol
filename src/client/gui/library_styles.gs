@@ -309,14 +309,13 @@ namespace Khovsgol.GUI
                             node.append_separator()
                             
                 var markup = Markup.escape_text(name)
-                node.append_object(artist.to_json(), sort, markup, null, true)
+                node.append_object(artist.to_json(), artist.name, markup, null, true)
                 first = false
  
     def private fill_albums_by(albums: IterableOfAlbum, node: LibraryNode)
         for var album in albums
             var title = album.title
             if title is not null
-                var title_sort = album.title_sort
                 var file_type = album.file_type
                 var date = album.date
                 title = Markup.escape_text(title)
@@ -324,7 +323,7 @@ namespace Khovsgol.GUI
                 if !is_lossless(file_type)
                     title = format_washed_out(title)
                 var markup = date != int64.MIN ? "%d: %s".printf((int) date, title) : title
-                node.append_object(album.to_json(), title_sort, markup, null, true)
+                node.append_object(album.to_json(), album.title, markup, null, true)
 
     def private fill_albums(albums: IterableOfAlbum, node: LibraryNode)
         current_letter: unichar = 0
@@ -351,14 +350,13 @@ namespace Khovsgol.GUI
                 if !is_lossless(file_type)
                     title = format_washed_out(title)
                 var markup = artist is not null ? "%s - <i>%s</i>".printf(title, artist) : title
-                node.append_object(album.to_json(), title_sort, markup, null, true)
+                node.append_object(album.to_json(), album.title, markup, null, true)
                 first = false
 
     def private fill_tracks_in_album(tracks: IterableOfTrack, is_compilation: bool, node: LibraryNode)
         for var track in tracks
             var title = track.title
             if title is not null
-                var title_sort = track.title_sort
                 var file_type = track.file_type
                 var position = track.position
                 var duration = track.duration
@@ -379,7 +377,7 @@ namespace Khovsgol.GUI
                 else
                     markup1 = title
                 var markup2 = duration != double.MIN ? format_duration(duration) : null
-                node.append_object(track.to_json(), title_sort, markup1, markup2)
+                node.append_object(track.to_json(), track.title, markup1, markup2)
 
     def private fill_tracks(tracks: IterableOfTrack, node: LibraryNode)
         current_letter: unichar = 0
@@ -414,7 +412,7 @@ namespace Khovsgol.GUI
                     markup1 = title
                     
                 var markup2 = duration != double.MIN ? format_duration(duration) : null
-                node.append_object(track.to_json(), title_sort, markup1, markup2)
+                node.append_object(track.to_json(), track.title, markup1, markup2)
                 first = false
 
     def private gather_from_albums(albums: IterableOfAlbum, node: LibraryNode, ref paths: Json.Array)

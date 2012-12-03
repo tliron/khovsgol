@@ -2,8 +2,23 @@
 
 namespace Khovsgol.Filesystem
 
+    ARTICLES: Regex
+    WHITESPACE: Regex
+
     def to_sortable(text: string): string
-        return text
+        try
+            if ARTICLES is null
+                ARTICLES = new Regex("^([\\s\\n\\r]*(?:the|a|an) )")
+            if WHITESPACE is null
+                WHITESPACE = new Regex("[\\s\\n\\r]")
+            
+            var sortable = text.down()
+            sortable = ARTICLES.replace(sortable, sortable.length, 0, "")
+            sortable = WHITESPACE.replace(sortable, sortable.length, 0, "")
+            return sortable
+        except e: RegexError
+            Logging.get_logger("khovsgol.directory").warning(e.message)
+            return text
     
     class Directory: Khovsgol.Directory
         prop override readonly is_scanning: bool
