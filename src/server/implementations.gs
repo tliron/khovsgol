@@ -91,8 +91,8 @@ namespace Khovsgol
         def abstract iterate_dates(args: IterateByAlbumsOrTracksArgs): IterableOfInt raises GLib.Error
         
         // Timestamps
-        def abstract get_timestamp(path: string): double raises GLib.Error
-        def abstract set_timestamp(path: string, timestamp: double) raises GLib.Error
+        def abstract get_timestamp(path: string): int64 raises GLib.Error
+        def abstract set_timestamp(path: string, timestamp: int64) raises GLib.Error
         
         def add(album_path: string, destination: int, paths: Json.Array) raises GLib.Error
             var length = paths.get_length()
@@ -272,6 +272,7 @@ namespace Khovsgol
     class abstract Directory: Object implements HasJsonObject
         prop crucible: Crucible
         prop path: string
+        prop library: Library
         
         prop abstract readonly is_scanning: bool
         

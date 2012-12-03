@@ -61,6 +61,7 @@ namespace Khovsgol.Server
                 for var path in _configuration.get_directories(name)
                     var directory = create_directory()
                     directory.path = path
+                    directory.library = library
                     library.directories[path] = directory
                 libraries.libraries[name] = library
             return libraries
@@ -100,34 +101,6 @@ namespace Khovsgol.Server
         _api: Api
         _uri_space: UriSpace
 
-        def test_data() raises GLib.Error
-            var l = create_library()
-            l.name = "Main"
-            var d = create_directory()
-            d.path = "/Depot/Music"
-            l.directories[d.path] = d
-            _libraries.libraries[l.name] = l
-            
-            var p = create_player()
-            p.name = "emblemparade"
-            _players.players[p.name] = p
-
-            /*var t = new Track()
-            t.path = "/Depot/Music/50 Foot Wave/Power+Light [EP]/01 - Power+Light.flac"
-            t.title = "Power+Light"
-            t.title_sort = "powerlight"
-            t.artist = "50 Foot Wave"
-            t.artist_sort = "50footwave"
-            t.album = "Power+Light [EP]"
-            t.album_sort = "powerlightep"
-            t.album_path = "/Depot/Music/50 Foot Wave/Power+Light [EP]"
-            t.duration = 100
-            t.file_type = "flac"
-            t.position = 1
-            p.play_list.tracks.add(t)
-            p.play_list.version = 12345
-            p.play_list.id = "05c14cdc-2e2b-11e2-acee-00241ddd2a14"*/
-
     _logger: Logging.Logger
     
     def private static initialize_logging(console: bool) raises GLib.Error
@@ -135,7 +108,7 @@ namespace Khovsgol.Server
         
         if !console
             var appender = new Logging.FileAppender()
-            appender.deepest_level = LogLevelFlags.LEVEL_INFO
+            appender.deepest_level = LogLevelFlags.LEVEL_MESSAGE
             appender.set_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
             Logging.get_logger().appender = appender
             

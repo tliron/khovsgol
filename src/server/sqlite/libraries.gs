@@ -41,7 +41,7 @@ namespace Khovsgol.Sqlite
             _db.execute("CREATE INDEX IF NOT EXISTS album_type_idx ON album (type)")
 
             // Scanned table
-            _db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp REAL)")
+            _db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp INTEGER(8))")
             
         def override begin() raises GLib.Error
             _db.execute("BEGIN")
@@ -81,16 +81,17 @@ namespace Khovsgol.Sqlite
             statement: Statement
             _db.prepare(out statement, "INSERT OR REPLACE INTO track (path, library, title, title_sort, artist, artist_sort, album, album_sort, position, duration, date, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             statement.bind_text(1, track.path)
-            statement.bind_text(2, track.title)
-            statement.bind_text(3, track.title_sort)
-            statement.bind_text(4, track.artist)
-            statement.bind_text(5, track.artist_sort)
-            statement.bind_text(6, track.album)
-            statement.bind_text(7, track.album_sort)
-            statement.bind_int(8, (int) track.position)
-            statement.bind_double(9, track.duration)
-            statement.bind_int(10, (int) track.date)
-            statement.bind_text(11, track.file_type)
+            statement.bind_text(2, track.library)
+            statement.bind_text(3, track.title)
+            statement.bind_text(4, track.title_sort)
+            statement.bind_text(5, track.artist)
+            statement.bind_text(6, track.artist_sort)
+            statement.bind_text(7, track.album)
+            statement.bind_text(8, track.album_sort)
+            statement.bind_int(9, track.position)
+            statement.bind_double(10, track.duration)
+            statement.bind_int(11, (int) track.date)
+            statement.bind_text(12, track.file_type)
             _db.assert_done(statement.step())
 
         def override delete_track(path: string) raises GLib.Error
@@ -446,19 +447,19 @@ namespace Khovsgol.Sqlite
         // Timestamps
         //
         
-        def override get_timestamp(path: string): double raises GLib.Error
+        def override get_timestamp(path: string): int64 raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "SELECT timestamp FROM scanned WHERE path=?")
             statement.bind_text(1, path)
             if statement.step() == ROW
-                return statement.column_double(0)
-            return double.MIN
+                return statement.column_int64(0)
+            return int64.MIN
 
-        def override set_timestamp(path: string, timestamp: double) raises GLib.Error
+        def override set_timestamp(path: string, timestamp: int64) raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "INSERT OR REPLACE INTO scanned (path, timestamp) VALUES (?, ?)")
             statement.bind_text(1, path)
-            statement.bind_double(2, timestamp)
+            statement.bind_int64(2, timestamp)
             _db.assert_done(statement.step())
 
         _db: SqliteUtil.Database

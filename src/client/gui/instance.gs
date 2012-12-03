@@ -61,7 +61,7 @@ namespace Khovsgol.GUI
         _logger = Logging.get_logger("khovsgol.client")
         
         var appender = new Logging.FileAppender()
-        appender.deepest_level = LogLevelFlags.LEVEL_INFO
+        appender.deepest_level = LogLevelFlags.LEVEL_MESSAGE
         appender.set_path("%s/.khovsgol/log/client.log".printf(Environment.get_home_dir()))
         Logging.get_logger().appender = appender
 

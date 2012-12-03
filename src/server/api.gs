@@ -398,6 +398,7 @@ namespace Khovsgol.Server
             if add is not null
                 var directory = _crucible.create_directory()
                 directory.path = add
+                directory.library = library
                 library.directories[add] = directory
                 processed = true
 
@@ -502,6 +503,7 @@ namespace Khovsgol.Server
             var path = conversation.variables["path"]
             var directory = _crucible.create_directory()
             directory.path = path
+            directory.library = library
             library.directories[path] = directory
             set_response_json_object_or_not_found(directory, conversation)
 
