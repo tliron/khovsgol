@@ -86,7 +86,7 @@ namespace Khovsgol
             get
                 return get_int_member_or_min(_json, "date")
             set
-                set_int_member_not_min(_json, "date", (int) value)
+                set_int_member_not_min(_json, "date", value != 0 ? (int) value : int.MIN)
                 
         prop file_type: string
             owned get
@@ -217,7 +217,7 @@ namespace Khovsgol
             get
                 return get_int64_member_or_min(_json, "date")
             set
-                set_int64_member_not_min(_json, "date", (int64) value)
+                set_int64_member_not_min(_json, "date", value != 0 ? (int64) value : int64.MIN)
 
         prop compilation_type: CompilationType
             get
