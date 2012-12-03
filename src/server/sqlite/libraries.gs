@@ -99,6 +99,12 @@ namespace Khovsgol.Sqlite
             _db.prepare(out statement, "DELETE FROM track WHERE path=?")
             statement.bind_text(1, path)
             _db.assert_done(statement.step())
+
+            // Delete track pointers
+            // TODO: move positions in custom compilation?
+            _db.prepare(out statement, "DELETE FROM track_pointer WHERE path=?")
+            statement.bind_text(1, path)
+            _db.assert_done(statement.step())
             
         //
         // Track pointers
@@ -192,8 +198,9 @@ namespace Khovsgol.Sqlite
             statement: Statement
             
             // Delete track pointers
-            _db.prepare(out statement, "DELETE FROM track_pointer WHERE album=?")
+            _db.prepare(out statement, "DELETE FROM track_pointer WHERE album=? OR path LIKE ? ESCAPE \"\\\"")
             statement.bind_text(1, path)
+            statement.bind_text(2, escape_like(path + SEPARATOR) + "%")
             _db.assert_done(statement.step())
 
             // Delete tracks
