@@ -5,7 +5,10 @@ namespace Khovsgol.Filesystem
     ARTICLES: Regex
     WHITESPACE: Regex
 
+    const BATCH_SIZE: int = 200
+
     def to_sortable(text: string): string
+        // See: http://en.wikipedia.org/wiki/Article_%28grammar%29#Variation_among_languages
         try
             if ARTICLES is null
                 ARTICLES = new Regex("^([\\s\\n\\r]*(?:the|a|an) )")
@@ -44,8 +47,10 @@ namespace Khovsgol.Filesystem
         def private do_scan(): bool
             _logger.messagef("Started scanning: %s", path)
 
+            var libraries = crucible.libraries
             count: int = 0
-            
+            var timer = new Timer()
+
             // Phase 1: Add tracks and albums
             _logger.infof("Phase 1: Add tracks and albums: %s", path)
             
@@ -53,8 +58,6 @@ namespace Khovsgol.Filesystem
             enumerator: FileEnumerator? = null
             info: FileInfo? = null
             album: Album? = null
-            var libraries = crucible.libraries
-            var timer = new Timer()
             try
                 libraries.begin()
                 
@@ -76,12 +79,15 @@ namespace Khovsgol.Filesystem
 
                             if ++count % BATCH_SIZE == 0
                                 libraries.commit()
+                                Thread.usleep(1)
                                 libraries.begin()
 
                         enumerator = enumerators.poll_tail()
                         if enumerator is not null
                             _logger.debugf("Moved out: %s", enumerator.get_container().get_path())
                         continue
+                        
+                    // TODO: ignore hidden files
 
                     var file = enumerator.get_container().resolve_relative_path(info.get_name())
                     var file_path = file.get_path()
@@ -128,6 +134,7 @@ namespace Khovsgol.Filesystem
 
                             if ++count % BATCH_SIZE == 0
                                 libraries.commit()
+                                Thread.usleep(1)
                                 libraries.begin()
 
                             if album is not null
@@ -143,15 +150,14 @@ namespace Khovsgol.Filesystem
                                         album.artist_sort = null
                                 album.date = track.date
                                 album.file_type = track.file_type
-
-                        
             except e: GLib.Error
                 _logger.warning(e.message)
             finally
-                try
-                    libraries.commit()
-                except e: GLib.Error
-                    _logger.warning(e.message)
+                if libraries is not null
+                    try
+                        libraries.commit()
+                    except e: GLib.Error
+                        _logger.warning(e.message)
                 
                 // Close remaining enumerators
                 if enumerator is not null
@@ -183,6 +189,7 @@ namespace Khovsgol.Filesystem
 
                         if ++count % BATCH_SIZE == 0
                             libraries.commit()
+                            Thread.usleep(1)
                             libraries.begin()
 
                 // Phase 3: Delete missing tracks
@@ -200,6 +207,7 @@ namespace Khovsgol.Filesystem
 
                         if ++count % BATCH_SIZE == 0
                             libraries.commit()
+                            Thread.usleep(1)
                             libraries.begin()
                 
                 pass
@@ -220,8 +228,6 @@ namespace Khovsgol.Filesystem
             AtomicInt.set(ref _is_scan_stopping, 0)
             return true
 
-        const private BATCH_SIZE: int = 500
-        
         _logger: static Logging.Logger
     
         init

@@ -1,6 +1,6 @@
 [indent=4]
 
-namespace Nap.Connector._Soup
+namespace Nap._Soup
 
     /*
      * Soup implementation of a Nap server conversation.

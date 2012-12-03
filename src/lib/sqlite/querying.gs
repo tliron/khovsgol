@@ -8,7 +8,7 @@ namespace SqliteUtil
     /*
      * String join for Gee.Iterable.
      */
-    def static join(sep: string, items: Gee.Iterable of string): string
+    def join(sep: string, items: Gee.Iterable of string): string
         var str = new StringBuilder()
         var i = items.iterator()
         while i.next()
@@ -20,7 +20,7 @@ namespace SqliteUtil
     /*
      * String join for multiples of a string.
      */
-    def static join_same(sep: string, item: string, num: int): string
+    def join_same(sep: string, item: string, num: int): string
         var str = new StringBuilder()
         num--
         for var i = 0 to num
@@ -33,9 +33,9 @@ namespace SqliteUtil
      * Escapes a string for use in SQL's LIKE, where '\' is the escape
      * character.
      */
-    def static escape_like(text: string): string
+    def escape_like(text: string): string
         return text.replace("%", "\\%").replace("_", "\\_")
-
+        
     /*
      * Wrapper for Sqlite.Statement rows, allowing fetching of column
      * values by name.

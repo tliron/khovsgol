@@ -271,7 +271,7 @@ namespace Khovsgol.Server
                     return
                 
                 if positions is not null
-                    _crucible.libraries.move(album_path, destination, positions)
+                    _crucible.libraries.move_transaction(album_path, destination, positions)
 
                     processed = true
             
@@ -291,14 +291,14 @@ namespace Khovsgol.Server
                     return
 
                 if paths is not null
-                    _crucible.libraries.add(album_path, destination, paths)
+                    _crucible.libraries.add_transaction(album_path, destination, paths)
 
                     processed = true
 
             // Remove track pointers
             var remove = get_array_member_or_null(entity, "remove")
             if remove is not null
-                _crucible.libraries.remove(album_path, remove)
+                _crucible.libraries.remove_transaction(album_path, remove)
 
                 processed = true
             
@@ -333,18 +333,25 @@ namespace Khovsgol.Server
                 album.title_sort = to_sortable(title)
                 album.library = library
                 album.compilation_type = CompilationType.CUSTOM_COMPILATION
-                _crucible.libraries.save_album(album)
-                _crucible.libraries.delete_track_pointers(album_path)
                 
-                // Create track pointers
-                var tracks = get_array_member_or_null(entity, "tracks")
-                position: int = 1
-                for var path in new JsonStrings(tracks)
-                    var track_pointer = new TrackPointer()
-                    track_pointer.path = path
-                    track_pointer.album = album_path
-                    track_pointer.position = position++
-                    _crucible.libraries.save_track_pointer(track_pointer)
+                _crucible.libraries.begin()
+                try
+                    _crucible.libraries.save_album(album)
+                    _crucible.libraries.delete_track_pointers(album_path)
+                    
+                    // Create track pointers
+                    var tracks = get_array_member_or_null(entity, "tracks")
+                    position: int = 1
+                    for var path in new JsonStrings(tracks)
+                        var track_pointer = new TrackPointer()
+                        track_pointer.path = path
+                        track_pointer.album = album_path
+                        track_pointer.position = position++
+                        _crucible.libraries.save_track_pointer(track_pointer)
+                except e: GLib.Error
+                    _crucible.libraries.rollback()
+                    raise e
+                _crucible.libraries.commit()
 
                 set_response_json_object_or_not_found(album, conversation)
             else
@@ -361,7 +368,13 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
 
-            _crucible.libraries.delete_album(path)
+            _crucible.libraries.begin()
+            try
+                _crucible.libraries.delete_album(path)
+            except e: GLib.Error
+                _crucible.libraries.rollback()
+                raise e
+            _crucible.libraries.commit()
         
         /*
          * receive {
@@ -451,6 +464,7 @@ namespace Khovsgol.Server
             if !_crucible.libraries.libraries.has_key(library)
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
+            // TODO: more!
             _crucible.libraries.libraries.unset(library)
 
         /*

@@ -4,7 +4,7 @@ uses
     Sqlite
     SqliteUtil
 
-namespace Khovsgol.Sqlite
+namespace Khovsgol._Sqlite
 
     def private static parse_libraries(q: Query, prefix: string, libraries: list of string)
         if !libraries.is_empty

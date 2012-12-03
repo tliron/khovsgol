@@ -35,9 +35,9 @@ namespace Khovsgol.Server
             if _arguments.delay != int64.MIN
                 _configuration.delay_override = _arguments.delay
 
-            Connector._Soup.Server.delay = (ulong) (_configuration.delay * 1000)
+            _Soup.Server.delay = (ulong) (_configuration.delay * 1000)
 
-            _server = new Connector._Soup.Server(_configuration.port, _main_loop.get_context())
+            _server = new _Soup.Server(_configuration.port, _main_loop.get_context())
             _server.set_handler(_uri_space.handle)
 
             if _configuration.threads > 0
@@ -54,7 +54,7 @@ namespace Khovsgol.Server
         prop readonly players: Players
 
         def create_libraries(): Libraries
-            var libraries = new Sqlite.Libraries()
+            var libraries = new _Sqlite.Libraries()
             for var name in _configuration.libraries
                 var library = create_library()
                 library.name = name

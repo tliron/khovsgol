@@ -37,7 +37,7 @@ namespace Khovsgol.Client
      */
     class API: GLib.Object
         construct(host: string, port: uint) raises GLib.Error
-            _client = new Nap.Connector._Soup.Client("http://%s:%u".printf(host, port))
+            _client = new Nap._Soup.Client("http://%s:%u".printf(host, port))
         
         prop watching_player: string?
             get

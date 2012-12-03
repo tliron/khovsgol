@@ -43,12 +43,12 @@ namespace Khovsgol
 
     class abstract Libraries: Object implements HasJsonArray
         prop libraries: dict of string, Library = new dict of string, Library
-    
+
         def abstract initialize() raises GLib.Error
         def abstract begin() raises GLib.Error
         def abstract commit() raises GLib.Error
         def abstract rollback() raises GLib.Error
-
+        
         // Tracks
         def abstract get_track(path: string): Track? raises GLib.Error
         def abstract save_track(track: Track) raises GLib.Error
@@ -94,7 +94,7 @@ namespace Khovsgol
         def abstract get_timestamp(path: string): int64 raises GLib.Error
         def abstract set_timestamp(path: string, timestamp: int64) raises GLib.Error
         
-        def add(album_path: string, destination: int, paths: Json.Array) raises GLib.Error
+        def add_transaction(album_path: string, destination: int, paths: Json.Array, transaction: bool = true) raises GLib.Error
             var length = paths.get_length()
             if length == 0
                 return
@@ -110,7 +110,8 @@ namespace Khovsgol
                         destination = position
                 destination++
 
-            begin()
+            if transaction
+                begin()
             try
                 // Make room by moving the track pointers after us forward
                 move_track_pointers(album_path, (int) length, destination)
@@ -123,17 +124,20 @@ namespace Khovsgol
                     track_pointer.position = destination++
                     save_track_pointer(track_pointer)
             except e: GLib.Error
-                rollback()
+                if transaction
+                    rollback()
                 raise e
-            commit()
+            if transaction
+                commit()
         
-        def remove(album_path: string, positions: Json.Array) raises GLib.Error
+        def remove_transaction(album_path: string, positions: Json.Array, transaction: bool = true) raises GLib.Error
             var length = positions.get_length()
             if length == 0
                 return
             var last = length - 1
 
-            begin()
+            if transaction
+                begin()
             try
                 for var i = 0 to last
                     var position = get_int_element_or_min(positions, i)
@@ -150,11 +154,13 @@ namespace Khovsgol
                                 if p > position
                                     positions.get_element(ii).set_int(p - 1)
             except e: GLib.Error
-                rollback()
+                if transaction
+                    rollback()
                 raise e
-            commit()
+            if transaction
+                commit()
         
-        def move(album_path: string, destination: int, positions: Json.Array) raises GLib.Error
+        def move_transaction(album_path: string, destination: int, positions: Json.Array, transaction: bool = true) raises GLib.Error
             var length = positions.get_length()
             if length == 0
                 return
@@ -172,7 +178,8 @@ namespace Khovsgol
                 destination++
                 
             // Remove the track pointers
-            begin()
+            if transaction
+                begin()
             try
                 var paths = new list of string
                 for var i = 0 to last
@@ -207,9 +214,11 @@ namespace Khovsgol
                     track_pointer.position = destination++
                     save_track_pointer(track_pointer)
             except e: GLib.Error
-                rollback()
+                if transaction
+                    rollback()
                 raise e
-            commit()
+            if transaction
+                commit()
 
         def to_json(): Json.Array
             return to_object_array(_libraries.values)
@@ -575,15 +584,27 @@ namespace Khovsgol
         
         def set_paths(paths: Json.Array) raises GLib.Error
             _player.position_in_play_list = int.MIN
-            _crucible.libraries.delete_track_pointers(_album_path)
-            _crucible.libraries.add(_album_path, 0, paths)
-            update_version()
+            _crucible.libraries.begin()
+            try
+                _crucible.libraries.delete_track_pointers(_album_path)
+                _crucible.libraries.add_transaction(_album_path, 0, paths, false)
+                update_version()
+            except e: GLib.Error
+                _crucible.libraries.rollback()
+                raise e
+            _crucible.libraries.commit()
             _player.next()
             
         def add(position: int, paths: Json.Array) raises GLib.Error
             var was_empty = tracks.size == 0
-            _crucible.libraries.add(_album_path, position, paths)
-            update_version()
+            _crucible.libraries.begin()
+            try
+                _crucible.libraries.add_transaction(_album_path, position, paths, false)
+                update_version()
+            except e: GLib.Error
+                _crucible.libraries.rollback()
+                raise e
+            _crucible.libraries.commit()
             if was_empty
                 _player.next()
         
@@ -606,17 +627,29 @@ namespace Khovsgol
                     else if position < position_in_play_list
                         final_position_in_play_list--
 
-            _crucible.libraries.remove(_album_path, positions)
-            update_version()
+            _crucible.libraries.begin()
+            try
+                _crucible.libraries.remove_transaction(_album_path, positions, false)
+                update_version()
+            except e: GLib.Error
+                _crucible.libraries.rollback()
+                raise e
+            _crucible.libraries.commit()
 
             if final_position_in_play_list != position_in_play_list
                 player.position_in_play_list = final_position_in_play_list
 
         def move(position: int, positions: Json.Array) raises GLib.Error
             // TODO: player cursor...
-        
-            _crucible.libraries.move(_album_path, position, positions)
-            update_version()
+            
+            _crucible.libraries.begin()
+            try
+                _crucible.libraries.move_transaction(_album_path, position, positions, false)
+                update_version()
+            except e: GLib.Error
+                _crucible.libraries.rollback()
+                raise e
+            _crucible.libraries.commit()
 
         def to_json(): Json.Object
             var json = new Json.Object()
@@ -634,7 +667,13 @@ namespace Khovsgol
             if (album is not null) && (album.date != int64.MIN) && (album.date != 0)
                 return album.date
             else
-                update_version()
+                _crucible.libraries.begin()
+                try
+                    update_version()
+                except e: GLib.Error
+                    _crucible.libraries.rollback()
+                    raise e
+                _crucible.libraries.commit()
                 return _version
 
         def private update_version() raises GLib.Error
