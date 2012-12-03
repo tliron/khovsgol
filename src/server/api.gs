@@ -338,16 +338,13 @@ namespace Khovsgol.Server
                 
                 // Create track pointers
                 var tracks = get_array_member_or_null(entity, "tracks")
-                if (tracks is not null) && (tracks.get_length() > 0)
-                    position: int = 1
-                    for var i = 0 to (tracks.get_length() - 1)
-                        var track = get_string_element_or_null(tracks, i)
-                        if track is not null
-                            var track_pointer = new TrackPointer()
-                            track_pointer.path = track
-                            track_pointer.album = album_path
-                            track_pointer.position = position++
-                            _crucible.libraries.save_track_pointer(track_pointer)
+                position: int = 1
+                for var path in new JsonStrings(tracks)
+                    var track_pointer = new TrackPointer()
+                    track_pointer.path = path
+                    track_pointer.album = album_path
+                    track_pointer.position = position++
+                    _crucible.libraries.save_track_pointer(track_pointer)
 
                 set_response_json_object_or_not_found(album, conversation)
             else

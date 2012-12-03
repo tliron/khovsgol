@@ -41,25 +41,22 @@ namespace SqliteUtil
      * values by name.
      */
     class Row
-        construct(iterator: RowIterator, columns: int)
+        construct(iterator: RowIterator)
             _iterator = iterator
-            for var c = 0 to (columns - 1)
-                _column_names[iterator.statement.column_name(c)] = c
         
         def get_text(name: string): string
             var value = _iterator.query.constants[name]
             if value is null
-                value = _iterator.statement.column_text(_column_names[name])
+                value = _iterator.statement.column_text(_iterator.column_names[name])
             return value
 
         def get_int(name: string): int
-            return _iterator.statement.column_int(_column_names[name])
+            return _iterator.statement.column_int(_iterator.column_names[name])
 
         def get_double(name: string): double
-            return _iterator.statement.column_double(_column_names[name])
+            return _iterator.statement.column_double(_iterator.column_names[name])
     
         _iterator: RowIterator
-        _column_names: dict of string, int = new dict of string, int
     
     /*
      * Row iterator for Sqlite.Statement.
@@ -67,6 +64,7 @@ namespace SqliteUtil
     class RowIterator: Object implements Gee.Iterator of Row
         construct(db: Database, query: Query) raises SqliteUtil.Error
             db.prepare(out _statement, query.as_sql)
+
             var index = 1
             for var binding in query.bindings
                 if binding.holds(typeof(string))
@@ -74,12 +72,17 @@ namespace SqliteUtil
                 else if binding.holds(typeof(int))
                     _statement.bind_int(index++, (int) binding)
 
+            var columns = _statement.column_count()
+            if columns > 0
+                for var c = 0 to (columns - 1)
+                    _column_names[_statement.column_name(c)] = c
+
             _first = true
-            _columns = _statement.column_count()
             _query = query
             
         prop readonly statement: Statement
         prop readonly query: Query
+        prop readonly column_names: dict of string, int = new dict of string, int
         
         def next(): bool
             _first = false
@@ -87,7 +90,7 @@ namespace SqliteUtil
             return _result == ROW
         
         def new @get(): Row
-            return new Row(self, _columns)
+            return new Row(self)
         
         def first(): bool
             return _first
@@ -98,7 +101,6 @@ namespace SqliteUtil
         def remove()
             pass
             
-        _columns: int
         _result: int
         _first: bool
     

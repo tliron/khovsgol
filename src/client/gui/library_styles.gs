@@ -33,7 +33,7 @@ namespace Khovsgol.GUI
             
             else if level == 1
                 var node_type = node.node_type
-                if node_type == Json.NodeType.ARRAY
+                if node_type == Json.NodeType.OBJECT
                     // Albums by artist
                     var artist = new Artist.from_json(node.as_object)
                     var name = artist.name
@@ -66,7 +66,7 @@ namespace Khovsgol.GUI
             var level = node.level
             if level == 1
                 var node_type = node.node_type
-                if node_type == Json.NodeType.ARRAY
+                if node_type == Json.NodeType.OBJECT
                     // All paths for artist, one album at a time
                     var artist = new Artist.from_json(node.as_object)
                     var name = artist.name
@@ -388,6 +388,7 @@ namespace Khovsgol.GUI
             var title = track.title
             if title is not null
                 var title_sort = track.title_sort
+                var album = track.album
                 var file_type = track.file_type
                 var duration = track.duration
 
@@ -403,9 +404,17 @@ namespace Khovsgol.GUI
                 title = format_annotation(title)
                 if !is_lossless(file_type)
                     title = format_washed_out(title)
-
+                
+                markup1: string
+                if album is not null
+                    album = Markup.escape_text(album)
+                    album = format_annotation(album)
+                    markup1 = "%s - %s".printf(title, album)
+                else
+                    markup1 = title
+                    
                 var markup2 = duration != double.MIN ? format_duration(duration) : null
-                node.append_object(track.to_json(), title_sort, title, markup2)
+                node.append_object(track.to_json(), title_sort, markup1, markup2)
                 first = false
 
     def private gather_from_albums(albums: IterableOfAlbum, node: LibraryNode, ref paths: Json.Array)

@@ -98,7 +98,6 @@ namespace Khovsgol
             var length = paths.get_length()
             if length == 0
                 return
-            var last = length - 1
             
             if destination == int.MIN
                 // Set destination position at end of current track pointers
@@ -117,14 +116,12 @@ namespace Khovsgol
                 move_track_pointers(album_path, (int) length, destination)
                 
                 // Add the track pointers at the destination
-                for var i = 0 to last
-                    var path = get_string_element_or_null(paths, i)
-                    if path is not null
-                        var track_pointer = new TrackPointer()
-                        track_pointer.path = path
-                        track_pointer.album = album_path
-                        track_pointer.position = destination++
-                        save_track_pointer(track_pointer)
+                for var path in new JsonStrings(paths)
+                    var track_pointer = new TrackPointer()
+                    track_pointer.path = path
+                    track_pointer.album = album_path
+                    track_pointer.position = destination++
+                    save_track_pointer(track_pointer)
             except e: GLib.Error
                 rollback()
                 raise e
@@ -275,14 +272,15 @@ namespace Khovsgol
     class abstract Directory: Object implements HasJsonObject
         prop crucible: Crucible
         prop path: string
-        prop is_scanning: bool
+        
+        prop abstract readonly is_scanning: bool
         
         def abstract scan()
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            set_string_member_not_null(json, "path", _path)
-            json.set_boolean_member("scanning", _is_scanning)
+            set_string_member_not_null(json, "path", path)
+            json.set_boolean_member("scanning", is_scanning)
             return json
 
     //
@@ -548,7 +546,7 @@ namespace Khovsgol
         prop crucible: Crucible
         prop player: Player
         prop id: string
-        prop version: int64 = int64.MIN
+        prop version: uint64 = uint64.MIN
 
         prop readonly tracks: list of Track
             get
@@ -622,7 +620,7 @@ namespace Khovsgol
         def to_json(): Json.Object
             var json = new Json.Object()
             json.set_string_member("id", _id)
-            json.set_int_member("version", _version)
+            json.set_int_member("version", (int64) _version)
             json.set_array_member("tracks", tracks_json)
             return json
             
@@ -630,7 +628,7 @@ namespace Khovsgol
         _tracks: list of Track = new list of Track
         _tracks_json: Json.Array?
 
-        def private get_stored_version(): int64 raises GLib.Error
+        def private get_stored_version(): uint64 raises GLib.Error
             var album = _crucible.libraries.get_album(_album_path)
             if (album is not null) && (album.date != int64.MIN) && (album.date != 0)
                 return album.date

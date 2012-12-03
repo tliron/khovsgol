@@ -12,6 +12,7 @@
 # Gst:          apt-get install libgstreamer1.0-dev   valac --pkg=gstreamer-1.0
 # Unity:        apt-get install libunity-dev          valac --pkg=unity
 # Indicate:     apt-get install libindicate-dev       valac --pkg=Indicate-0.7 --Xcc=-I/usr/include/libindicate-0.7 --Xcc=-lindicate
+# TagLib:       apt-get install libtagc0-dev          valac --pkg=taglib_c
 # AppIndicator: apt-get install libappindicator-dev   valac --pkg=appindicator-0.1
 
 # gstreamer1.0-pulseaudio, gstreamer1.0-plugins-base
@@ -38,7 +39,8 @@ compile()
         --pkg=libdaemon \
         --pkg=gstreamer-1.0 \
         --pkg=unity \
-        --pkg=Indicate-0.7 --Xcc=-I/usr/include/libindicate-0.7 --Xcc=-lindicate
+        --pkg=Indicate-0.7 --Xcc=-I/usr/include/libindicate-0.7 --Xcc=-lindicate \
+        --pkg=taglib_c
 
         #--enable-deprecated \
 }
@@ -65,7 +67,8 @@ ccode()
         --pkg=libdaemon \
         --pkg=gstreamer-1.0 \
         --pkg=unity \
-        --pkg=Indicate-0.7
+        --pkg=Indicate-0.7 \
+        --pkg=taglib_c
 }
 
 doc()
@@ -119,9 +122,9 @@ vdoc()
 ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
 cd "$ROOT"
 
-#compile khovsgold src/models.gs src/server src/lib
-#compile khovsgolc src/models.gs src/client/api.gs src/client/models.gs src/client/cli src/lib/logging src/lib/console src/lib/nap src/lib/json
-compile khovsgol src/models.gs src/client/api.gs src/client/models.gs src/client/gui src/lib/logging src/lib/console src/lib/nap src/lib/json src/lib/dbus src/lib/gtk
+#compile khovsgold src/models.gs src/iterators.gs src/server src/lib
+#compile khovsgolc src/models.gs src/iterators.gs src/client/api.gs src/client/cli src/lib/logging src/lib/console src/lib/nap src/lib/json
+compile khovsgol src/models.gs src/iterators.gs src/client/api.gs src/client/gui src/lib/logging src/lib/console src/lib/nap src/lib/json src/lib/dbus src/lib/gtk
 
 #ccode src/server src/lib
 #doc

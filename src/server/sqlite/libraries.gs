@@ -87,9 +87,9 @@ namespace Khovsgol.Sqlite
             statement.bind_text(5, track.artist_sort)
             statement.bind_text(6, track.album)
             statement.bind_text(7, track.album_sort)
-            statement.bind_int(8, track.position)
+            statement.bind_int(8, (int) track.position)
             statement.bind_double(9, track.duration)
-            statement.bind_int(10, track.date)
+            statement.bind_int(10, (int) track.date)
             statement.bind_text(11, track.file_type)
             _db.assert_done(statement.step())
 
@@ -182,7 +182,7 @@ namespace Khovsgol.Sqlite
             statement.bind_text(4, album.title_sort)
             statement.bind_text(5, album.artist)
             statement.bind_text(6, album.artist_sort)
-            statement.bind_int64(7, album.date)
+            statement.bind_int64(7, (int64) album.date)
             statement.bind_int(8, album.compilation_type)
             statement.bind_text(9, album.file_type)
             _db.assert_done(statement.step())
@@ -452,13 +452,13 @@ namespace Khovsgol.Sqlite
             statement.bind_text(1, path)
             if statement.step() == ROW
                 return statement.column_double(0)
-            return 0
+            return double.MIN
 
         def override set_timestamp(path: string, timestamp: double) raises GLib.Error
             statement: Statement
             _db.prepare(out statement, "INSERT OR REPLACE INTO scanned (path, timestamp) VALUES (?, ?)")
             statement.bind_text(1, path)
-            statement.bind_double(1, timestamp)
+            statement.bind_double(2, timestamp)
             _db.assert_done(statement.step())
 
         _db: SqliteUtil.Database

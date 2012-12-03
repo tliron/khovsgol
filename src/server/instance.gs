@@ -45,8 +45,9 @@ namespace Khovsgol.Server
                     _server.thread_pool = new Nap.ThreadPool(_configuration.threads)
                 except e: ThreadError
                     raise new Error.NETWORK(e.message)
-                if !SqliteUtil.enable_multithreaded()
-                    raise new Error.DATABASE("Could not enable multithreaded Sqlite")
+
+            if !SqliteUtil.enable_multithreaded()
+                raise new Error.DATABASE("Could not enable multithreaded Sqlite")
 
         prop readonly configuration: Configuration
         prop readonly libraries: Libraries

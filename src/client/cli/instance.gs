@@ -156,6 +156,15 @@ namespace Khovsgol.CLI
                 for var date in _api.get_dates()
                     stdout.printf("%d\n", date)
 
+            else if command == "scan"
+                if _arguments.library is not null
+                    _api.library_action(_arguments.library, "scan")
+                else
+                    for var library in _api.get_libraries()
+                        var name = get_string_member_or_null(library, "name")
+                        if name is not null
+                            _api.library_action(name, "scan")
+
             else if command == "players"
                 for var player in _api.get_players()
                     print_player(player)
@@ -165,20 +174,16 @@ namespace Khovsgol.CLI
                     var name = get_string_member_or_null(library, "name")
                     if name is not null
                         stdout.printf("Library: %s\n", name)
-                        var directories = get_array_member_or_null(library, "directories")
-                        if directories is not null
-                            for var ii = 0 to (directories.get_length() - 1)
-                                var directory = get_object_element_or_null(directories, ii)
-                                if directory is not null
-                                    var path = get_string_member_or_null(directory, "path")
-                                    var scanning = get_bool_member_or_false(directory, "scanning")
-                                    if path is not null
-                                        stdout.printf("  Directory: %s", path)
-                                        if scanning
-                                            stdout.printf(" (currently scanning)\n")
-                                        else
-                                            stdout.printf("\n")
-            
+                        for var directory in new JsonObjects(get_array_member_or_null(library, "directories"))
+                            var path = get_string_member_or_null(directory, "path")
+                            var scanning = get_bool_member_or_false(directory, "scanning")
+                            if path is not null
+                                stdout.printf("  Directory: %s", path)
+                                if scanning
+                                    stdout.printf(" (currently scanning)\n")
+                                else
+                                    stdout.printf("\n")
+
             else
                 stderr.printf("Unknown command: %s\n", command)
                 Posix.exit(1)
@@ -283,6 +288,7 @@ namespace Khovsgol.CLI
         s.append("  artists\n")
         s.append("  albumartists\n")
         s.append("  dates\n")
+        s.append("  scan\n")
         s.append("\n")
         s.append("General commands:\n")
         s.append("\n")

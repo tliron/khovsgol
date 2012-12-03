@@ -142,8 +142,8 @@ namespace Khovsgol.GStreamer
     
         _pipeline: GstUtil.Pipeline?
         _path: string?
+
+        _logger: static Logging.Logger
         
         init
             _logger = Logging.get_logger("khovsgol.gstreamer")
-    
-    _logger: Logging.Logger
