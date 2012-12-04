@@ -33,15 +33,20 @@ namespace Khovsgol.Server.GStreamer
                             return PlayMode.PAUSED
                 return PlayMode.STOPPED
             set
-                if (value == PlayMode.PLAYING) && (position_in_play_list == int.MIN)
-                    next()
-                    return
-            
                 if _pipeline is not null
-                    if value == PlayMode.PLAYING
-                        _pipeline.pipeline.set_state(State.PLAYING)
-                    else if value == PlayMode.PAUSED
+                    if value == PlayMode.PAUSED
                         _pipeline.pipeline.set_state(State.PAUSED)
+                    else if value == PlayMode.PLAYING
+                        state: State
+                        pending_state: State
+                        if _pipeline.pipeline.get_state(out state, out pending_state, CLOCK_TIME_NONE) == StateChangeReturn.SUCCESS
+                            if state == State.PAUSED
+                                _pipeline.pipeline.set_state(State.PLAYING)
+                            else if state == State.NULL
+                                if position_in_play_list != int.MIN
+                                    _pipeline.pipeline.set_state(State.PLAYING)
+                                else
+                                    next()
                     else if value == PlayMode.TOGGLE_PAUSED
                         state: State
                         pending_state: State
@@ -50,8 +55,16 @@ namespace Khovsgol.Server.GStreamer
                                 _pipeline.pipeline.set_state(State.PAUSED)
                             else if state == State.PAUSED
                                 _pipeline.pipeline.set_state(State.PLAYING)
+                            else if state == State.NULL
+                                if position_in_play_list != int.MIN
+                                    _pipeline.pipeline.set_state(State.PLAYING)
+                                else
+                                    next()
                     else
                         _pipeline.pipeline.set_state(State.NULL)
+                else
+                    if (value == PlayMode.PLAYING) || (value == PlayMode.TOGGLE_PAUSED)
+                        next()
             
         prop override cursor_mode: CursorMode
         
