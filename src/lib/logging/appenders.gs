@@ -99,9 +99,9 @@ namespace Logging
                     roll()
             except e: Error
                 stderr.printf("Error rolling log file: %s\n", e.message)
-
+                
         def roll() raises Error
-            var info = _file.query_info(FileAttribute.STANDARD_SIZE + "," + FileAttribute.STANDARD_NAME, FileQueryInfoFlags.NONE)
+            var info = _file.query_info(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
             
             // Is our file too big?
             var size = info.get_size()
@@ -165,6 +165,8 @@ namespace Logging
                     
                     // Re-open stream
                     set_file(_file)
+
+        const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_SIZE + "," + FileAttribute.STANDARD_NAME
 
         def private static min(a: int, b: int): int
             return a < b ? a : b

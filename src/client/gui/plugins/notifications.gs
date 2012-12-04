@@ -17,9 +17,9 @@ namespace Khovsgol.Client.GUI.Plugins
         def start()
             var file = _instance.get_resource("khovsgol.svg")
             if file is not null
-                _icon = file.get_path()
+                _default_icon = file.get_path()
             else
-                _icon = "stock_media-play"
+                _default_icon = "stock_media-play"
 
             if _notifications is null
                 try
@@ -67,8 +67,15 @@ namespace Khovsgol.Client.GUI.Plugins
                         else
                             markup = title
                             
+                        icon: string
+                        var file = find_cover(File.new_for_path(track.path).get_parent())
+                        if file is not null
+                            icon = file.get_path()
+                        else
+                            icon = _default_icon
+                            
                         try
-                            _notifications.Notify("Khövsgöl", position, _icon, "Khövsgöl", markup, _actions, _hints, 3000)
+                            _notifications.Notify("Khövsgöl", position, icon, "Khövsgöl", markup, _actions, _hints, 3000)
                             _logger.info("Notified new track")
                         except e: IOError
                             _logger.warning(e.message)
@@ -77,7 +84,7 @@ namespace Khovsgol.Client.GUI.Plugins
         _tracks: IterableOfTrack
         _actions: array of string = new array of string[0] // {"close", "OK"}
         _hints: HashTable of string, Variant = new HashTable of string, Variant(str_hash, str_equal) // {x: 0, y: 0}
-        _icon: string
+        _default_icon: string
 
         _logger: static Logging.Logger
         

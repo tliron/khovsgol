@@ -5,8 +5,6 @@ namespace Khovsgol.Server
     ARTICLES: Regex
     WHITESPACE: Regex
 
-    const BATCH_SIZE: int = 200
-
     def to_sortable(text: string): string
         // See: http://en.wikipedia.org/wiki/Article_%28grammar%29#Variation_among_languages
         try
@@ -22,7 +20,7 @@ namespace Khovsgol.Server
         except e: RegexError
             Logging.get_logger("khovsgol.directory").warning(e.message)
             return text
-
+            
     def get_album_path_dynamic(obj: Json.Object)
         var track = new Track.from_json(obj)
         track.album_path = File.new_for_path(track.path).get_parent().get_path()

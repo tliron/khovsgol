@@ -349,9 +349,16 @@ namespace Khovsgol.Client.GUI.Plugins
                             
                             if duration != double.MIN
                                 _Metadata.@set("mpris:length", (int) duration * 1000000) // microseconds
-                                
-                            if _default_art_url is not null
-                                _Metadata.@set("mpris:artUrl", _default_art_url)
+                            
+                            art_url: string = null
+                            var file = find_cover(File.new_for_path(track.path).get_parent())
+                            if file is not null
+                                art_url = file.get_uri()
+                            else
+                                art_url = _default_art_url
+
+                            if art_url is not null
+                                _Metadata.@set("mpris:artUrl", art_url)
                                 
                             _properties.set("Metadata", _Metadata)
                             _properties.emit_changes()

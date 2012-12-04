@@ -8,6 +8,29 @@ namespace Khovsgol.Client.GUI
     //def get_stock_icon_pixbuf(window, name):
       //  return window.render_icon(getattr(Gtk, 'STOCK_' + name), Gtk.IconSize.MENU, None)
 
+    def find_cover(dir: File): File?
+        if _covers is null
+            _covers = new list of string
+            _covers.add("Cover.png")
+            _covers.add("Cover.gif")
+            _covers.add("Cover.jpg")
+            _covers.add("Cover.jpeg")
+            _covers.add("Cover.bmp")
+            _covers.add("cover.png")
+            _covers.add("cover.gif")
+            _covers.add("cover.jpg")
+            _covers.add("cover.jpeg")
+            _covers.add("cover.bmp")
+        
+        for cover in _covers
+            var file = dir.get_child(cover)
+            if file.query_exists()
+                return file
+
+        return null
+
+    _covers: private list of string
+
     /*
      * True if the file type is known to be lossless.
      */

@@ -22,7 +22,7 @@ namespace Khovsgol.Server.Filesystem
         // The following should only be accessed atomically
         _is_scan_stopping: int
         _is_scanning: int
-
+        
         def private do_scan(): bool
             _logger.messagef("Started scanning: %s", path)
 
@@ -40,7 +40,7 @@ namespace Khovsgol.Server.Filesystem
             try
                 libraries.begin()
                 
-                enumerator = File.new_for_path(path).enumerate_children(FileAttribute.STANDARD_NAME + "," + FileAttribute.TIME_MODIFIED, FileQueryInfoFlags.NONE)
+                enumerator = File.new_for_path(path).enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
                 _logger.debugf("Switched to: %s", enumerator.get_container().get_path())
 
                 while enumerator is not null
@@ -83,7 +83,7 @@ namespace Khovsgol.Server.Filesystem
                             album.compilation_type = CompilationType.NOT
 
                             enumerators.offer_tail(enumerator)
-                            enumerator = file.enumerate_children(FileAttribute.STANDARD_NAME + "," + FileAttribute.TIME_MODIFIED, FileQueryInfoFlags.NONE)
+                            enumerator = file.enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
                             _logger.debugf("Moved in: %s", enumerator.get_container().get_path())
                             continue
                         
@@ -206,6 +206,9 @@ namespace Khovsgol.Server.Filesystem
             AtomicInt.set(ref _is_scanning, 0)
             AtomicInt.set(ref _is_scan_stopping, 0)
             return true
+
+        const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.TIME_MODIFIED
+        const private BATCH_SIZE: int = 200
 
         _logger: static Logging.Logger
     
