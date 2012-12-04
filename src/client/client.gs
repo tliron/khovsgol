@@ -2,6 +2,9 @@
 
 namespace Khovsgol.Client
 
+    /*
+     * Basic interface for client instances.
+     */
     interface Instance: GLib.Object
         prop abstract readonly configuration: Configuration
         prop abstract readonly dir: File

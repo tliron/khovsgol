@@ -75,7 +75,7 @@ namespace Khovsgol.Server._Sqlite
             try
                 _db.execute("COMMIT")
             finally
-                _lock.unlock()
+                _transaction_lock.unlock()
 
         def override rollback() raises GLib.Error
             try
@@ -88,7 +88,7 @@ namespace Khovsgol.Server._Sqlite
         //
         
         def override get_track(path: string): Track? raises GLib.Error
-            _get_path_lock.lock()
+            _get_track_lock.lock()
             try
                 if _get_track is null
                     _db.prepare(out _get_track, "SELECT library, title, title_sort, artist, artist_sort, album, album_sort, position, duration, date, type FROM track WHERE path=?")
@@ -112,7 +112,7 @@ namespace Khovsgol.Server._Sqlite
                     return track
                 return null
             finally
-                _get_path_lock.unlock()
+                _get_track_lock.unlock()
         
         def override save_track(track: Track) raises GLib.Error
             _save_track_lock.lock()
@@ -138,7 +138,7 @@ namespace Khovsgol.Server._Sqlite
                 _save_track_lock.unlock()
 
         def override delete_track(path: string) raises GLib.Error
-            _delete_lock.lock()
+            _delete_track_lock.lock()
             try
                 if _delete_track1 is null
                     _db.prepare(out _delete_track1, "DELETE FROM track WHERE path=?")
@@ -156,7 +156,7 @@ namespace Khovsgol.Server._Sqlite
                 _delete_track2.bind_text(1, path)
                 _db.assert_done(_delete_track2.step())
             finally
-                _delete_lock.unlock()
+                _delete_track_lock.unlock()
             
         //
         // Track pointers
@@ -604,7 +604,7 @@ namespace Khovsgol.Server._Sqlite
         _get_track_pointer: Statement
         _get_track_pointer_lock: GLib.Mutex = GLib.Mutex()
         _save_track_pointer: Statement
-        _save_track_lock: GLib.Mutex = GLib.Mutex()
+        _save_track_pointer_lock: GLib.Mutex = GLib.Mutex()
         _delete_track_pointer: Statement
         _delete_track_pointer_lock: GLib.Mutex = GLib.Mutex()
         _delete_track_pointers: Statement
