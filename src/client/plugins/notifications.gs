@@ -3,7 +3,7 @@
 uses
     JsonUtil
 
-namespace Khovsgol.Client.GUI.Plugins
+namespace Khovsgol.Client.Plugins
 
     /*
      * FreeDesktop Notifications plugin.

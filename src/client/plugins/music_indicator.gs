@@ -3,7 +3,7 @@
 uses
     Indicate
 
-namespace Khovsgol.Client.GUI.Plugins
+namespace Khovsgol.Client.Plugins
 
     /*
      * Music indicator plugin.
@@ -49,7 +49,7 @@ namespace Khovsgol.Client.GUI.Plugins
         _server: Server?
         
         def private on_display(timestamp: uint)
-            _instance.window.present()
+            _instance.show()
 
         _logger: static Logging.Logger
         

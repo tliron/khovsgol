@@ -6,7 +6,7 @@ uses
     Unity
     Dbusmenu
 
-namespace Khovsgol.Client.GUI.Plugins
+namespace Khovsgol.Client.Plugins
 
     /*
      * Unity plugin.

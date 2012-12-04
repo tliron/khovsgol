@@ -4,7 +4,7 @@ uses
     JsonUtil
     DBusUtil
 
-namespace Khovsgol.Client.GUI.Plugins
+namespace Khovsgol.Client.Plugins
 
     /*
      * MPRIS2 plugin.
@@ -162,7 +162,7 @@ namespace Khovsgol.Client.GUI.Plugins
                 _instance.stop()
 
             def Raise()
-                _instance.window.present()
+                _instance.show()
             
             _instance: Instance
 

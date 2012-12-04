@@ -1,6 +1,6 @@
 [indent=4]
 
-namespace Khovsgol.Client.GUI.Plugins
+namespace Khovsgol.Client.Plugins
 
     /*
      * Purple plugin.

@@ -5,7 +5,7 @@ uses
 
 namespace Khovsgol.Client.GUI
 
-    class Instance: Object
+    class Instance: Object implements Client.Instance
         construct(args: array of string) raises GLib.Error
             _configuration = new Configuration()
 
@@ -60,6 +60,9 @@ namespace Khovsgol.Client.GUI
                 stop_server()
 
             Gtk.main_quit()
+            
+        def show()
+            _window.present()
         
         def get_resource(name: string): File?
             // TODO: try standard location first

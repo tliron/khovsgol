@@ -1,6 +1,6 @@
 [indent=4]
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client
 
     class Configuration: Object
         construct() raises KeyFileError
