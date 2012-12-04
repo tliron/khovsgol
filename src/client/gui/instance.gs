@@ -61,6 +61,15 @@ namespace Khovsgol.Client.GUI
 
             Gtk.main_quit()
         
+        def get_resource(name: string): File?
+            // TODO: try standard location first
+            var base_dir = _dir.get_parent()
+            if base_dir is not null
+                var file = base_dir.get_child("resources").get_child(name)
+                if file.query_exists()
+                    return file
+            return null
+        
         _player: string
         _plugins: list of Plugin = new list of Plugin
         

@@ -15,6 +15,12 @@ namespace Khovsgol.Client.GUI.Plugins
         prop instance: Instance
         
         def start()
+            var file = _instance.get_resource("khovsgol.svg")
+            if file is not null
+                _icon = file.get_path()
+            else
+                _icon = "stock_media-play"
+
             if _notifications is null
                 try
                     _notifications = Bus.get_proxy_sync(BusType.SESSION, "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
@@ -62,7 +68,7 @@ namespace Khovsgol.Client.GUI.Plugins
                             markup = title
                             
                         try
-                            _notifications.Notify("Khövsgöl", position, "stock_media-play", "Khövsgöl", markup, _actions, _hints, 3000)
+                            _notifications.Notify("Khövsgöl", position, _icon, "Khövsgöl", markup, _actions, _hints, 3000)
                             _logger.info("Notified new track")
                         except e: IOError
                             _logger.warning(e.message)
@@ -71,6 +77,7 @@ namespace Khovsgol.Client.GUI.Plugins
         _tracks: IterableOfTrack
         _actions: array of string = new array of string[0] // {"close", "OK"}
         _hints: HashTable of string, Variant = new HashTable of string, Variant(str_hash, str_equal) // {x: 0, y: 0}
+        _icon: string
 
         _logger: static Logging.Logger
         

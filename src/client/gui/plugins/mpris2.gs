@@ -176,6 +176,10 @@ namespace Khovsgol.Client.GUI.Plugins
                 _instance.api.position_in_track_change.connect(on_position_in_track_changed)
                 _instance.api.play_list_change.connect(on_play_list_changed)
                 _instance.api.position_in_play_list_change.connect(on_position_in_play_list_changed)
+
+                var file = _instance.get_resource("khovsgol.svg")
+                if file is not null
+                    _default_art_url = file.get_uri()
             
             final
                 _instance.api.play_mode_change.disconnect(on_play_mode_changed)
@@ -335,17 +339,23 @@ namespace Khovsgol.Client.GUI.Plugins
                             var artist = track.artist
                             var album = track.album
                             var duration = track.duration
-                            
+
                             _Metadata.remove_all()
+                            
                             _Metadata.@set("mpris:trackid", path)
                             _Metadata.@set("xesam:title", title)
                             _Metadata.@set("xesam:artist", artist)
                             _Metadata.@set("xesam:album", album)
+                            
                             if duration != double.MIN
-                                _Metadata.@set("mpris:length", (int) duration * 1000000)
+                                _Metadata.@set("mpris:length", (int) duration * 1000000) // microseconds
+                                
+                            if _default_art_url is not null
+                                _Metadata.@set("mpris:artUrl", _default_art_url)
                                 
                             _properties.set("Metadata", _Metadata)
                             _properties.emit_changes()
                             break
             
             _properties: Properties
+            _default_art_url: string
