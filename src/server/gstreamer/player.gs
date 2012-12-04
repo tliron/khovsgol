@@ -4,9 +4,9 @@ uses
     Gst
     GstUtil
 
-namespace Khovsgol.GStreamer
+namespace Khovsgol.Server.GStreamer
 
-    class Player: Khovsgol.Player
+    class Player: Khovsgol.Server.Player
         prop override path: string?
             get
                 return _path

@@ -2,9 +2,8 @@
 
 uses
     Gtk
-    Khovsgol
 
-namespace Khovsgol.GUI
+namespace Khovsgol.Client.GUI
 
     class MainWindow: Window
         construct(instance: Instance)

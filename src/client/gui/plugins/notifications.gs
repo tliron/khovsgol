@@ -3,7 +3,7 @@
 uses
     JsonUtil
 
-namespace Khovsgol.GUI.Plugins
+namespace Khovsgol.Client.GUI.Plugins
 
     /*
      * FreeDesktop Notifications plugin.
@@ -11,8 +11,8 @@ namespace Khovsgol.GUI.Plugins
      * Sends a desktop notification every time the current track
      * changes.
      */
-    class NotificationsPlugin: Object implements Khovsgol.GUI.Plugin
-        prop instance: Khovsgol.GUI.Instance
+    class NotificationsPlugin: Object implements Plugin
+        prop instance: Instance
         
         def start()
             if _notifications is null

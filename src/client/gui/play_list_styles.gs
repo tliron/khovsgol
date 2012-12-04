@@ -3,9 +3,8 @@
 uses
     Gtk
     JsonUtil
-    Khovsgol
 
-namespace Khovsgol.GUI
+namespace Khovsgol.Client.GUI
     
     interface PlayListStyle: Style
         def abstract fill(node: PlayListNode)

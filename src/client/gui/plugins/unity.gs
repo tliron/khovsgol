@@ -6,16 +6,19 @@ uses
     Unity
     Dbusmenu
 
-namespace Khovsgol.GUI.Plugins
+namespace Khovsgol.Client.GUI.Plugins
 
     /*
      * Unity plugin.
      * 
      * Adds a quicklist menu to the Launcher entry and a progress bar
      * while a track is playing.
+     * 
+     * Adds a "/com/canonical/unity/launcherentry/<num>" DBus object to
+     * our bus.
      */
-    class UnityPlugin: Object implements Khovsgol.GUI.Plugin
-        prop instance: Khovsgol.GUI.Instance
+    class UnityPlugin: Object implements Plugin
+        prop instance: Instance
         
         def start()
             if _launcher_entry is null

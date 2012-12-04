@@ -3,9 +3,8 @@
 uses
     Gtk
     JsonUtil
-    Khovsgol
 
-namespace Khovsgol.GUI
+namespace Khovsgol.Client.GUI
 
     interface LibraryStyle: Style
         def abstract fill(node: LibraryNode)
@@ -24,10 +23,10 @@ namespace Khovsgol.GUI
             var level = node.level
             if level == 0
                 // Album artists
-                fill_artists(node.instance.api.get_artists(true, "artist_sort"), node)
-
+                if fill_artists(node.instance.api.get_artists(true, "artist_sort"), node)
+                    node.append_separator()
+    
                 // Compilation section
-                node.append_separator()
                 node.append_string("compilations", "compilations", "<b>Compilations</b>", null, true)
                 node.append_string("custom", "customcompilations", "<b>Custom Compilations</b>", null, true)
             
@@ -292,7 +291,7 @@ namespace Khovsgol.GUI
                 // The track's path
                 gather_from_track(node, ref paths)
 
-    def private fill_artists(artists: IterableOfArtist, node: LibraryNode)
+    def private fill_artists(artists: IterableOfArtist, node: LibraryNode): bool
         current_letter: unichar = 0
         first: bool = true
         for var artist in artists
@@ -311,6 +310,7 @@ namespace Khovsgol.GUI
                 var markup = Markup.escape_text(name)
                 node.append_object(artist.to_json(), artist.name, markup, null, true)
                 first = false
+        return !first
  
     def private fill_albums_by(albums: IterableOfAlbum, node: LibraryNode)
         for var album in albums

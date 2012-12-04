@@ -3,9 +3,8 @@
 uses
     Gtk
     JsonUtil
-    Khovsgol
 
-namespace Khovsgol.GUI
+namespace Khovsgol.Client.GUI
 
     class PlayList: Alignment
         construct(instance: Instance)
@@ -134,7 +133,7 @@ namespace Khovsgol.GUI
             var style = _instance.configuration.play_list_style
             if style is not null
                 _style_box.active_style_name = style
-            else
+            if _style_box.active_style_name is null
                 _style_box.active_style_name = "group_by_albums"
             _style_box.changed.connect(on_style)
 

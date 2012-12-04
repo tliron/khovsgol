@@ -3,29 +3,40 @@
 uses
     Indicate
 
-namespace Khovsgol.GUI.Plugins
+namespace Khovsgol.Client.GUI.Plugins
 
     /*
      * Music indicator plugin.
      * 
+     * This is needed only in Ubuntu 11.10 and earlier. Ubuntu 12.04
+     * and later no longer need this.
+     * 
      * Registers us with music application indicator. Add the
      * MPRIS2 plugin for full integration with the indicator's menu.
+     * 
+     * Adds a "/com/canonical/indicate" DBus object to our bus.
      */
-    class MusicIndicatorPlugin: Object implements Khovsgol.GUI.Plugin
-        prop instance: Khovsgol.GUI.Instance
+    class MusicIndicatorPlugin: Object implements Plugin
+        prop instance: Instance
         
         def start()
             _server = Server.ref_default()
-            if _server != null
-                // The name ("music.<name>") matches the MPRIS2 desktop
-                // entry property, and is also used for displaying
-                // the icon from "/usr/share/pixmaps/<name>.*"
+            if _server is not null
+                // The type "music.<name>" specifies that we are a sub-indicator
+                // under the music indicator.
                 _server.type = "music.khovsgol"
-                
-                // Used to start the program if it's closed
-                _server.desktop = "/usr/share/applications/khovsgol.desktop"
+
+                // The desktop file must be a full path
+                var desktop_file = File.new_for_path("%s/.local/share/applications/khovsgol.desktop".printf(Environment.get_home_dir()))
+                if desktop_file.query_exists()
+                    _server.desktop = desktop_file.get_path()
+                else
+                    desktop_file = File.new_for_path("/usr/share/applications/khovsgol.desktop")
+                    if desktop_file.query_exists()
+                        _server.desktop = desktop_file.get_path()
                 
                 _server.server_display.connect(on_display)
+                
                 _server.show()
                 _logger.message("Started")
         
@@ -38,8 +49,7 @@ namespace Khovsgol.GUI.Plugins
         _server: Server?
         
         def private on_display(timestamp: uint)
-            print "display %u", timestamp
-            _instance.window.deiconify()
+            _instance.window.present()
 
         _logger: static Logging.Logger
         

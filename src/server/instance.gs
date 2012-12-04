@@ -5,6 +5,15 @@ uses
     
 namespace Khovsgol.Server
 
+    interface Crucible: Object
+        prop abstract readonly libraries: Libraries
+        prop abstract readonly players: Players
+        
+        def abstract create_library(): Library
+        def abstract create_directory(): Directory
+        def abstract create_player(): Player
+        def abstract create_play_list(): PlayList
+
     class Instance: Object implements Crucible
         construct(args: array of string) raises GLib.Error
             _arguments = new Arguments(args)

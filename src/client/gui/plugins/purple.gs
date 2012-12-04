@@ -1,14 +1,14 @@
 [indent=4]
 
-namespace Khovsgol.GUI.Plugins
+namespace Khovsgol.Client.GUI.Plugins
 
     /*
      * Purple plugin.
      * 
      * Sets the instant messaging status for Pidgin and Finch.
      */
-    class PurplePlugin: Object implements Khovsgol.GUI.Plugin
-        prop instance: Khovsgol.GUI.Instance
+    class PurplePlugin: Object implements Plugin
+        prop instance: Instance
         
         def start()
             _logger.message("Started")

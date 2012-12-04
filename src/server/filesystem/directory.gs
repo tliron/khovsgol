@@ -1,29 +1,8 @@
 [indent=4]
 
-namespace Khovsgol.Filesystem
+namespace Khovsgol.Server.Filesystem
 
-    ARTICLES: Regex
-    WHITESPACE: Regex
-
-    const BATCH_SIZE: int = 200
-
-    def to_sortable(text: string): string
-        // See: http://en.wikipedia.org/wiki/Article_%28grammar%29#Variation_among_languages
-        try
-            if ARTICLES is null
-                ARTICLES = new Regex("^([\\s\\n\\r]*(?:the|a|an) )")
-            if WHITESPACE is null
-                WHITESPACE = new Regex("[\\s\\n\\r]")
-            
-            var sortable = text.down()
-            sortable = ARTICLES.replace(sortable, sortable.length, 0, "")
-            sortable = WHITESPACE.replace(sortable, sortable.length, 0, "")
-            return sortable
-        except e: RegexError
-            Logging.get_logger("khovsgol.directory").warning(e.message)
-            return text
-    
-    class Directory: Khovsgol.Directory
+    class Directory: Khovsgol.Server.Directory
         prop override readonly is_scanning: bool
             get
                 return AtomicInt.get(ref _is_scanning) == 1

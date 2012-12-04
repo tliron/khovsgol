@@ -1,9 +1,9 @@
 [indent=4]
 
 uses
-    Khovsgol
+    DBusUtil
 
-namespace Khovsgol.GUI
+namespace Khovsgol.Client.GUI
 
     class Instance: Object
         construct(args: array of string) raises GLib.Error
@@ -19,7 +19,7 @@ namespace Khovsgol.GUI
             add_plugin(new Plugins.NotificationsPlugin())
             add_plugin(new Plugins.MediaPlayerKeysPlugin())
             add_plugin(new Plugins.Mpris2Plugin())
-            add_plugin(new Plugins.MusicIndicatorPlugin())
+            //add_plugin(new Plugins.MusicIndicatorPlugin())
             add_plugin(new Plugins.UnityPlugin())
             add_plugin(new Plugins.PurplePlugin())
             
@@ -40,20 +40,42 @@ namespace Khovsgol.GUI
             _plugins.add(plugin)
     
         def start()
+            if _configuration.server_autostart
+                start_server()
+                
             for var plugin in _plugins
                 plugin.start()
-            //Gdk.threads_add_idle(_api.start_player_poll)
+
             _api.start_player_poll()
+            
             Gtk.main()
         
         def stop()
+            _api.stop_player_poll(true)
+            
             for var plugin in _plugins
                 plugin.stop()
-            _api.stop_player_poll(true)
+                
+            if _configuration.server_autostop
+                stop_server()
+
             Gtk.main_quit()
         
         _player: string
         _plugins: list of Plugin = new list of Plugin
+        
+        def private start_server()
+            try
+                Process.spawn_sync(dir.get_path(), {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null)
+            except e: SpawnError
+                _logger.warning(e.message)
+
+        def private stop_server()
+            pid: Pid
+            try
+                Process.spawn_async(dir.get_path(), {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
+            except e: SpawnError
+                _logger.warning(e.message)
         
     _logger: Logging.Logger
         
@@ -68,6 +90,6 @@ namespace Khovsgol.GUI
 init
     try
         GtkUtil.initialize()
-        new Khovsgol.GUI.Instance(args).start()
+        new Khovsgol.Client.GUI.Instance(args).start()
     except e: GLib.Error
         stderr.printf("%s\n", e.message)

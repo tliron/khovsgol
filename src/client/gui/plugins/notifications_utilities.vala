@@ -1,6 +1,6 @@
 
-namespace Khovsgol.GUI.Plugins {
-
+namespace Khovsgol.Client.GUI.Plugins {
+    
     /*
      * Written in Vala due to Genie limitation, see: https://bugzilla.gnome.org/show_bug.cgi?id=687703
      */

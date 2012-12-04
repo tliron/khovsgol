@@ -3,9 +3,8 @@
 uses
     Gtk
     JsonUtil
-    Khovsgol
 
-namespace Khovsgol.GUI
+namespace Khovsgol.Client.GUI
 
     class Library: Alignment
         construct(instance: Instance)
@@ -79,7 +78,7 @@ namespace Khovsgol.GUI
             var style = _instance.configuration.library_style
             if style is not null
                 _style_box.active_style_name = style
-            else
+            if _style_box.active_style_name is null
                 _style_box.active_style_name = "artists_albums"
             _style_box.changed.connect(on_style)
 
@@ -102,13 +101,13 @@ namespace Khovsgol.GUI
         
             add(box)
             set(0, 0, 1, 1)
-            
-            on_filter()
+
+            _instance.api.server_change_gdk.connect(on_server_changed)
         
         prop readonly accel_group: AccelGroup
             
         def private on_unrealized()
-            pass
+            _instance.api.server_change_gdk.disconnect(on_server_changed)
 
         //def private on_progress_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
           //  pass
@@ -215,6 +214,9 @@ namespace Khovsgol.GUI
         def private on_actions(e: Gdk.EventButton): bool
             on_right_clicked(e)
             return false
+
+        def on_server_changed(base_url: string?, old_base_url: string?)
+            on_filter()
             
         def private gather_selected_tracks(): Json.Array?
             var style = _style_box.active_style

@@ -1,10 +1,9 @@
 [indent=4]
 
 uses
-    Khovsgol
     JsonUtil
 
-namespace Khovsgol.CLI
+namespace Khovsgol.Client.CLI
 
     class Instance: GLib.Object
         construct(args: array of string) raises GLib.Error
@@ -337,6 +336,6 @@ namespace Khovsgol.CLI
 
 init
     try
-        new Khovsgol.CLI.Instance(args).start()
+        new Khovsgol.Client.CLI.Instance(args).start()
     except e: GLib.Error
         stderr.printf("%s\n", e.message)

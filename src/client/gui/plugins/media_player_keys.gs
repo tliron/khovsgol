@@ -1,6 +1,6 @@
 [indent=4]
 
-namespace Khovsgol.GUI.Plugins
+namespace Khovsgol.Client.GUI.Plugins
 
     /*
      * GNOME Media Player Keys plugin.
@@ -10,8 +10,8 @@ namespace Khovsgol.GUI.Plugins
      * 
      * Supports a fallback for the GNOME 2.20 interface.
      */
-    class MediaPlayerKeysPlugin: Object implements Khovsgol.GUI.Plugin
-        prop instance: Khovsgol.GUI.Instance
+    class MediaPlayerKeysPlugin: Object implements Plugin
+        prop instance: Instance
         
         def start()
             if _media_keys is null
@@ -59,37 +59,37 @@ namespace Khovsgol.GUI.Plugins
         init
             _logger = Logging.get_logger("khovsgol.client.media-player-keys")
 
-    /*
-     * Wrapper that fallbacks to legacy interface.
-     */
-    class private MediaKeysWrapper
-        construct() raises IOError
-            try
-                _media_keys = Bus.get_proxy_sync(BusType.SESSION, "org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon/MediaKeys")
-                _media_keys.MediaPlayerKeyPressed.connect(on_key_pressed)
-            except e: IOError
-                _media_keys_legacy = Bus.get_proxy_sync(BusType.SESSION, "org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon")
-                _media_keys_legacy.MediaPlayerKeyPressed.connect(on_key_pressed)
-        
-        def GrabMediaPlayerKeys(application: string, time: uint32) raises IOError
-            if _media_keys is not null
-                _media_keys.GrabMediaPlayerKeys(application, time)
-            else
-                _media_keys_legacy.GrabMediaPlayerKeys(application, time)
+        /*
+         * Wrapper that fallbacks to legacy interface.
+         */
+        class private MediaKeysWrapper
+            construct() raises IOError
+                try
+                    _media_keys = Bus.get_proxy_sync(BusType.SESSION, "org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon/MediaKeys")
+                    _media_keys.MediaPlayerKeyPressed.connect(on_key_pressed)
+                except e: IOError
+                    _media_keys_legacy = Bus.get_proxy_sync(BusType.SESSION, "org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon")
+                    _media_keys_legacy.MediaPlayerKeyPressed.connect(on_key_pressed)
+            
+            def GrabMediaPlayerKeys(application: string, time: uint32) raises IOError
+                if _media_keys is not null
+                    _media_keys.GrabMediaPlayerKeys(application, time)
+                else
+                    _media_keys_legacy.GrabMediaPlayerKeys(application, time)
 
-        def ReleaseMediaPlayerKeys(application: string) raises IOError
-            if _media_keys is not null
-                _media_keys.ReleaseMediaPlayerKeys(application)
-            else
-                _media_keys_legacy.ReleaseMediaPlayerKeys(application)
-        
-        event MediaPlayerKeyPressed(application: string, key: string)
-        
-        _media_keys: MediaKeys
-        _media_keys_legacy: MediaKeysLegacy
-        
-        def private on_key_pressed(application: string, key: string)
-            MediaPlayerKeyPressed(application, key)
+            def ReleaseMediaPlayerKeys(application: string) raises IOError
+                if _media_keys is not null
+                    _media_keys.ReleaseMediaPlayerKeys(application)
+                else
+                    _media_keys_legacy.ReleaseMediaPlayerKeys(application)
+            
+            event MediaPlayerKeyPressed(application: string, key: string)
+            
+            _media_keys: MediaKeys
+            _media_keys_legacy: MediaKeysLegacy
+            
+            def private on_key_pressed(application: string, key: string)
+                MediaPlayerKeyPressed(application, key)
 
     // GNOME 2.22+
     [DBus(name="org.gnome.SettingsDaemon.MediaKeys")]

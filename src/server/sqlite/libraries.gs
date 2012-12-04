@@ -4,9 +4,9 @@ uses
     Sqlite
     SqliteUtil
 
-namespace Khovsgol._Sqlite
+namespace Khovsgol.Server._Sqlite
 
-    class Libraries: Khovsgol.Libraries
+    class Libraries: Khovsgol.Server.Libraries
         def override initialize() raises GLib.Error
             if _db is not null
                 return

@@ -2,9 +2,8 @@
 
 uses
     Gtk
-    Khovsgol
 
-namespace Khovsgol.GUI
+namespace Khovsgol.Client.GUI
 
     class ControlBar: Toolbar
         construct(instance: Instance)

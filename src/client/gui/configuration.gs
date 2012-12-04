@@ -1,6 +1,6 @@
 [indent=4]
 
-namespace Khovsgol.GUI
+namespace Khovsgol.Client.GUI
 
     class Configuration: Object
         construct() raises KeyFileError
@@ -73,6 +73,24 @@ namespace Khovsgol.GUI
                     return "artists_albums"
             set
                 _key_file.set_string("ui", "library-style", value)
+        
+        prop server_autostart: bool
+            get
+                try
+                    return _key_file.get_boolean("server", "autostart")
+                except e: KeyFileError
+                    return true
+            set
+                _key_file.set_boolean("server", "autostart", value)
+
+        prop server_autostop: bool
+            get
+                try
+                    return _key_file.get_boolean("server", "autostop")
+                except e: KeyFileError
+                    return false
+            set
+                _key_file.set_boolean("server", "autostop", value)
 
         /*
          * Saves the configuration.

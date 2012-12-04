@@ -1,7 +1,6 @@
 [indent=4]
 
 uses
-    Khovsgol
     Nap
     JsonUtil
 
@@ -57,6 +56,8 @@ namespace Khovsgol.Client
             get
                 return AtomicInt.get(ref _is_polling) == 1
 
+        event server_change(base_url: string?, old_base_url: string?)
+        event server_change_gdk(base_url: string?, old_base_url: string?)
         event play_mode_change(play_mode: string?, old_play_mode: string?)
         event play_mode_change_gdk(play_mode: string?, old_play_mode: string?)
         event cursor_mode_change(cursor_mode: string?, old_cursor_mode: string?)
@@ -981,7 +982,7 @@ namespace Khovsgol.Client
         _is_polling: int
 
         // The following should only be accessed via mutex
-        _watching_player_lock: Mutex = Mutex()
+        _watching_player_lock: RecMutex = RecMutex()
         _watching_player: string?
         _play_mode: string?
         _cursor_mode: string?
@@ -989,6 +990,7 @@ namespace Khovsgol.Client
         _position_in_track: double
         _play_list_id: string?
         _play_list_version: int64
+        _last_base_url: string?
 
         init
             _logger = Logging.get_logger("khovsgol.client")
@@ -1005,6 +1007,14 @@ namespace Khovsgol.Client
             
             _watching_player_lock.lock()
             try
+                if _last_base_url != _client.base_url
+                    server_change(_client.base_url, _last_base_url)
+                    if in_gdk
+                        server_change_gdk(_client.base_url, _last_base_url)
+                    else
+                        new ServerChangeGdk(self, _client.base_url, _last_base_url)
+                    _last_base_url = _client.base_url
+            
                 var name = get_string_member_or_null(player, "name")
                 if name != _watching_player
                     return
@@ -1080,6 +1090,23 @@ namespace Khovsgol.Client
             AtomicInt.set(ref _is_polling, 0)
             AtomicInt.set(ref _is_poll_stopping, 0)
             return true
+
+    class ServerChangeGdk: GLib.Object
+        construct(api: API, base_url: string?, old_base_url: string?)
+            _api = api
+            _base_url = base_url
+            _old_base_url = old_base_url
+            ref()
+            Gdk.threads_add_idle(idle)
+
+        _api: API
+        _base_url: string?
+        _old_base_url: string?
+
+        def private idle(): bool
+            _api.server_change_gdk(_base_url, _old_base_url)
+            unref()
+            return false
 
     class PlayModeChangeGdk: GLib.Object
         construct(api: API, play_mode: string?, old_play_mode: string?)
