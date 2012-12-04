@@ -60,10 +60,10 @@ namespace Khovsgol.Server
         def abstract get_timestamp(path: string): int64 raises GLib.Error
         def abstract set_timestamp(path: string, timestamp: int64) raises GLib.Error
         
-        def add_transaction(album_path: string, destination: int, paths: Json.Array, transaction: bool = true) raises GLib.Error
+        def add_transaction(album_path: string, destination: int, paths: Json.Array, transaction: bool = true): int raises GLib.Error
             var length = paths.get_length()
             if length == 0
-                return
+                return destination
             
             if destination == int.MIN
                 // Set destination position at end of current track pointers
@@ -83,11 +83,12 @@ namespace Khovsgol.Server
                 move_track_pointers(album_path, (int) length, destination)
                 
                 // Add the track pointers at the destination
+                var position = destination
                 for var path in new JsonStrings(paths)
                     var track_pointer = new TrackPointer()
                     track_pointer.path = path
                     track_pointer.album = album_path
-                    track_pointer.position = destination++
+                    track_pointer.position = position++
                     save_track_pointer(track_pointer)
             except e: GLib.Error
                 if transaction
@@ -95,6 +96,8 @@ namespace Khovsgol.Server
                 raise e
             if transaction
                 commit()
+            
+            return destination
         
         def remove_transaction(album_path: string, positions: Json.Array, transaction: bool = true) raises GLib.Error
             var length = positions.get_length()
@@ -126,10 +129,10 @@ namespace Khovsgol.Server
             if transaction
                 commit()
         
-        def move_transaction(album_path: string, destination: int, positions: Json.Array, transaction: bool = true) raises GLib.Error
+        def move_transaction(album_path: string, destination: int, positions: Json.Array, transaction: bool = true): int raises GLib.Error
             var length = positions.get_length()
             if length == 0
-                return
+                return destination
             var last = length - 1
 
             if destination == int.MIN
@@ -173,11 +176,12 @@ namespace Khovsgol.Server
                 move_track_pointers(album_path, paths.size, destination)
                 
                 // Add the removed track pointers at the destination
+                var position = destination
                 for var path in paths
                     var track_pointer = new TrackPointer()
                     track_pointer.path = path
                     track_pointer.album = album_path
-                    track_pointer.position = destination++
+                    track_pointer.position = position++
                     save_track_pointer(track_pointer)
             except e: GLib.Error
                 if transaction
@@ -185,6 +189,8 @@ namespace Khovsgol.Server
                 raise e
             if transaction
                 commit()
+            
+            return destination
 
         def to_json(): Json.Array
             return to_object_array(_libraries.values)

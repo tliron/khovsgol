@@ -49,17 +49,16 @@ namespace Khovsgol.Server
             _player.next()
             
         def add(position: int, paths: Json.Array) raises GLib.Error
-            var was_empty = tracks.size == 0
             _crucible.libraries.begin()
             try
-                _crucible.libraries.add_transaction(_album_path, position, paths, false)
+                position = _crucible.libraries.add_transaction(_album_path, position, paths, false)
                 update_version()
             except e: GLib.Error
                 _crucible.libraries.rollback()
                 raise e
             _crucible.libraries.commit()
-            if was_empty
-                _player.next()
+            if (position != int.MIN) && (_player.play_mode == PlayMode.STOPPED)
+                _player.position_in_play_list = position
         
         def remove(positions: Json.Array) raises GLib.Error
             var length = positions.get_length()
