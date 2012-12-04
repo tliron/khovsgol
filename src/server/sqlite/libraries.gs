@@ -6,6 +6,29 @@ uses
 
 namespace Khovsgol.Server._Sqlite
 
+    /*
+     * An implementation of Libraries over Sqlite.
+     * 
+     * Sqlite offers stunning performance, but at the cost of limited
+     * multi-threaded behavior. While it is thread-safe and allows for
+     * several concurrent connections, only one connection can have
+     * write access. Furthmore, only one transaction can be active at
+     * a time.
+     * 
+     * There are many ways to work around these limitations: using
+     * connection pools for reads, and queuing all write operations as
+     * messages to be handle by a single thread reading the queue.
+     * The overhead and complexity of such solutions is considerable,
+     * at the cost of improving concurrency at the cost of performance.
+     * 
+     * For this application, very high concurrency is not a priority.
+     * Performance is much more important. Thus, we've decided that a
+     * single shared connection makes the most sense. We enforce
+     * transaction atomicity via a mutex.
+     * 
+     * To improve performance, we re-use prepared statements, again
+     * guarding them with mutexes.
+     */
     class Libraries: Khovsgol.Server.Libraries
         def override initialize() raises GLib.Error
             if _db is not null
@@ -45,7 +68,7 @@ namespace Khovsgol.Server._Sqlite
             _db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp INTEGER(8))")
             
         def override begin() raises GLib.Error
-            _lock.lock()
+            _transaction_lock.lock()
             _db.execute("BEGIN")
 
         def override commit() raises GLib.Error
@@ -58,202 +81,246 @@ namespace Khovsgol.Server._Sqlite
             try
                 _db.execute("ROLLBACK")
             finally
-                _lock.unlock()
+                _transaction_lock.unlock()
             
         //
         // Tracks
         //
         
         def override get_track(path: string): Track? raises GLib.Error
-            if _get_track is null
-                _db.prepare(out _get_track, "SELECT library, title, title_sort, artist, artist_sort, album, album_sort, position, duration, date, type FROM track WHERE path=?")
-            else
-                _get_track.reset()
-            _get_track.bind_text(1, path)
-            if _get_track.step() == ROW
-                var track = new Track()
-                track.path = path
-                track.library = _get_track.column_text(0)
-                track.title = _get_track.column_text(1)
-                track.title_sort = _get_track.column_text(2)
-                track.artist = _get_track.column_text(3)
-                track.artist_sort = _get_track.column_text(4)
-                track.album = _get_track.column_text(5)
-                track.album_sort = _get_track.column_text(6)
-                track.position = _get_track.column_int(7)
-                track.duration = _get_track.column_double(8)
-                track.date = _get_track.column_int(9)
-                track.file_type = _get_track.column_text(10)
-                return track
-            return null
+            _get_path_lock.lock()
+            try
+                if _get_track is null
+                    _db.prepare(out _get_track, "SELECT library, title, title_sort, artist, artist_sort, album, album_sort, position, duration, date, type FROM track WHERE path=?")
+                else
+                    _get_track.reset()
+                _get_track.bind_text(1, path)
+                if _get_track.step() == ROW
+                    var track = new Track()
+                    track.path = path
+                    track.library = _get_track.column_text(0)
+                    track.title = _get_track.column_text(1)
+                    track.title_sort = _get_track.column_text(2)
+                    track.artist = _get_track.column_text(3)
+                    track.artist_sort = _get_track.column_text(4)
+                    track.album = _get_track.column_text(5)
+                    track.album_sort = _get_track.column_text(6)
+                    track.position = _get_track.column_int(7)
+                    track.duration = _get_track.column_double(8)
+                    track.date = _get_track.column_int(9)
+                    track.file_type = _get_track.column_text(10)
+                    return track
+                return null
+            finally
+                _get_path_lock.unlock()
         
         def override save_track(track: Track) raises GLib.Error
-            if _save_track is null
-                _db.prepare(out _save_track, "INSERT OR REPLACE INTO track (path, library, title, title_sort, artist, artist_sort, album, album_sort, position, duration, date, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-            else
-                _save_track.reset()
-            _save_track.bind_text(1, track.path)
-            _save_track.bind_text(2, track.library)
-            _save_track.bind_text(3, track.title)
-            _save_track.bind_text(4, track.title_sort)
-            _save_track.bind_text(5, track.artist)
-            _save_track.bind_text(6, track.artist_sort)
-            _save_track.bind_text(7, track.album)
-            _save_track.bind_text(8, track.album_sort)
-            _save_track.bind_int(9, track.position)
-            _save_track.bind_double(10, track.duration)
-            _save_track.bind_int(11, (int) track.date)
-            _save_track.bind_text(12, track.file_type)
-            _db.assert_done(_save_track.step())
+            _save_track_lock.lock()
+            try
+                if _save_track is null
+                    _db.prepare(out _save_track, "INSERT OR REPLACE INTO track (path, library, title, title_sort, artist, artist_sort, album, album_sort, position, duration, date, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                else
+                    _save_track.reset()
+                _save_track.bind_text(1, track.path)
+                _save_track.bind_text(2, track.library)
+                _save_track.bind_text(3, track.title)
+                _save_track.bind_text(4, track.title_sort)
+                _save_track.bind_text(5, track.artist)
+                _save_track.bind_text(6, track.artist_sort)
+                _save_track.bind_text(7, track.album)
+                _save_track.bind_text(8, track.album_sort)
+                _save_track.bind_int(9, track.position)
+                _save_track.bind_double(10, track.duration)
+                _save_track.bind_int(11, (int) track.date)
+                _save_track.bind_text(12, track.file_type)
+                _db.assert_done(_save_track.step())
+            finally
+                _save_track_lock.unlock()
 
         def override delete_track(path: string) raises GLib.Error
-            if _delete_track1 is null
-                _db.prepare(out _delete_track1, "DELETE FROM track WHERE path=?")
-            else
-                _delete_track1.reset()
-            _delete_track1.bind_text(1, path)
-            _db.assert_done(_delete_track1.step())
+            _delete_lock.lock()
+            try
+                if _delete_track1 is null
+                    _db.prepare(out _delete_track1, "DELETE FROM track WHERE path=?")
+                else
+                    _delete_track1.reset()
+                _delete_track1.bind_text(1, path)
+                _db.assert_done(_delete_track1.step())
 
-            // Delete track pointers
-            // TODO: move positions in custom compilation?
-            if _delete_track2 is null
-                _db.prepare(out _delete_track2, "DELETE FROM track_pointer WHERE path=?")
-            else
-                _delete_track2.reset()
-            _delete_track2.bind_text(1, path)
-            _db.assert_done(_delete_track2.step())
+                // Delete track pointers
+                // TODO: move positions in custom compilation?
+                if _delete_track2 is null
+                    _db.prepare(out _delete_track2, "DELETE FROM track_pointer WHERE path=?")
+                else
+                    _delete_track2.reset()
+                _delete_track2.bind_text(1, path)
+                _db.assert_done(_delete_track2.step())
+            finally
+                _delete_lock.unlock()
             
         //
         // Track pointers
         //
         
         def override get_track_pointer(album: string, position: int): TrackPointer? raises GLib.Error
-            if _get_track_pointer is null
-                _db.prepare(out _get_track_pointer, "SELECT path FROM track_pointer WHERE album=? AND position=?")
-            else
-                _get_track_pointer.reset()
-            _get_track_pointer.bind_text(1, album)
-            _get_track_pointer.bind_int(2, position)
-            if _get_track_pointer.step() == ROW
-                var track_pointer = new TrackPointer()
-                track_pointer.path = _get_track_pointer.column_text(0)
-                track_pointer.position = position
-                track_pointer.album = album
-                return track_pointer
-            return null
+            _get_track_pointer_lock.lock()
+            try
+                if _get_track_pointer is null
+                    _db.prepare(out _get_track_pointer, "SELECT path FROM track_pointer WHERE album=? AND position=?")
+                else
+                    _get_track_pointer.reset()
+                _get_track_pointer.bind_text(1, album)
+                _get_track_pointer.bind_int(2, position)
+                if _get_track_pointer.step() == ROW
+                    var track_pointer = new TrackPointer()
+                    track_pointer.path = _get_track_pointer.column_text(0)
+                    track_pointer.position = position
+                    track_pointer.album = album
+                    return track_pointer
+                return null
+            finally
+                _get_track_pointer_lock.unlock()
 
         def override save_track_pointer(track_pointer: TrackPointer) raises GLib.Error
-            if _save_track_pointer is null
-                _db.prepare(out _save_track_pointer, "INSERT OR REPLACE INTO track_pointer (path, position, album) VALUES (?, ?, ?)")
-            else
-                _save_track_pointer.reset()
-            _save_track_pointer.bind_text(1, track_pointer.path)
-            _save_track_pointer.bind_int(2, track_pointer.position)
-            _save_track_pointer.bind_text(3, track_pointer.album)
-            _db.assert_done(_save_track_pointer.step())
+            _save_track_pointer_lock.lock()
+            try
+                if _save_track_pointer is null
+                    _db.prepare(out _save_track_pointer, "INSERT OR REPLACE INTO track_pointer (path, position, album) VALUES (?, ?, ?)")
+                else
+                    _save_track_pointer.reset()
+                _save_track_pointer.bind_text(1, track_pointer.path)
+                _save_track_pointer.bind_int(2, track_pointer.position)
+                _save_track_pointer.bind_text(3, track_pointer.album)
+                _db.assert_done(_save_track_pointer.step())
+            finally
+                _save_track_pointer_lock.unlock()
 
         def override delete_track_pointer(album: string, position: int) raises GLib.Error
             // TODO: renumber the rest of the pointers?
-            if _delete_track_pointer is null
-                _db.prepare(out _delete_track_pointer, "DELETE FROM track_pointer WHERE album=? AND position=?")
-            else
-                _delete_track_pointer.reset()
-            _delete_track_pointer.bind_text(1, album)
-            _delete_track_pointer.bind_int(2, position)
-            _db.assert_done(_delete_track_pointer.step())
+            _delete_track_pointer_lock.lock()
+            try
+                if _delete_track_pointer is null
+                    _db.prepare(out _delete_track_pointer, "DELETE FROM track_pointer WHERE album=? AND position=?")
+                else
+                    _delete_track_pointer.reset()
+                _delete_track_pointer.bind_text(1, album)
+                _delete_track_pointer.bind_int(2, position)
+                _db.assert_done(_delete_track_pointer.step())
+            finally
+                _delete_track_pointer_lock.unlock()
 
         def override delete_track_pointers(album: string) raises GLib.Error
-            if _delete_track_pointers is null
-                _db.prepare(out _delete_track_pointers, "DELETE FROM track_pointer WHERE album=?")
-            else
-                _delete_track_pointers.reset()
-            _delete_track_pointers.bind_text(1, album)
-            _db.assert_done(_delete_track_pointers.step())
+            _delete_track_pointers_lock.lock()
+            try
+                if _delete_track_pointers is null
+                    _db.prepare(out _delete_track_pointers, "DELETE FROM track_pointer WHERE album=?")
+                else
+                    _delete_track_pointers.reset()
+                _delete_track_pointers.bind_text(1, album)
+                _db.assert_done(_delete_track_pointers.step())
+            finally
+                _delete_track_pointers_lock.unlock()
 
         def override move_track_pointers(album: string, delta: int, from_position: int = int.MIN) raises GLib.Error
-            if from_position == int.MIN
-                if _move_track_pointers1 is null
-                    _db.prepare(out _move_track_pointers1, "UPDATE track_pointer SET position=position+? WHERE album=?")
+            _move_track_pointers_lock.lock()
+            try
+                if from_position == int.MIN
+                    if _move_track_pointers1 is null
+                        _db.prepare(out _move_track_pointers1, "UPDATE track_pointer SET position=position+? WHERE album=?")
+                    else
+                        _move_track_pointers1.reset()
+                    _move_track_pointers1.bind_int(1, delta)
+                    _move_track_pointers1.bind_text(2, album)
+                    _db.assert_done(_move_track_pointers1.step())
                 else
-                    _move_track_pointers1.reset()
-                _move_track_pointers1.bind_int(1, delta)
-                _move_track_pointers1.bind_text(2, album)
-                _db.assert_done(_move_track_pointers1.step())
-            else
-                if _move_track_pointers2 is null
-                    _db.prepare(out _move_track_pointers2, "UPDATE track_pointer SET position=position+? WHERE album=? AND position>=?")
-                else
-                    _move_track_pointers2.reset()
-                _move_track_pointers2.bind_int(1, delta)
-                _move_track_pointers2.bind_text(2, album)
-                _move_track_pointers2.bind_int(3, from_position)
-                _db.assert_done(_move_track_pointers2.step())
+                    if _move_track_pointers2 is null
+                        _db.prepare(out _move_track_pointers2, "UPDATE track_pointer SET position=position+? WHERE album=? AND position>=?")
+                    else
+                        _move_track_pointers2.reset()
+                    _move_track_pointers2.bind_int(1, delta)
+                    _move_track_pointers2.bind_text(2, album)
+                    _move_track_pointers2.bind_int(3, from_position)
+                    _db.assert_done(_move_track_pointers2.step())
+            finally
+                _move_track_pointers_lock.unlock()
 
         //
         // Albums
         //
         
         def override get_album(path: string): Album? raises GLib.Error
-            if _get_album is null
-                _db.prepare(out _get_album, "SELECT library, title, title_sort, artist, artist_sort, date, compilation, type FROM album WHERE path=?")
-            else
-                _get_album.reset()
-            _get_album.bind_text(1, path)
-            if _get_album.step() == ROW
-                var album = new Album()
-                album.path = path
-                album.library = _get_album.column_text(0)
-                album.title = _get_album.column_text(1)
-                album.title_sort = _get_album.column_text(2)
-                album.artist = _get_album.column_text(3)
-                album.artist_sort = _get_album.column_text(4)
-                album.date = _get_album.column_int64(5)
-                album.compilation_type = (CompilationType) _get_album.column_int(6)
-                album.file_type = _get_album.column_text(7)
-                return album
-            return null
+            _get_album_lock.lock()
+            try
+                if _get_album is null
+                    _db.prepare(out _get_album, "SELECT library, title, title_sort, artist, artist_sort, date, compilation, type FROM album WHERE path=?")
+                else
+                    _get_album.reset()
+                _get_album.bind_text(1, path)
+                if _get_album.step() == ROW
+                    var album = new Album()
+                    album.path = path
+                    album.library = _get_album.column_text(0)
+                    album.title = _get_album.column_text(1)
+                    album.title_sort = _get_album.column_text(2)
+                    album.artist = _get_album.column_text(3)
+                    album.artist_sort = _get_album.column_text(4)
+                    album.date = _get_album.column_int64(5)
+                    album.compilation_type = (CompilationType) _get_album.column_int(6)
+                    album.file_type = _get_album.column_text(7)
+                    return album
+                return null
+            finally
+                _get_album_lock.unlock()
         
         def override save_album(album: Album) raises GLib.Error
-            if _save_album is null
-                _db.prepare(out _save_album, "INSERT OR REPLACE INTO album (path, library, title, title_sort, artist, artist_sort, date, compilation, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-            else
-                _save_album.reset()
-            _save_album.bind_text(1, album.path)
-            _save_album.bind_text(2, album.library)
-            _save_album.bind_text(3, album.title)
-            _save_album.bind_text(4, album.title_sort)
-            _save_album.bind_text(5, album.artist)
-            _save_album.bind_text(6, album.artist_sort)
-            _save_album.bind_int64(7, (int64) album.date)
-            _save_album.bind_int(8, album.compilation_type)
-            _save_album.bind_text(9, album.file_type)
-            _db.assert_done(_save_album.step())
+            _save_album_lock.lock()
+            try
+                if _save_album is null
+                    _db.prepare(out _save_album, "INSERT OR REPLACE INTO album (path, library, title, title_sort, artist, artist_sort, date, compilation, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                else
+                    _save_album.reset()
+                _save_album.bind_text(1, album.path)
+                _save_album.bind_text(2, album.library)
+                _save_album.bind_text(3, album.title)
+                _save_album.bind_text(4, album.title_sort)
+                _save_album.bind_text(5, album.artist)
+                _save_album.bind_text(6, album.artist_sort)
+                _save_album.bind_int64(7, (int64) album.date)
+                _save_album.bind_int(8, album.compilation_type)
+                _save_album.bind_text(9, album.file_type)
+                _db.assert_done(_save_album.step())
+            finally
+                _save_album_lock.unlock()
 
         def override delete_album(path: string) raises GLib.Error
-            // Delete track pointers
-            if _delete_album1 is null
-                _db.prepare(out _delete_album1, "DELETE FROM track_pointer WHERE album=? OR path LIKE ? ESCAPE \"\\\"")
-            else
-                _delete_album1.reset()
-            _delete_album1.bind_text(1, path)
-            _delete_album1.bind_text(2, escape_like(path + SEPARATOR) + "%")
-            _db.assert_done(_delete_album1.step())
+            _delete_album_lock.lock()
+            try
+                // Delete track pointers
+                if _delete_album1 is null
+                    _db.prepare(out _delete_album1, "DELETE FROM track_pointer WHERE album=? OR path LIKE ? ESCAPE \"\\\"")
+                else
+                    _delete_album1.reset()
+                _delete_album1.bind_text(1, path)
+                _delete_album1.bind_text(2, escape_like(path + SEPARATOR) + "%")
+                _db.assert_done(_delete_album1.step())
 
-            // Delete tracks
-            if _delete_album2 is null
-                _db.prepare(out _delete_album2, "DELETE FROM track WHERE path LIKE ? ESCAPE \"\\\"")
-            else
-                _delete_album2.reset()
-            _delete_album2.bind_text(1, escape_like(path + SEPARATOR) + "%")
-            _db.assert_done(_delete_album2.step())
+                // Delete tracks
+                if _delete_album2 is null
+                    _db.prepare(out _delete_album2, "DELETE FROM track WHERE path LIKE ? ESCAPE \"\\\"")
+                else
+                    _delete_album2.reset()
+                _delete_album2.bind_text(1, escape_like(path + SEPARATOR) + "%")
+                _db.assert_done(_delete_album2.step())
 
-            // Delete album
-            if _delete_album3 is null
-                _db.prepare(out _delete_album3, "DELETE FROM album WHERE path=?")
-            else
-                _delete_album3.reset()
-            _delete_album3.bind_text(1, path)
-            _db.assert_done(_delete_album3.step())
+                // Delete album
+                if _delete_album3 is null
+                    _db.prepare(out _delete_album3, "DELETE FROM album WHERE path=?")
+                else
+                    _delete_album3.reset()
+                _delete_album3.bind_text(1, path)
+                _db.assert_done(_delete_album3.step())
+            finally
+                _delete_album_lock.unlock()
         
         //
         // Iterate tracks
@@ -497,40 +564,63 @@ namespace Khovsgol.Server._Sqlite
         //
         
         def override get_timestamp(path: string): int64 raises GLib.Error
-            if _get_timestamp is null
-                _db.prepare(out _get_timestamp, "SELECT timestamp FROM scanned WHERE path=?")
-            else
-                _get_timestamp.reset()
-            _get_timestamp.bind_text(1, path)
-            if _get_timestamp.step() == ROW
-                return _get_timestamp.column_int64(0)
-            return int64.MIN
+            _get_timestamp_lock.lock()
+            try
+                if _get_timestamp is null
+                    _db.prepare(out _get_timestamp, "SELECT timestamp FROM scanned WHERE path=?")
+                else
+                    _get_timestamp.reset()
+                _get_timestamp.bind_text(1, path)
+                if _get_timestamp.step() == ROW
+                    return _get_timestamp.column_int64(0)
+                return int64.MIN
+            finally
+                _get_timestamp_lock.unlock()
 
         def override set_timestamp(path: string, timestamp: int64) raises GLib.Error
-            if _set_timestamp is null
-                _db.prepare(out _set_timestamp, "INSERT OR REPLACE INTO scanned (path, timestamp) VALUES (?, ?)")
-            else
-                _set_timestamp.reset()
-            _set_timestamp.bind_text(1, path)
-            _set_timestamp.bind_int64(2, timestamp)
-            _db.assert_done(_set_timestamp.step())
+            _set_timestamp_lock.lock()
+            try
+                if _set_timestamp is null
+                    _db.prepare(out _set_timestamp, "INSERT OR REPLACE INTO scanned (path, timestamp) VALUES (?, ?)")
+                else
+                    _set_timestamp.reset()
+                _set_timestamp.bind_text(1, path)
+                _set_timestamp.bind_int64(2, timestamp)
+                _db.assert_done(_set_timestamp.step())
+            finally
+                _set_timestamp_lock.unlock()
 
         _db: SqliteUtil.Database
-        _lock: GLib.Mutex = GLib.Mutex()
+        
+        _transaction_lock: GLib.Mutex = GLib.Mutex()
+        
         _get_track: Statement
+        _get_track_lock: GLib.Mutex = GLib.Mutex()
         _save_track: Statement
+        _save_track_lock: GLib.Mutex = GLib.Mutex()
         _delete_track1: Statement
         _delete_track2: Statement
+        _delete_track_lock: GLib.Mutex = GLib.Mutex()
         _get_track_pointer: Statement
+        _get_track_pointer_lock: GLib.Mutex = GLib.Mutex()
         _save_track_pointer: Statement
+        _save_track_lock: GLib.Mutex = GLib.Mutex()
         _delete_track_pointer: Statement
+        _delete_track_pointer_lock: GLib.Mutex = GLib.Mutex()
         _delete_track_pointers: Statement
+        _delete_track_pointers_lock: GLib.Mutex = GLib.Mutex()
         _move_track_pointers1: Statement
         _move_track_pointers2: Statement
+        _move_track_pointers_lock: GLib.Mutex = GLib.Mutex()
         _get_album: Statement
+        _get_album_lock: GLib.Mutex = GLib.Mutex()
         _save_album: Statement
+        _save_album_lock: GLib.Mutex = GLib.Mutex()
         _delete_album1: Statement
         _delete_album2: Statement
         _delete_album3: Statement
+        _delete_album_lock: GLib.Mutex = GLib.Mutex()
         _get_timestamp: Statement
+        _get_timestamp_lock: GLib.Mutex = GLib.Mutex()
         _set_timestamp: Statement
+        _set_timestamp_lock: GLib.Mutex = GLib.Mutex()
