@@ -18,7 +18,7 @@ namespace Khovsgol.Client.Plugins
                 try
                     _media_keys = new MediaKeysWrapper()
                 except e: IOError
-                    _logger.warning(e.message)
+                    _logger.exception(e)
         
             if _media_keys is not null
                 try
@@ -26,7 +26,7 @@ namespace Khovsgol.Client.Plugins
                     _media_keys.MediaPlayerKeyPressed.connect(on_key_pressed)
                     _logger.message("Started")
                 except e: IOError
-                    _logger.warning(e.message)
+                    _logger.exception(e)
         
         def stop()
             if _media_keys is not null
@@ -36,7 +36,7 @@ namespace Khovsgol.Client.Plugins
                     _media_keys = null
                     _logger.message("Stopped")
                 except e: IOError
-                    _logger.warning(e.message)
+                    _logger.exception(e)
         
         _media_keys: MediaKeysWrapper
 

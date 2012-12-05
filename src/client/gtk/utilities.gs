@@ -55,7 +55,7 @@ namespace Khovsgol.Client.GUI
                 _is_frozen = true
             iter: TreeIter
             _store.append(out iter)
-            _store.set(iter, PlayList.Column.NODE, node, PlayList.Column.SEARCH, search, PlayList.Column.MARKUP1, markup1, PlayList.Column.MARKUP2, markup2, PlayList.Column.POSITION, position, -1)
+            _store.@set(iter, PlayList.Column.NODE, node, PlayList.Column.SEARCH, search, PlayList.Column.MARKUP1, markup1, PlayList.Column.MARKUP2, markup2, PlayList.Column.POSITION, position, -1)
 
         def append_object(obj: Json.Object, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
             var node = new Json.Node(Json.NodeType.OBJECT)
@@ -131,11 +131,11 @@ namespace Khovsgol.Client.GUI
                 _is_frozen = true
             child_iter: TreeIter
             _store.append(out child_iter, _iter)
-            _store.set(child_iter, Library.Column.NODE, node, Library.Column.SEARCH, search, Library.Column.MARKUP1, markup1, Library.Column.MARKUP2, markup2, -1)
+            _store.@set(child_iter, Library.Column.NODE, node, Library.Column.SEARCH, search, Library.Column.MARKUP1, markup1, Library.Column.MARKUP2, markup2, -1)
             if is_expandable
                 // Add placeholder
                 _store.append(out child_iter, child_iter)
-                _store.set(child_iter, Library.Column.NODE, null, -1)
+                _store.@set(child_iter, Library.Column.NODE, null, -1)
 
         def append_object(obj: Json.Object, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
             var node = new Json.Node(Json.NodeType.OBJECT)
@@ -261,7 +261,7 @@ namespace Khovsgol.Client.GUI
         def append(value: Variant, label: string)
             iter: TreeIter
             _store.append(out iter)
-            _store.set(iter, 0, value, 1, label, -1)
+            _store.@set(iter, 0, value, 1, label, -1)
 
     /*
      * A ComboBox for Style instances.
@@ -308,7 +308,7 @@ namespace Khovsgol.Client.GUI
         def append(style: Style)
             iter: TreeIter
             _store.append(out iter)
-            _store.set(iter, 0, style, 1, style.label, -1)
+            _store.@set(iter, 0, style, 1, style.label, -1)
             
         _store: ListStore
 

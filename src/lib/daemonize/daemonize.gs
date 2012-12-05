@@ -24,9 +24,15 @@ namespace Daemonize
      * signals (TERM, QUIT and INT) will cause it to quit the main loop,
      * blocking until it is properly shut down.
      */
-    def handle(name: string, start: bool, stop: bool, main_loop: MainLoop? = null)
+    def handle(dir: string, name: string, start: bool, stop: bool, main_loop: MainLoop? = null) raises Error
         // See: http://0pointer.de/lennart/projects/libdaemon/reference/html/testd_8c-example.html
 
+        // Make sure dir exists
+        var file = File.new_for_path("%s/.%s".printf(Environment.get_home_dir(), dir))
+        if !file.query_exists() || (file.query_info(FileAttribute.STANDARD_TYPE, FileQueryInfoFlags.NONE).get_file_type() != FileType.DIRECTORY)
+            file.make_directory()
+
+        _dir = dir
         Daemon.pid_file_ident = Daemon.log_ident = _name = name
         set_daemon_pid_file_proc((Func) get_pid_file) // Ideally: Daemon.pid_file_proc = get_pid_file
         
@@ -135,7 +141,7 @@ namespace Daemonize
      * Our version uses one located in the user's home directory.
      */
     def private get_pid_file(): string
-        var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _name, _name)
+        var pid_file = "%s/.%s/%s.pid".printf(Environment.get_home_dir(), _dir, _name)
         return pid_file
 
     def private exit()
@@ -197,6 +203,7 @@ namespace Daemonize
         // Continue to wrapped poll callback
         return _poll(fds, timeout)
 
+    _dir: private string
     _name: private string
     _poll: private PollFunc
     _daemon_fd: private PollFD

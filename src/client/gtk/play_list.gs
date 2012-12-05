@@ -279,7 +279,7 @@ namespace Khovsgol.Client.GUI
                         Gdk.drop_finish(context, true, time)
                         return
                     except e: GLib.Error
-                        _logger.warning(e.message)
+                        _logger.exception(e)
 
             else if target_name == "JSON_STRING_ARRAY"
                 // Track paths, likely from the library pane
@@ -291,7 +291,7 @@ namespace Khovsgol.Client.GUI
                         Gdk.drop_finish(context, true, time)
                         return
                     except e: GLib.Error
-                        _logger.warning(e.message)
+                        _logger.exception(e)
                         
             Gdk.drop_finish(context, false, time)
 

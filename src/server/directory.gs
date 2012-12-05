@@ -13,6 +13,7 @@ namespace Khovsgol.Server
         prop abstract readonly is_scanning: bool
         
         def abstract scan()
+        def abstract abort(block: bool = false)
 
         def to_json(): Json.Object
             var json = new Json.Object()

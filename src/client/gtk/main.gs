@@ -8,22 +8,25 @@ namespace Khovsgol.Client.GUI
     class MainWindow: Window
         construct(instance: Instance)
             _instance = instance
-            
-            var icon_file = File.new_for_path("/usr/share/pixmaps/khovsgol.svg")
-            if !icon_file.query_exists()
+
+            var icon_file = File.new_for_path("%s/.local/share/icons/khovsgol.svg".printf(Environment.get_home_dir()))
+            if icon_file.query_exists()
                 // Use system icon
                 icon_name = "khovsgol"
             else
-                // Use icon directly from file
-                var base_dir = _instance.dir.get_parent()
-                if base_dir is not null
-                    icon_file = base_dir.get_child("resources").get_child("khovsgol.svg")
-                    if icon_file.query_exists()
+                icon_file = File.new_for_path("/usr/share/icons/khovsgol.svg")
+                if icon_file.query_exists()
+                    // Use system icon
+                    icon_name = "khovsgol"
+                else
+                    // Use icon directly from file
+                    icon_file = _instance.get_resource("khovsgol.svg")
+                    if icon_file is not null
                         try
                             if !set_icon_from_file(icon_file.get_path())
                                 _logger.warningf("Could not set icon: %s", icon_file.get_path())
                         except e: GLib.Error
-                            _logger.warning(e.message)
+                            _logger.exception(e)
             
             realize.connect(on_realized)
             delete_event.connect(on_delete)
@@ -31,6 +34,12 @@ namespace Khovsgol.Client.GUI
             _control_bar = new ControlBar(_instance)
             _play_list = new PlayList(_instance)
             _library = new Library(_instance)
+
+            add_accel_group(_control_bar.accel_group)
+            add_accel_group(_play_list.accel_group)
+            add_accel_group(_library.accel_group)
+            
+            // Assemble
 
             _panes = new Paned(Orientation.HORIZONTAL)
             _panes.pack1(_play_list, true, true)
@@ -40,6 +49,8 @@ namespace Khovsgol.Client.GUI
             var main_box = new Box(Orientation.VERTICAL, 10)
             main_box.pack_start(_control_bar, false)
             main_box.pack_start(_panes)
+
+            add(main_box)
             
             title = "Khövsgöl"
             deletable = false
@@ -59,10 +70,6 @@ namespace Khovsgol.Client.GUI
             else
                 set_default_size(900, 600)
 
-            add(main_box)
-            add_accel_group(_control_bar.accel_group)
-            add_accel_group(_play_list.accel_group)
-            add_accel_group(_library.accel_group)
             /*if self.instance.configuration.is_boolean('ui', 'focus-on-library'):
                 self.library_pane.tree_view.grab_focus()
             else:

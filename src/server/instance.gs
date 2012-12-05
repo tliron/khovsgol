@@ -2,6 +2,7 @@
 
 uses
     Nap
+    AvahiUtil
     
 namespace Khovsgol.Server
 
@@ -23,7 +24,7 @@ namespace Khovsgol.Server
             _main_loop = new MainLoop(null, false)
             
             if _arguments.start_daemon || _arguments.stop_daemon || _arguments.status_daemon
-                Daemonize.handle("khovsgol", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
+                Daemonize.handle("khovsgol", "khovsgold", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
             
             initialize_logging(_arguments.console)
             
@@ -102,13 +103,24 @@ namespace Khovsgol.Server
         
         def start()
             _server.start()
+            publish()
             _main_loop.run()
+            
+        def private publish()
+            //var name = NetworkAddress.hostname
+            //print "host"
+            //print _server.hostname
+            try
+                _publisher = new Publisher("emblemparade@durkheim", "_khovsgol._tcp", (uint16) _configuration.port)
+            except e: Avahi.Error
+                _logger.exception(e)
 
         _arguments: Arguments
         _server: Nap.Server
         _main_loop: MainLoop
         _api: Api
         _uri_space: UriSpace
+        _publisher: Publisher
 
     _logger: Logging.Logger
     
@@ -117,7 +129,7 @@ namespace Khovsgol.Server
         
         if !console
             var appender = new Logging.FileAppender()
-            appender.deepest_level = LogLevelFlags.LEVEL_MESSAGE
+            appender.deepest_level = LogLevelFlags.LEVEL_DEBUG // LogLevelFlags.LEVEL_MESSAGE
             appender.set_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))
             Logging.get_logger().appender = appender
             

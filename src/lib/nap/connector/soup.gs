@@ -288,6 +288,10 @@ namespace Nap._Soup
             
         prop thread_pool: ThreadPool?
         prop readonly port: uint
+        
+        prop readonly hostname: string
+            get
+                return _soup_server.@interface.physical
 
         def get_handler(): unowned Handler?
             return _handler

@@ -26,7 +26,17 @@ namespace Khovsgol.Client
 
         return null
 
-    _covers: private list of string
+    /*
+     * String join for Gee.Iterable.
+     */
+    def join(sep: string, items: Gee.Iterable of string): string
+        var str = new StringBuilder()
+        var i = items.iterator()
+        while i.next()
+            str.append(i.get())
+            if i.has_next()
+                str.append(sep)
+        return str.str
 
     /*
      * True if the file type is known to be lossless.
@@ -76,4 +86,5 @@ namespace Khovsgol.Client
             if text.get_next_char(ref second, null)
                 return first.toupper().to_string() + text.substring(second)
         return text
-    
+
+    _covers: private list of string

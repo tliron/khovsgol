@@ -77,7 +77,7 @@ namespace Khovsgol.Client.Plugins
                 _object_id = connection.register_object("/org/mpris/MediaPlayer2", _object)
                 _player_id = connection.register_object("/org/mpris/MediaPlayer2", _player)
             except e: IOError
-                _logger.warning(e.message)
+                _logger.exception(e)
             _logger.message("Started")
         
         def private on_disconnecting(connection: DBusConnection)

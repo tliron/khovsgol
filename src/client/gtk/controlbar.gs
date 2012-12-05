@@ -30,10 +30,11 @@ namespace Khovsgol.Client.GUI
             var manage_receiver = new ControlToolButton(Stock.JUMP_TO, Gdk.Key.R, "Manage receiver\n<Alt>R", _accel_group)
             manage_receiver.clicked.connect(on_manage_receiver)
             
-            var info_label = new Label(null)
+            _info = new Label("<b>Not connected</b>")
+            _info.use_markup = true
             var info_label_alignment = new Alignment(0, 0, 1, 1)
             info_label_alignment.set_padding(0, 0, 5, 5)
-            info_label_alignment.add(info_label)
+            info_label_alignment.add(_info)
             var info_label_item = new ToolItem()
             info_label_item.add(info_label_alignment)
         
@@ -99,12 +100,14 @@ namespace Khovsgol.Client.GUI
             add(progress_item)
             add(visualization)
             
+            _instance.api.server_change_gdk.connect(on_server_changed)
             _instance.api.play_mode_change_gdk.connect(on_play_mode_changed)
             _instance.api.position_in_track_change_gdk.connect(on_position_in_track_changed)
             
         prop readonly accel_group: AccelGroup
             
         def private on_unrealized()
+            _instance.api.server_change_gdk.disconnect(on_server_changed)
             _instance.api.play_mode_change_gdk.disconnect(on_play_mode_changed)
             _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
             
@@ -115,7 +118,7 @@ namespace Khovsgol.Client.GUI
             pass
 
         def private on_manage_servers()
-            pass
+            new Servers(_instance).show_all()
 
         def private on_manage_players()
             pass
@@ -165,6 +168,12 @@ namespace Khovsgol.Client.GUI
             
         def private on_visualization()
             pass
+            
+        def private on_server_changed(base_url: string?, old_base_url: string?)
+            if base_url is not null
+                _info.label = "<b>%s</b>".printf(Markup.escape_text(base_url))
+            else
+                _info.label = "<b>Not connected</b>"
 
         def private on_play_mode_changed(play_mode: string?, old_play_mode: string?)
             SignalHandler.block(_toggle_pause, _on_toggle_pause_id)
@@ -182,6 +191,7 @@ namespace Khovsgol.Client.GUI
                 _progress.text = ""
 
         _instance: Instance
+        _info: Label
         _progress: ProgressBar
         _toggle_pause: ControlToggleToolButton
         _position_in_track: double = double.MIN

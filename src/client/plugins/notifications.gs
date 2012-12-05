@@ -28,7 +28,7 @@ namespace Khovsgol.Client.Plugins
                     _instance.api.position_in_play_list_change.connect(on_position_in_play_list_changed)
                     _logger.message("Started")
                 except e: IOError
-                    _logger.warning(e.message)
+                    _logger.exception(e)
         
         def stop()
             if _notifications is not null
@@ -78,7 +78,7 @@ namespace Khovsgol.Client.Plugins
                             _notifications.Notify("Khövsgöl", position, icon, "Khövsgöl", markup, _actions, _hints, 3000)
                             _logger.info("Notified new track")
                         except e: IOError
-                            _logger.warning(e.message)
+                            _logger.exception(e)
                     break
 
         _tracks: IterableOfTrack

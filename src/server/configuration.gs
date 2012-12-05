@@ -97,7 +97,7 @@ namespace Khovsgol.Server
             try
                 return FileUtils.set_data(_file, data.data)
             except e: GLib.FileError
-                _logger.warning(e.message)
+                _logger.exception(e)
                 return false
     
         _file: string

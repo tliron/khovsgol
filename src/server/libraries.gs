@@ -204,8 +204,11 @@ namespace Khovsgol.Server
             for directory in _directories.values
                 if !directory.is_scanning
                     directory.scan()
-                else
-                    pass // TODO: log?
+
+        def abort_all()
+            for directory in _directories.values
+                if !directory.is_scanning
+                    directory.abort()
     
         def to_json(): Json.Object
             var json = new Json.Object()

@@ -12,7 +12,7 @@ namespace Khovsgol.Server.Filesystem
             AtomicInt.set(ref _is_scanning, 1)
             _scan_thread = new Thread of bool("DirectoryScan:%s".printf(path), do_scan)
         
-        def abort(block: bool = false)
+        def override abort(block: bool = false)
             AtomicInt.set(ref _is_scan_stopping, 1)
             if block
                 _scan_thread.join()
@@ -130,25 +130,25 @@ namespace Khovsgol.Server.Filesystem
                                 album.date = track.date
                                 album.file_type = track.file_type
             except e: GLib.Error
-                _logger.warning(e.message)
+                _logger.exception(e)
             finally
                 if libraries is not null
                     try
                         libraries.commit()
                     except e: GLib.Error
-                        _logger.warning(e.message)
+                        _logger.exception(e)
                 
                 // Close remaining enumerators
                 if enumerator is not null
                     try
                         enumerator.close()
                     except e: GLib.Error
-                        _logger.warning(e.message)
+                        _logger.exception(e)
                 for var e in enumerators
                     try
                         e.close()
                     except e: GLib.Error
-                        _logger.warning(e.message)
+                        _logger.exception(e)
             
             try
                 libraries.begin()
@@ -191,12 +191,12 @@ namespace Khovsgol.Server.Filesystem
                 
                 pass
             except e: GLib.Error
-                _logger.warning(e.message)
+                _logger.exception(e)
             finally
                 try
                     libraries.commit()
                 except e: GLib.Error
-                    _logger.warning(e.message)
+                    _logger.exception(e)
 
             timer.stop()
             var seconds = timer.elapsed()

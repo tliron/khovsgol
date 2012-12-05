@@ -443,6 +443,14 @@ namespace Khovsgol.Server
                             directory.scan()
                         
                     processed = true
+                    
+                else if action_type == "abort"
+                    if path is null
+                        library.abort_all()
+                    else
+                        var directory = library.directories[path]
+                        if directory is not null
+                            directory.abort()
 
             if processed
                 set_response_json_object_or_not_found(library, conversation)

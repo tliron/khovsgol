@@ -146,6 +146,9 @@ namespace Logging
             
         def debugf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_DEBUG, message, va_list())
+        
+        def exception(e: Error)
+            warning(e.message)
             
         _handler_id: uint = 0
         _appender: Appender?

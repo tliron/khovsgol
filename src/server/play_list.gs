@@ -16,7 +16,7 @@ namespace Khovsgol.Server
                 try
                     validate_tracks()
                 except e: GLib.Error
-                    _logger.warning(e.message)
+                    _logger.exception(e)
                 return _tracks
 
         prop readonly tracks_json: Json.Array
@@ -24,7 +24,7 @@ namespace Khovsgol.Server
                 try
                     validate_tracks()
                 except e: GLib.Error
-                    _logger.warning(e.message)
+                    _logger.exception(e)
                 if _tracks_json is null
                     _tracks_json = to_object_array(_tracks)
                 return _tracks_json

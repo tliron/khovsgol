@@ -140,6 +140,10 @@ namespace Nap
      */
     interface Server: Object
         prop abstract thread_pool: ThreadPool?
+        prop abstract readonly port: uint
+        prop abstract readonly hostname: string
+        
+        // Note: we get compilation errors if we use a properties for handler/error_handler
         
         def abstract get_handler(): unowned Handler?
         def abstract set_handler(handler: Handler?)

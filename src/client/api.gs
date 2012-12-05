@@ -6,20 +6,6 @@ uses
 
 namespace Khovsgol.Client
 
-    _logger: Logging.Logger
-    
-    /*
-     * String join for Gee.Iterable.
-     */
-    def static join(sep: string, items: Gee.Iterable of string): string
-        var str = new StringBuilder()
-        var i = items.iterator()
-        while i.next()
-            str.append(i.get())
-            if i.has_next()
-                str.append(sep)
-        return str.str
-
     /*
      * Unified client-side API. Internally uses a Nap client to access
      * the server remotely over HTTP. The instance can be reconnected
@@ -992,12 +978,14 @@ namespace Khovsgol.Client
         _play_list_version: int64
         _last_base_url: string?
 
+        _logger: static Logging.Logger
+
         init
             _logger = Logging.get_logger("khovsgol.client")
         
         def private on_error(e: GLib.Error)
             // TODO: special handling for network errors
-            _logger.warning(e.message)
+            _logger.exception(e)
         
         def private process_player(player: Json.Object?, in_gdk: bool = false)
             if player is null

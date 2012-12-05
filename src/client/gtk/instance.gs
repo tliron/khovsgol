@@ -80,14 +80,14 @@ namespace Khovsgol.Client.GUI
             try
                 Process.spawn_sync(dir.get_path(), {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null)
             except e: SpawnError
-                _logger.warning(e.message)
+                _logger.exception(e)
 
         def private stop_server()
             pid: Pid
             try
                 Process.spawn_async(dir.get_path(), {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
             except e: SpawnError
-                _logger.warning(e.message)
+                _logger.exception(e)
         
     _logger: Logging.Logger
         
