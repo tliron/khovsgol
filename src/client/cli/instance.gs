@@ -182,6 +182,10 @@ namespace Khovsgol.Client.CLI
                                     stdout.printf(" (currently scanning)\n")
                                 else
                                     stdout.printf("\n")
+                                    
+            else if command == "servers"
+                // TODO: Avahi scan until CTRL+C
+                pass
 
             else
                 stderr.printf("Unknown command: %s\n", command)
@@ -292,7 +296,8 @@ namespace Khovsgol.Client.CLI
         s.append("General commands:\n")
         s.append("\n")
         s.append("  players\n")
-        s.append("  libraries")
+        s.append("  libraries\n")
+        s.append("  servers")
         return s.str
 
     class Arguments: Object

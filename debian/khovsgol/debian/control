@@ -1,0 +1,59 @@
+Standards-Version: 3.9.3
+Source: khovsgol
+Section: sound
+Priority: optional
+Maintainer: Tal Liron <tal.liron@gmail.com>
+Vcs-Browser: http://code.google.com/p/khovsgol/source/browse/
+Vcs-Git: https://code.google.com/p/khovsgol/
+Build-Depends: debhelper (>=9), valac-0.18 (>= 0.18.0), libglib2.0-dev (>= 2.32.1), libgee-dev (>=0.6.4), libsoup2.4-dev (>= 2.38.1), libjson-glib-dev (>= 0.14.2), libsqlite3-dev (>= 3.7.9), libdaemon-dev (>= 0.14), libgstreamer1.0-dev (>= 1.0.1), libtagc0-dev (>= 1.7), libavahi-gobject-dev (>= 0.6.30), libgtk-3-dev (>= 3.4.1), libunity-dev (>= 5.10.0), libindicate-dev (>= 0.6.92)
+
+Package: khovsgol-server
+Architecture: any
+Homepage: http://code.google.com/p/khovsgol/
+Depends: libglib2.0-0 (>= 2.32.1), libgee2 (>= 0.6.4), libsoup2.4-1 (>= 2.38.1), libjson-glib-1.0-0 (>= 0.14.2), libsqlite3-0 (>= 3.7.9), libdaemon0 (>= 0.14), libgstreamer1.0-0 (>= 1.0.1), libtagc0 (>= 1.7), libavahi-gobject0 (>= 0.6.30), ${shlibs:Depends}, ${misc:Depends}
+Description: Khövsgöl Music Player: Server
+ Khövsgöl can handle very large collections of music with ease. Minimalists will
+ love its straightforward, clutter-free user interface.
+ .
+ In addition to working as a regular desktop player, Khövsgöl can work in
+ client/server mode, allowing you to broadcast and share music over a local
+ network.
+ .
+ Though designed with the GNOME desktop and Unity shell in mind, it supports any
+ GTK+ environment and a wide range of audio technologies. It also comes with a
+ command line interface, and a web interface is under development and should be
+ released soon. 
+
+Package: khovsgol-cli
+Architecture: any
+Homepage: http://code.google.com/p/khovsgol/
+Depends: libglib2.0-0 (>= 2.32.1), libgee2 (>= 0.6.4), libsoup2.4-1 (>= 2.38.1), libjson-glib-1.0-0 (>= 0.14.2), libavahi-gobject0 (>= 0.6.30), ${shlibs:Depends}, ${misc:Depends}
+Description: Khövsgöl Music Player: CLI Client
+ Khövsgöl can handle very large collections of music with ease. Minimalists will
+ love its straightforward, clutter-free user interface.
+ .
+ In addition to working as a regular desktop player, Khövsgöl can work in
+ client/server mode, allowing you to broadcast and share music over a local
+ network.
+ .
+ Though designed with the GNOME desktop and Unity shell in mind, it supports any
+ GTK+ environment and a wide range of audio technologies. It also comes with a
+ command line interface, and a web interface is under development and should be
+ released soon. 
+
+Package: khovsgol-gtk
+Architecture: any
+Homepage: http://code.google.com/p/khovsgol/
+Depends: libglib2.0-0 (>= 2.32.1), libgee2 (>= 0.6.4), libsoup2.4-1 (>= 2.38.1), libjson-glib-1.0-0 (>= 0.14.2), libavahi-gobject0 (>= 0.6.30), libgtk-3-0 (>= 3.4.1), libunity9 (>= 5.10.0), libindicate5 (>= 0.6.92), ${shlibs:Depends}, ${misc:Depends}
+Description: Khövsgöl Music Player: GTK+ GUI Client
+ Khövsgöl can handle very large collections of music with ease. Minimalists will
+ love its straightforward, clutter-free user interface.
+ .
+ In addition to working as a regular desktop player, Khövsgöl can work in
+ client/server mode, allowing you to broadcast and share music over a local
+ network.
+ .
+ Though designed with the GNOME desktop and Unity shell in mind, it supports any
+ GTK+ environment and a wide range of audio technologies. It also comes with a
+ command line interface, and a web interface is under development and should be
+ released soon. 

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#
+# How we created the debian/control file:
+#
+# Standards-Version
+#
+#  To find the max version supported locally: "apt-get install debian-policy"
+#  and then browse to
+#  "file:///usr/share/doc/debian-policy/policy.html/index.html". The version
+#  will be at the bottom of the page. Only the first three version fields are
+#  normally specified here.
+#
+# debhelper
+#
+#  Use "man debhelper" to find the recommended compatibility version to use
+#  locally. This version must be specified in the "debian/compat" file, but here
+#  we will add a build dependency for it.
+#
+# Other packages
+#
+#  Use "apt-cache info" to find their local versions.
+#
+# Missing build dependencies for Ubuntu 12.04
+#
+#  valac-0.18:
+#   "add-apt-repository ppa:vala-team"
+#
+#  libgstreamer1.0-dev:
+#   "add-apt-repository ppa:gstreamer-developers"
+#
+
+ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
+
+cd "$ROOT/debian/khovsgol"
+debuild -kC11D6BA2

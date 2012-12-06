@@ -1,0 +1,74 @@
+#!/usr/bin/make -f
+
+ROOT=../..
+SRC=$(ROOT)/src
+BIN=debian/tmp
+
+find-sources=$(shell find "$(SRC)/$1" \( -name '*.gs' -o -name '*.vala' \))
+
+KHOVSGOLD_SOURCES=\
+	$(call find-sources,server) \
+	$(SRC)/models.gs $(SRC)/iterators.gs \
+	$(call find-sources,lib)
+
+KHOVSGOLC_SOURCES=\
+	$(call find-sources,client/cli) \
+	$(SRC)/client/api.gs $(SRC)/client/utilities.gs \
+	$(SRC)/models.gs $(SRC)/iterators.gs \
+	$(call find-sources,lib/logging) \
+	$(call find-sources,lib/console) \
+	$(call find-sources,lib/nap) \
+	$(call find-sources,lib/json)
+
+KHOVSGOL_SOURCES=\
+	$(call find-sources,client/gtk) \
+	$(call find-sources,client/plugins) \
+	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs \
+	$(SRC)/models.gs $(SRC)/iterators.gs \
+	$(call find-sources,lib/logging) \
+	$(call find-sources,lib/console) \
+	$(call find-sources,lib/nap) \
+	$(call find-sources,lib/json) \
+	$(call find-sources,lib/dbus) \
+	$(call find-sources,lib/gtk) \
+	$(call find-sources,lib/avahi)
+
+# To avoid the "hardening-no-fortify-functions" lintian warning, see:
+# http://wiki.debian.org/Hardening#Notes_for_packages_using_Vala
+
+VALAC=valac \
+	--basedir=$(SRC) \
+	--directory=$(BIN) \
+	\
+	--thread \
+	--target-glib=2.32 \
+	--Xcc=-w \
+	--debug \
+	$(foreach w,$(CPPFLAGS) $(CFLAGS) $(LDFLAGS),-X $(w)) \
+	\
+	--pkg=libsoup-2.4 \
+	--pkg=gee-1.0 \
+	--pkg=json-glib-1.0 \
+	--pkg=posix --Xcc=-D_GNU_SOURCE \
+	--pkg=sqlite3 \
+	--pkg=gtk+-3.0 \
+	--pkg=libdaemon \
+	--pkg=gstreamer-1.0 \
+	--pkg=unity \
+	--pkg=Indicate-0.7 --Xcc=-I/usr/include/libindicate-0.7 --Xcc=-lindicate \
+	--pkg=taglib_c \
+	--pkg=avahi-gobject
+
+%:
+	dh $@
+
+override_dh_auto_install: khovsgold khovsgolc khovsgol
+
+khovsgold:
+	$(VALAC) --output=khovsgold $(KHOVSGOLD_SOURCES)
+
+khovsgolc:
+	$(VALAC) --output=khovsgolc $(KHOVSGOLC_SOURCES)
+
+khovsgol:
+	$(VALAC) --output=khovsgol $(KHOVSGOL_SOURCES)

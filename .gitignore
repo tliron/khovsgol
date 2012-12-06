@@ -1,3 +1,15 @@
 bin/
 c/
 doc/
+debian/*.dsc
+debian/*.deb
+debian/*.changes
+debian/*.build
+debian/*.tar.gz
+debian/khovsgol/debian/files
+debian/khovsgol/debian/*.log
+debian/khovsgol/debian/*.substvars
+debian/khovsgol/debian/tmp/
+debian/khovsgol/debian/khovsgol-server/
+debian/khovsgol/debian/khovsgol-cli/
+debian/khovsgol/debian/khovsgol-gtk/
