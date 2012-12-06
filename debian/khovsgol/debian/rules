@@ -3,65 +3,7 @@
 SRC=src
 BIN=debian/tmp/bin
 
-<<<<<<< HEAD
 include components.mk
-=======
-find-sources=$(shell find "$(SRC)/$1" \( -name '*.gs' -o -name '*.vala' \))
-
-KHOVSGOLD_SOURCES=\
-	$(call find-sources,server) \
-	$(SRC)/models.gs $(SRC)/iterators.gs \
-	$(call find-sources,lib)
-
-KHOVSGOLC_SOURCES=\
-	$(call find-sources,client/cli) \
-	$(SRC)/client/api.gs $(SRC)/client/utilities.gs \
-	$(SRC)/models.gs $(SRC)/iterators.gs \
-	$(call find-sources,lib/logging) \
-	$(call find-sources,lib/console) \
-	$(call find-sources,lib/nap) \
-	$(call find-sources,lib/json) \
-	$(call find-sources,lib/avahi)
-
-KHOVSGOL_SOURCES=\
-	$(call find-sources,client/gtk) \
-	$(call find-sources,client/plugins) \
-	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs \
-	$(SRC)/models.gs $(SRC)/iterators.gs \
-	$(call find-sources,lib/logging) \
-	$(call find-sources,lib/console) \
-	$(call find-sources,lib/nap) \
-	$(call find-sources,lib/json) \
-	$(call find-sources,lib/dbus) \
-	$(call find-sources,lib/gtk) \
-	$(call find-sources,lib/avahi)
-
-# To avoid the "hardening-no-fortify-functions" lintian warning, see:
-# http://wiki.debian.org/Hardening#Notes_for_packages_using_Vala
-
-VALAC=valac \
-	--basedir=$(SRC) \
-	--directory=$(BIN) \
-	\
-	--thread \
-	--target-glib=2.32 \
-	--Xcc=-w \
-	--debug \
-	$(foreach w,$(CPPFLAGS) $(CFLAGS) $(LDFLAGS),-X $(w)) \
-	\
-	--pkg=libsoup-2.4 \
-	--pkg=gee-1.0 \
-	--pkg=json-glib-1.0 \
-	--pkg=posix --Xcc=-D_GNU_SOURCE \
-	--pkg=sqlite3 \
-	--pkg=gtk+-3.0 \
-	--pkg=libdaemon \
-	--pkg=gstreamer-1.0 \
-	--pkg=unity \
-	--pkg=Indicate-0.7 --Xcc=-I/usr/include/libindicate-0.7 --Xcc=-lindicate \
-	--pkg=taglib_c \
-	--pkg=avahi-gobject
->>>>>>> e23c36db4582f8ce72c6b0e33ace6ab899501aa3
 
 %:
 	echo $(PWD)
