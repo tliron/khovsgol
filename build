@@ -130,8 +130,8 @@ cd "$ROOT"
 sed "s|/usr/bin/|$ROOT/bin/|g" "$ROOT/resources/khovsgol.desktop" > ~/.local/share/applications/khovsgol.desktop
 cp "$ROOT/resources/khovsgol.svg" ~/.local/share/icons/
 
-compile khovsgold src/models.gs src/iterators.gs src/server src/lib
-#compile khovsgolc src/models.gs src/iterators.gs src/client/api.gs src/client/utilities.gs src/client/cli src/lib/logging src/lib/console src/lib/nap src/lib/json
+#compile khovsgold src/models.gs src/iterators.gs src/server src/lib
+compile khovsgolc src/models.gs src/iterators.gs src/client/api.gs src/client/utilities.gs src/client/cli src/lib/logging src/lib/console src/lib/nap src/lib/json src/lib/avahi
 #compile khovsgol src/models.gs src/iterators.gs src/client/client.gs src/client/utilities.gs src/client/configuration.gs src/client/api.gs src/client/plugins src/client/gtk src/lib/logging src/lib/console src/lib/nap src/lib/json src/lib/dbus src/lib/gtk src/lib/avahi
 
 #ccode src/server src/lib

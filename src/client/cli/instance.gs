@@ -2,6 +2,7 @@
 
 uses
     JsonUtil
+    AvahiUtil
 
 namespace Khovsgol.Client.CLI
 
@@ -184,8 +185,14 @@ namespace Khovsgol.Client.CLI
                                     stdout.printf("\n")
                                     
             else if command == "servers"
-                // TODO: Avahi scan until CTRL+C
-                pass
+                try
+                    print "Scanning for servers, press CTRL+C to exit..."
+                    _browser = new Browser("_khovsgol._tcp")
+                    _browser.found.connect(on_avahi_found)
+                    _browser.removed.connect(on_avahi_removed)
+                    new MainLoop().run()
+                except e: Avahi.Error
+                    stderr.printf("%s\n", e.message)
 
             else
                 stderr.printf("Unknown command: %s\n", command)
@@ -193,6 +200,15 @@ namespace Khovsgol.Client.CLI
                         
         _arguments: Arguments
         _api: Client.API
+        _browser: Browser
+
+        def private on_avahi_found(info: ServiceFoundInfo)
+            // Only show IPv4
+            if info.protocol == Avahi.Protocol.INET
+                stdout.printf("Found: %s (port %u)\n", info.hostname, info.port)
+        
+        def private on_avahi_removed(info: ServiceInfo)
+            stdout.printf("Disappeared: %s\n", info.to_id())
         
         def private static indent(indentation: int)
             if indentation > 0

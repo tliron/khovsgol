@@ -18,7 +18,8 @@ KHOVSGOLC_SOURCES=\
 	$(call find-sources,lib/logging) \
 	$(call find-sources,lib/console) \
 	$(call find-sources,lib/nap) \
-	$(call find-sources,lib/json)
+	$(call find-sources,lib/json) \
+	$(call find-sources,lib/avahi)
 
 KHOVSGOL_SOURCES=\
 	$(call find-sources,client/gtk) \

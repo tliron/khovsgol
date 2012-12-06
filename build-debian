@@ -34,3 +34,6 @@ ROOT=$(cd "${0%/*}" 2>/dev/null; echo "$PWD")
 
 cd "$ROOT/debian/khovsgol"
 debuild -kC11D6BA2
+
+# using pbuilder
+#DIST=precise pdebuild -kC11D6BA2
