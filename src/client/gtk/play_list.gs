@@ -4,7 +4,7 @@ uses
     Gtk
     JsonUtil
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client.GTK
 
     class PlayList: Alignment
         construct(instance: Instance)
@@ -157,20 +157,20 @@ namespace Khovsgol.Client.GUI
             add(box)
             set(0, 0, 1, 1)
             
-            _instance.api.cursor_mode_change_gdk.connect(on_cursor_mode_changed)
-            _instance.api.play_mode_change_gdk.connect(on_play_mode_changed)
-            _instance.api.play_list_change_gdk.connect(on_play_list_changed)
-            _instance.api.position_in_play_list_change_gdk.connect(on_position_in_play_list_changed)
-            _instance.api.position_in_track_change_gdk.connect(on_position_in_track_changed)
+            ((API) _instance.api).cursor_mode_change_gdk.connect(on_cursor_mode_changed)
+            ((API) _instance.api).play_mode_change_gdk.connect(on_play_mode_changed)
+            ((API) _instance.api).play_list_change_gdk.connect(on_play_list_changed)
+            ((API) _instance.api).position_in_play_list_change_gdk.connect(on_position_in_play_list_changed)
+            ((API) _instance.api).position_in_track_change_gdk.connect(on_position_in_track_changed)
 
         prop readonly accel_group: AccelGroup
         
         def private on_unrealized()
-            _instance.api.cursor_mode_change_gdk.disconnect(on_cursor_mode_changed)
-            _instance.api.play_mode_change_gdk.disconnect(on_play_mode_changed)
-            _instance.api.play_list_change_gdk.disconnect(on_play_list_changed)
-            _instance.api.position_in_play_list_change_gdk.disconnect(on_position_in_play_list_changed)
-            _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
+            ((API) _instance.api).cursor_mode_change_gdk.disconnect(on_cursor_mode_changed)
+            ((API) _instance.api).play_mode_change_gdk.disconnect(on_play_mode_changed)
+            ((API) _instance.api).play_list_change_gdk.disconnect(on_play_list_changed)
+            ((API) _instance.api).position_in_play_list_change_gdk.disconnect(on_position_in_play_list_changed)
+            ((API) _instance.api).position_in_track_change_gdk.disconnect(on_position_in_track_changed)
        
         def private on_progress_render(layout: CellLayout, renderer: dynamic CellRenderer, model: TreeModel, iter: TreeIter)
             position: Value
@@ -275,7 +275,9 @@ namespace Khovsgol.Client.GUI
                 if text is not null
                     try
                         var positions = from_array(text)
-                        _instance.api.move_in_play_list(_instance.player, destination, positions, true, true)
+                        API.in_gdk = true
+                        _instance.api.move_in_play_list(_instance.player, destination, positions, true)
+                        API.in_gdk = false
                         Gdk.drop_finish(context, true, time)
                         return
                     except e: GLib.Error
@@ -287,7 +289,9 @@ namespace Khovsgol.Client.GUI
                 if text is not null
                     try
                         var tracks = from_array(text)
-                        _instance.api.add_to_play_list(_instance.player, destination, tracks, true, true)
+                        API.in_gdk = true
+                        _instance.api.add_to_play_list(_instance.player, destination, tracks, true)
+                        API.in_gdk = false
                         Gdk.drop_finish(context, true, time)
                         return
                     except e: GLib.Error
@@ -321,10 +325,14 @@ namespace Khovsgol.Client.GUI
         def private on_delete()
             var positions = get_selected_positions()
             if positions.get_length() > 0
-                _instance.api.remove_from_play_list(_instance.player, positions, true, true)
+                API.in_gdk = true
+                _instance.api.remove_from_play_list(_instance.player, positions, true)
+                API.in_gdk = false
         
         def private on_clear()
-            _instance.api.set_play_list_paths(_instance.player, new Json.Array(), true, true)
+            API.in_gdk = true
+            _instance.api.set_play_list_paths(_instance.player, new Json.Array(), true)
+            API.in_gdk = false
 
         def private on_save_as_compilation()
             if _tracks.to_json().get_length() > 0

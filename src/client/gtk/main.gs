@@ -3,7 +3,7 @@
 uses
     Gtk
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client.GTK
 
     class MainWindow: Window
         construct(instance: Instance)
@@ -81,7 +81,9 @@ namespace Khovsgol.Client.GUI
               
         def private on_realized()
             _instance.api.reset_watch()
-            _instance.api.update(true)
+            API.in_gdk = true
+            _instance.api.update()
+            API.in_gdk = false
                 
         def private on_delete(event: Gdk.EventAny): bool
             iconify()

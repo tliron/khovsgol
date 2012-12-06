@@ -3,7 +3,7 @@
 uses
     Gtk
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client.GTK
 
     //def get_stock_icon_pixbuf(window, name):
       //  return window.render_icon(getattr(Gtk, 'STOCK_' + name), Gtk.IconSize.MENU, None)

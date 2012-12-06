@@ -4,7 +4,7 @@ uses
     Gtk
     JsonUtil
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client.GTK
 
     interface LibraryStyle: Style
         def abstract fill(node: LibraryNode)

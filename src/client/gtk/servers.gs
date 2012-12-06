@@ -4,7 +4,7 @@ uses
     Gtk
     AvahiUtil
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client.GTK
 
     class Servers: Window
         construct(instance: Instance)

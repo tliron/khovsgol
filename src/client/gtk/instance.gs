@@ -3,7 +3,7 @@
 uses
     DBusUtil
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client.GTK
 
     class Instance: Object implements Client.Instance
         construct(args: array of string) raises GLib.Error
@@ -12,7 +12,7 @@ namespace Khovsgol.Client.GUI
             initialize_logging()
             
             _dir = File.new_for_path(args[0]).get_parent()
-            _api = new Client.API("localhost", 8181)
+            _api = new API("localhost", 8181)
             player = Environment.get_user_name()
             _window = new MainWindow(self)
             
@@ -102,6 +102,6 @@ namespace Khovsgol.Client.GUI
 init
     try
         GtkUtil.initialize()
-        new Khovsgol.Client.GUI.Instance(args).start()
+        new Khovsgol.Client.GTK.Instance(args).start()
     except e: GLib.Error
         stderr.printf("%s\n", e.message)

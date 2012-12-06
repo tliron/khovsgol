@@ -99,15 +99,12 @@ KHOVSGOLC_SOURCES=\
 	$(call find-sources,lib/json) \
 	$(call find-sources,lib/avahi)
 
-# TODO: remove Gdk. use in Client.API
-
 KHOVSGOLC_PACKAGES=\
 	--pkg=libsoup-2.4 \
 	--pkg=gee-1.0 \
 	--pkg=json-glib-1.0 \
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
-	--pkg=avahi-gobject \
-	--pkg=gtk+-3.0
+	--pkg=avahi-gobject
 
 khovsgolc:
 	$(VALAC) --output=khovsgolc $(KHOVSGOLC_SOURCES) $(KHOVSGOLC_PACKAGES)

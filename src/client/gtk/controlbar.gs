@@ -3,7 +3,7 @@
 uses
     Gtk
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client.GTK
 
     class ControlBar: Toolbar
         construct(instance: Instance)
@@ -100,16 +100,16 @@ namespace Khovsgol.Client.GUI
             add(progress_item)
             add(visualization)
             
-            _instance.api.server_change_gdk.connect(on_server_changed)
-            _instance.api.play_mode_change_gdk.connect(on_play_mode_changed)
-            _instance.api.position_in_track_change_gdk.connect(on_position_in_track_changed)
+            ((API) _instance.api).server_change_gdk.connect(on_server_changed)
+            ((API) _instance.api).play_mode_change_gdk.connect(on_play_mode_changed)
+            ((API) _instance.api).position_in_track_change_gdk.connect(on_position_in_track_changed)
             
         prop readonly accel_group: AccelGroup
             
         def private on_unrealized()
-            _instance.api.server_change_gdk.disconnect(on_server_changed)
-            _instance.api.play_mode_change_gdk.disconnect(on_play_mode_changed)
-            _instance.api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
+            ((API) _instance.api).server_change_gdk.disconnect(on_server_changed)
+            ((API) _instance.api).play_mode_change_gdk.disconnect(on_play_mode_changed)
+            ((API) _instance.api).position_in_track_change_gdk.disconnect(on_position_in_track_changed)
             
         def private on_quit()
             _instance.stop()

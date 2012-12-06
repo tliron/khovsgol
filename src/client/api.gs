@@ -43,23 +43,17 @@ namespace Khovsgol.Client
                 return AtomicInt.get(ref _is_polling) == 1
 
         event server_change(base_url: string?, old_base_url: string?)
-        event server_change_gdk(base_url: string?, old_base_url: string?)
         event play_mode_change(play_mode: string?, old_play_mode: string?)
-        event play_mode_change_gdk(play_mode: string?, old_play_mode: string?)
         event cursor_mode_change(cursor_mode: string?, old_cursor_mode: string?)
-        event cursor_mode_change_gdk(cursor_mode: string?, old_cursor_mode: string?)
         event position_in_play_list_change(position_in_play_list: int, old_position_in_play_list: int)
-        event position_in_play_list_change_gdk(position_in_play_list: int, old_position_in_play_list: int)
         event position_in_track_change(position_in_track: double, old_position_in_track: double, track_duration: double)
-        event position_in_track_change_gdk(position_in_track: double, old_position_in_track: double, track_duration: double)
         event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
-        event play_list_change_gdk(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
 
         def new connect(host: string, port: uint)
             _client.base_url = "http://%s:%u".printf(host, port)
 
-        def update(in_gdk: bool = false)
-            get_player(watching_player, in_gdk)
+        def update()
+            get_player(watching_player)
         
         def reset_watch()
             _watching_player_lock.lock()
@@ -584,7 +578,7 @@ namespace Khovsgol.Client
          *  playList: =get_play_list
          * }
          */
-        def get_player(player: string, in_gdk: bool = false): Json.Object?
+        def get_player(player: string): Json.Object?
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
@@ -593,7 +587,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object, in_gdk)
+                    process_player(player_object)
                     return player_object
                 else
                     return null
@@ -606,7 +600,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_play_mode(player: string, play_mode: string, in_gdk: bool = false): Json.Object?
+        def set_play_mode(player: string, play_mode: string): Json.Object?
             try
                 var payload = new Json.Object()
                 payload.set_string_member("playMode", play_mode)
@@ -619,7 +613,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object, in_gdk)
+                    process_player(player_object)
                     return player_object
                 else
                     return null
@@ -632,7 +626,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_cursor_mode(player: string, cursor_mode: string, in_gdk: bool = false): Json.Object?
+        def set_cursor_mode(player: string, cursor_mode: string): Json.Object?
             try
                 var payload = new Json.Object()
                 payload.set_string_member("cursorMode", cursor_mode)
@@ -645,7 +639,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object, in_gdk)
+                    process_player(player_object)
                     return player_object
                 else
                     return null
@@ -658,7 +652,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_position_in_play_list(player: string, position: int, in_gdk: bool = false): Json.Object?
+        def set_position_in_play_list(player: string, position: int): Json.Object?
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
@@ -673,7 +667,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object, in_gdk)
+                    process_player(player_object)
                     return player_object
                 else
                     return null
@@ -686,7 +680,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_position_in_play_list_string(player: string, position: string, in_gdk: bool = false): Json.Object?
+        def set_position_in_play_list_string(player: string, position: string): Json.Object?
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
@@ -701,7 +695,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object, in_gdk)
+                    process_player(player_object)
                     return player_object
                 else
                     return null
@@ -714,7 +708,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_position_in_track(player: string, position: double, in_gdk: bool = false): Json.Object?
+        def set_position_in_track(player: string, position: double): Json.Object?
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
@@ -729,7 +723,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object, in_gdk)
+                    process_player(player_object)
                     return player_object
                 else
                     return null
@@ -742,7 +736,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_ratio_in_track(player: string, ratio: double, in_gdk: bool = false): Json.Object?
+        def set_ratio_in_track(player: string, ratio: double): Json.Object?
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
@@ -757,7 +751,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object, in_gdk)
+                    process_player(player_object)
                     return player_object
                 else
                     return null
@@ -791,7 +785,7 @@ namespace Khovsgol.Client
          *  tracks: =get_tracks
          * }
          */
-        def get_play_list(player: string, full: bool = false, in_gdk: bool = false): Json.Object?
+        def get_play_list(player: string, full: bool = false): Json.Object?
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
@@ -803,7 +797,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity, in_gdk)
+                        process_player(entity)
                     return entity
                 else
                     return null
@@ -816,7 +810,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_play_list
          */
-        def set_play_list_paths(player: string, paths: Json.Array, full: bool = false, in_gdk: bool = false): Json.Object?
+        def set_play_list_paths(player: string, paths: Json.Array, full: bool = false): Json.Object?
             try
                 var payload = new Json.Object()
                 payload.set_array_member("paths", paths)
@@ -832,7 +826,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity, in_gdk)
+                        process_player(entity)
                     return entity
                 else
                     return null
@@ -846,7 +840,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_play_list
          */
-        def move_in_play_list(player: string, destination: int, positions: Json.Array, full: bool = false, in_gdk: bool = false): Json.Object?
+        def move_in_play_list(player: string, destination: int, positions: Json.Array, full: bool = false): Json.Object?
             try
                 var payload = new Json.Object()
                 if destination != int.MIN
@@ -868,7 +862,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity, in_gdk)
+                        process_player(entity)
                     return entity
                 else
                     return null
@@ -882,7 +876,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_play_list
          */
-        def add_to_play_list(player: string, position: int, paths: Json.Array, full: bool = false, in_gdk: bool = false): Json.Object?
+        def add_to_play_list(player: string, position: int, paths: Json.Array, full: bool = false): Json.Object?
             try
                 var payload = new Json.Object()
                 if position != int.MIN
@@ -904,7 +898,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity, in_gdk)
+                        process_player(entity)
                     return entity
                 else
                     return null
@@ -917,7 +911,7 @@ namespace Khovsgol.Client
          * 
          * receive =get_play_list
          */
-        def remove_from_play_list(player: string, positions: Json.Array, full: bool = false, in_gdk: bool = false): Json.Object?
+        def remove_from_play_list(player: string, positions: Json.Array, full: bool = false): Json.Object?
             try
                 var payload = new Json.Object()
                 payload.set_array_member("remove", positions)
@@ -933,7 +927,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity, in_gdk)
+                        process_player(entity)
                     return entity
                 else
                     return null
@@ -987,7 +981,7 @@ namespace Khovsgol.Client
             // TODO: special handling for network errors
             _logger.exception(e)
         
-        def private process_player(player: Json.Object?, in_gdk: bool = false)
+        def private process_player(player: Json.Object?)
             if player is null
                 return
             if !is_polling
@@ -997,10 +991,6 @@ namespace Khovsgol.Client
             try
                 if _last_base_url != _client.base_url
                     server_change(_client.base_url, _last_base_url)
-                    if in_gdk
-                        server_change_gdk(_client.base_url, _last_base_url)
-                    else
-                        new ServerChangeGdk(self, _client.base_url, _last_base_url)
                     _last_base_url = _client.base_url
             
                 var name = get_string_member_or_null(player, "name")
@@ -1014,10 +1004,6 @@ namespace Khovsgol.Client
                     if (id != _play_list_id) || (version != _play_list_version)
                         var tracks = new JsonTracks(get_array_member_or_null(play_list, "tracks"))
                         play_list_change(id, version, _play_list_id, _play_list_version, tracks)
-                        if in_gdk
-                            play_list_change_gdk(id, version, _play_list_id, _play_list_version, tracks)
-                        else
-                            new PlayListChangeGdk(self, id, version, _play_list_id, _play_list_version, tracks)
                         _play_list_id = id
                         _play_list_version = version
 
@@ -1025,20 +1011,12 @@ namespace Khovsgol.Client
                 if play_mode is not null
                     if play_mode != _play_mode
                         play_mode_change(play_mode, _play_mode)
-                        if in_gdk
-                            play_mode_change_gdk(play_mode, _play_mode)
-                        else
-                            new PlayModeChangeGdk(self, play_mode, _play_mode)
                         _play_mode = play_mode
 
                 var cursor_mode = get_string_member_or_null(player, "cursorMode")
                 if cursor_mode is not null
                     if cursor_mode != _cursor_mode
                         cursor_mode_change(cursor_mode, _cursor_mode)
-                        if in_gdk
-                            cursor_mode_change_gdk(cursor_mode, _cursor_mode)
-                        else
-                            new CursorModeChangeGdk(self, cursor_mode, _cursor_mode)
                         _cursor_mode = cursor_mode
 
                 var cursor = get_object_member_or_null(player, "cursor")
@@ -1046,20 +1024,12 @@ namespace Khovsgol.Client
                     var position_in_play_list = get_int_member_or_min(cursor, "positionInPlayList")
                     if position_in_play_list != _position_in_play_list
                         position_in_play_list_change(position_in_play_list, _position_in_play_list)
-                        if in_gdk
-                            position_in_play_list_change_gdk(position_in_play_list, _position_in_play_list)
-                        else
-                            new PositionInPlayListChangeGdk(self, position_in_play_list, _position_in_play_list)
                         _position_in_play_list = position_in_play_list
                         
                     var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
                     var track_duration = get_double_member_or_min(cursor, "trackDuration")
                     if position_in_track != _position_in_track
                         position_in_track_change(position_in_track, _position_in_track, track_duration)
-                        if in_gdk
-                            position_in_track_change_gdk(position_in_track, _position_in_track, track_duration)
-                        else
-                            new PositionInTrackChangeGdk(self, position_in_track, _position_in_track, track_duration)
                         _position_in_track = position_in_track
             finally
                 _watching_player_lock.unlock()
@@ -1078,113 +1048,3 @@ namespace Khovsgol.Client
             AtomicInt.set(ref _is_polling, 0)
             AtomicInt.set(ref _is_poll_stopping, 0)
             return true
-
-    class ServerChangeGdk: GLib.Object
-        construct(api: API, base_url: string?, old_base_url: string?)
-            _api = api
-            _base_url = base_url
-            _old_base_url = old_base_url
-            ref()
-            Gdk.threads_add_idle(idle)
-
-        _api: API
-        _base_url: string?
-        _old_base_url: string?
-
-        def private idle(): bool
-            _api.server_change_gdk(_base_url, _old_base_url)
-            unref()
-            return false
-
-    class PlayModeChangeGdk: GLib.Object
-        construct(api: API, play_mode: string?, old_play_mode: string?)
-            _api = api
-            _play_mode = play_mode
-            _old_play_mode = old_play_mode
-            ref()
-            Gdk.threads_add_idle(idle)
-
-        _api: API
-        _play_mode: string?
-        _old_play_mode: string?
-
-        def private idle(): bool
-            _api.play_mode_change_gdk(_play_mode, _old_play_mode)
-            unref()
-            return false
-
-    class CursorModeChangeGdk: GLib.Object
-        construct(api: API, cursor_mode: string?, old_cursor_mode: string?)
-            _api = api
-            _cursor_mode = cursor_mode
-            _old_cursor_mode = old_cursor_mode
-            ref()
-            Gdk.threads_add_idle(idle)
-
-        _api: API
-        _cursor_mode: string?
-        _old_cursor_mode: string?
-
-        def private idle(): bool
-            _api.cursor_mode_change_gdk(_cursor_mode, _old_cursor_mode)
-            unref()
-            return false
-
-    class PositionInPlayListChangeGdk: GLib.Object
-        construct(api: API, position_in_play_list: int, old_position_in_play_list: int)
-            _api = api
-            _position_in_play_list = position_in_play_list
-            _old_position_in_play_list = old_position_in_play_list
-            ref()
-            Gdk.threads_add_idle(idle)
-
-        _api: API
-        _position_in_play_list: int
-        _old_position_in_play_list: int
-
-        def private idle(): bool
-            _api.position_in_play_list_change_gdk(_position_in_play_list, _old_position_in_play_list)
-            unref()
-            return false
-
-    class PositionInTrackChangeGdk: GLib.Object
-        construct(api: API, position_in_track: double, old_position_in_track: double, track_duration: double)
-            _api = api
-            _position_in_track = position_in_track
-            _old_position_in_track = old_position_in_track
-            _track_duration = track_duration
-            ref()
-            Gdk.threads_add_idle(idle)
-
-        _api: API
-        _position_in_track: double
-        _old_position_in_track: double
-        _track_duration: double
-
-        def private idle(): bool
-            _api.position_in_track_change_gdk(_position_in_track, _old_position_in_track, _track_duration)
-            unref()
-            return false
-
-    class PlayListChangeGdk: GLib.Object
-        construct(api: API, id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
-            _api = api
-            _id = id
-            _version = version
-            _old_id = old_id
-            _old_version = old_version
-            _tracks = tracks
-            ref()
-            Gdk.threads_add_idle(idle)
-
-        _api: API
-        _id: string?
-        _version: int64
-        _old_id: string?
-        _old_version: int64
-        _tracks: IterableOfTrack
-
-        def private idle(): bool
-            _api.play_list_change_gdk(_id, _version, _old_id, _old_version, _tracks)
-            unref()
-            return false

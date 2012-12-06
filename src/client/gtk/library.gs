@@ -4,7 +4,7 @@ uses
     Gtk
     JsonUtil
 
-namespace Khovsgol.Client.GUI
+namespace Khovsgol.Client.GTK
 
     class Library: Alignment
         construct(instance: Instance)
@@ -102,12 +102,12 @@ namespace Khovsgol.Client.GUI
             add(box)
             set(0, 0, 1, 1)
 
-            _instance.api.server_change_gdk.connect(on_server_changed)
+            ((API) _instance.api).server_change_gdk.connect(on_server_changed)
         
         prop readonly accel_group: AccelGroup
             
         def private on_unrealized()
-            _instance.api.server_change_gdk.disconnect(on_server_changed)
+            ((API) _instance.api).server_change_gdk.disconnect(on_server_changed)
 
         //def private on_progress_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
           //  pass
@@ -194,7 +194,9 @@ namespace Khovsgol.Client.GUI
         def private on_add()
             var tracks = gather_selected_tracks()
             if tracks is not null
-                _instance.api.add_to_play_list(_instance.player, int.MIN, tracks, true, true)
+                API.in_gdk = true
+                _instance.api.add_to_play_list(_instance.player, int.MIN, tracks, true)
+                API.in_gdk = false
 
         def private on_add_at()
             pass
