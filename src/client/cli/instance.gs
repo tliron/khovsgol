@@ -186,10 +186,22 @@ namespace Khovsgol.Client.CLI
                                     
             else if command == "servers"
                 try
+<<<<<<< HEAD
+                    print "Scanning for servers, press any key to exit..."
+                    
+                    _browser = new Browser("_khovsgol._tcp")
+                    _browser.found.connect(on_avahi_found)
+                    _browser.removed.connect(on_avahi_removed)
+
+                    unblock_stdin()
+                    Idle.add(exit_on_key_press)
+                    
+=======
                     print "Scanning for servers, press CTRL+C to exit..."
                     _browser = new Browser("_khovsgol._tcp")
                     _browser.found.connect(on_avahi_found)
                     _browser.removed.connect(on_avahi_removed)
+>>>>>>> e23c36db4582f8ce72c6b0e33ace6ab899501aa3
                     new MainLoop().run()
                 except e: Avahi.Error
                     stderr.printf("%s\n", e.message)
@@ -201,6 +213,18 @@ namespace Khovsgol.Client.CLI
         _arguments: Arguments
         _api: Client.API
         _browser: Browser
+<<<<<<< HEAD
+        
+        _original_termios: Posix.termios
+        
+        def private exit_on_key_press(): bool
+            if has_stdin()
+                stdin.getc()
+                revert_stdin()
+                Posix.exit(0)
+            return true
+=======
+>>>>>>> e23c36db4582f8ce72c6b0e33ace6ab899501aa3
 
         def private on_avahi_found(info: ServiceFoundInfo)
             // Only show IPv4
@@ -209,6 +233,28 @@ namespace Khovsgol.Client.CLI
         
         def private on_avahi_removed(info: ServiceInfo)
             stdout.printf("Disappeared: %s\n", info.to_id())
+<<<<<<< HEAD
+        
+        def private unblock_stdin()
+            Posix.tcgetattr(Posix.STDIN_FILENO, out _original_termios)
+            var new_termios = _original_termios
+            new_termios.c_lflag &= ~(Posix.ICANON|Posix.ECHO)
+            Posix.tcsetattr(Posix.STDIN_FILENO, Posix.TCSANOW, new_termios)
+        
+        def private revert_stdin()
+            Posix.tcsetattr(Posix.STDIN_FILENO, Posix.TCSANOW, _original_termios)
+        
+        def static private has_stdin(): bool
+            // See: http://rosettacode.org/wiki/Keyboard_input/Keypress_check#C
+            fds: Posix.fd_set
+            Posix.FD_ZERO(out fds)
+            Posix.FD_SET(Posix.STDIN_FILENO, ref fds)
+            var timeout = Posix.timeval()
+            timeout.tv_usec = timeout.tv_sec = 0
+            Posix.select(Posix.STDIN_FILENO + 1, &fds, null, null, timeout)
+            return Posix.FD_ISSET(Posix.STDIN_FILENO, fds) == 1
+=======
+>>>>>>> e23c36db4582f8ce72c6b0e33ace6ab899501aa3
         
         def private static indent(indentation: int)
             if indentation > 0

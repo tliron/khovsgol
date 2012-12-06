@@ -1,9 +1,11 @@
 #!/usr/bin/make -f
 
-ROOT=../..
-SRC=$(ROOT)/src
-BIN=debian/tmp
+SRC=src
+BIN=debian/tmp/bin
 
+<<<<<<< HEAD
+include components.mk
+=======
 find-sources=$(shell find "$(SRC)/$1" \( -name '*.gs' -o -name '*.vala' \))
 
 KHOVSGOLD_SOURCES=\
@@ -59,17 +61,10 @@ VALAC=valac \
 	--pkg=Indicate-0.7 --Xcc=-I/usr/include/libindicate-0.7 --Xcc=-lindicate \
 	--pkg=taglib_c \
 	--pkg=avahi-gobject
+>>>>>>> e23c36db4582f8ce72c6b0e33ace6ab899501aa3
 
 %:
+	echo $(PWD)
 	dh $@
 
 override_dh_auto_install: khovsgold khovsgolc khovsgol
-
-khovsgold:
-	$(VALAC) --output=khovsgold $(KHOVSGOLD_SOURCES)
-
-khovsgolc:
-	$(VALAC) --output=khovsgolc $(KHOVSGOLC_SOURCES)
-
-khovsgol:
-	$(VALAC) --output=khovsgol $(KHOVSGOL_SOURCES)

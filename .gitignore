@@ -6,6 +6,8 @@ debian/*.deb
 debian/*.changes
 debian/*.build
 debian/*.tar.gz
+debian/khovsgol/*.mk
+debian/khovsgol/src/
 debian/khovsgol/debian/files
 debian/khovsgol/debian/*.log
 debian/khovsgol/debian/*.substvars
