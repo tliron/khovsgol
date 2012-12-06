@@ -1,1 +1,3 @@
-bin/khovsgol usr/lib/khovsgol
+bin/khovsgol                 usr/bin
+resources/khovsgol.desktop   usr/share/applications
+resources/khovsgol.svg       usr/share/icons/gnome/scalable/apps

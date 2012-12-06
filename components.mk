@@ -36,6 +36,7 @@ find-sources=$(shell find "$(SRC)/$1" \( -name '*.gs' -o -name '*.vala' \))
 VALAC=valac \
 	--basedir=$(SRC) \
 	--directory=$(BIN) \
+	--thread \
 	--debug \
 	--target-glib=2.32 \
 	--Xcc=-w \
@@ -44,6 +45,7 @@ VALAC=valac \
 VALAC.C=valac \
 	--ccode \
 	--basedir=$(SRC) \
+	--thread \
 	--debug \
 	--target-glib=2.32 \
 	--Xcc=-w \
@@ -78,7 +80,7 @@ KHOVSGOLD_PACKAGES=\
 	--pkg=avahi-gobject
 
 khovsgold:
-	$(VALAC) --output=khovsgold --thread $(KHOVSGOLD_SOURCES) $(KHOVSGOLD_PACKAGES)
+	$(VALAC) --output=khovsgold $(KHOVSGOLD_SOURCES) $(KHOVSGOLD_PACKAGES)
 
 khovsgold.c:
 	$(VALAC.C) --directory=c/khovsgold $(KHOVSGOLD_SOURCES) $(KHOVSGOLD_PACKAGES)

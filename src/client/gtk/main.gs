@@ -8,25 +8,20 @@ namespace Khovsgol.Client.GUI
     class MainWindow: Window
         construct(instance: Instance)
             _instance = instance
-
-            var icon_file = File.new_for_path("%s/.local/share/icons/khovsgol.svg".printf(Environment.get_home_dir()))
-            if icon_file.query_exists()
+            
+            // Try to use icon directly from file
+            var icon_file = _instance.get_resource("khovsgol.svg")
+            if icon_file is not null
+                try
+                    if !set_icon_from_file(icon_file.get_path())
+                        _logger.warningf("Could not set icon: %s", icon_file.get_path())
+                        icon_name = "khovsgol"
+                except e: GLib.Error
+                    _logger.exception(e)
+                    icon_name = "khovsgol"
+            else
                 // Use system icon
                 icon_name = "khovsgol"
-            else
-                icon_file = File.new_for_path("/usr/share/icons/khovsgol.svg")
-                if icon_file.query_exists()
-                    // Use system icon
-                    icon_name = "khovsgol"
-                else
-                    // Use icon directly from file
-                    icon_file = _instance.get_resource("khovsgol.svg")
-                    if icon_file is not null
-                        try
-                            if !set_icon_from_file(icon_file.get_path())
-                                _logger.warningf("Could not set icon: %s", icon_file.get_path())
-                        except e: GLib.Error
-                            _logger.exception(e)
             
             realize.connect(on_realized)
             delete_event.connect(on_delete)
