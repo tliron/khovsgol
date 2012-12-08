@@ -60,7 +60,7 @@ namespace Khovsgol.Server
         def abstract get_timestamp(path: string): int64 raises GLib.Error
         def abstract set_timestamp(path: string, timestamp: int64) raises GLib.Error
         
-        def add_transaction(album_path: string, destination: int, paths: Json.Array, transaction: bool = true): int raises GLib.Error
+        def add_transaction(album_path: string, destination: int, paths: Json.Array, ref stable_position: int, transaction: bool = true): int raises GLib.Error
             var length = paths.get_length()
             if length == 0
                 return destination
@@ -96,10 +96,16 @@ namespace Khovsgol.Server
                 raise e
             if transaction
                 commit()
+
+            if (stable_position != int.MIN) && (destination <= stable_position)
+                stable_position += (int) length
             
             return destination
         
-        def remove_transaction(album_path: string, positions: Json.Array, transaction: bool = true) raises GLib.Error
+        /*
+         * Note: we will change the positions array!
+         */
+        def remove_transaction(album_path: string, positions: Json.Array, ref stable_position: int, transaction: bool = true) raises GLib.Error
             var length = positions.get_length()
             if length == 0
                 return
@@ -122,6 +128,13 @@ namespace Khovsgol.Server
                                 var p = get_int_element_or_min(positions, ii)
                                 if p > position
                                     positions.get_element(ii).set_int(p - 1)
+                        
+                        // Stable position might be affected
+                        if stable_position != int.MIN
+                            if position == stable_position
+                                stable_position = int.MIN
+                            else if position < stable_position
+                                stable_position--
             except e: GLib.Error
                 if transaction
                     rollback()
@@ -129,7 +142,10 @@ namespace Khovsgol.Server
             if transaction
                 commit()
         
-        def move_transaction(album_path: string, destination: int, positions: Json.Array, transaction: bool = true): int raises GLib.Error
+        /*
+         * Note: we will change the positions array!
+         */
+        def move_transaction(album_path: string, destination: int, positions: Json.Array, ref stable_position: int, transaction: bool = true): int raises GLib.Error
             var length = positions.get_length()
             if length == 0
                 return destination
@@ -146,7 +162,6 @@ namespace Khovsgol.Server
                         destination = position
                 destination++
                 
-            // Remove the track pointers
             if transaction
                 begin()
             try
@@ -169,8 +184,15 @@ namespace Khovsgol.Server
                                     positions.get_element(ii).set_int(p - 1)
                                 
                         // We need to also move back the destination position
-                        if destination > position
+                        if position < destination
                             destination--
+
+                        // Stable position might be affected
+                        if stable_position != int.MIN
+                            if position == stable_position
+                                stable_position = destination
+                            else if position < stable_position
+                                stable_position--
 
                 // Make room by moving the remaining track pointers forward
                 move_track_pointers(album_path, paths.size, destination)
@@ -181,8 +203,14 @@ namespace Khovsgol.Server
                     var track_pointer = new TrackPointer()
                     track_pointer.path = path
                     track_pointer.album = album_path
-                    track_pointer.position = position++
+                    track_pointer.position = position
                     save_track_pointer(track_pointer)
+
+                    // Stable position might be affected
+                    if (stable_position != int.MIN) && (position < stable_position)
+                        stable_position++
+                    
+                    position++
             except e: GLib.Error
                 if transaction
                     rollback()

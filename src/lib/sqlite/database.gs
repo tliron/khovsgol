@@ -39,10 +39,11 @@ namespace SqliteUtil
         def dump_table(name: string) raises SqliteUtil.Error
             statement: Statement
             assert_ok(_db.prepare_v2("SELECT * FROM %s LIMIT 1".printf(name), -1, out statement))
-            var cols = statement.column_count()
+            var columns = statement.column_count()
+            var last = columns - 1
             var result = statement.step()
             while result == ROW
-                for var c = 0 to (cols - 1)
+                for var c = 0 to last
                     var txt = statement.column_text(c)
                     stdout.printf("%s = %s\n", statement.column_name(c), txt)
                 result = statement.step()

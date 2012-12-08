@@ -18,6 +18,7 @@ namespace Khovsgol.Client.GTK
             position_in_play_list_change.connect(on_position_in_play_list_change)
             position_in_track_change.connect(on_position_in_track_change)
             play_list_change.connect(on_play_list_change)
+            track_change.connect(on_track_change)
 
         event server_change_gdk(base_url: string?, old_base_url: string?)
         event play_mode_change_gdk(play_mode: string?, old_play_mode: string?)
@@ -25,6 +26,7 @@ namespace Khovsgol.Client.GTK
         event position_in_play_list_change_gdk(position_in_play_list: int, old_position_in_play_list: int)
         event position_in_track_change_gdk(position_in_track: double, old_position_in_track: double, track_duration: double)
         event play_list_change_gdk(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
+        event track_change_gdk(track: Track?, old_track: Track?)
         
         prop static in_gdk: bool
             get
@@ -69,6 +71,12 @@ namespace Khovsgol.Client.GTK
                 play_list_change_gdk(id, version, old_id, old_version, tracks)
             else
                 new PlayListChangeGdk(self, id, version, old_id, old_version, tracks)
+
+        def private on_track_change(track: Track?, old_track: Track?)
+            if in_gdk
+                track_change_gdk(track, old_track)
+            else
+                new TrackChangeGdk(self, track, old_track)
 
         class private ServerChangeGdk: Object
             construct(api: API, base_url: string?, old_base_url: string?)
@@ -177,5 +185,22 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.play_list_change_gdk(_id, _version, _old_id, _old_version, _tracks)
+                unref()
+                return false
+
+        class private TrackChangeGdk: Object
+            construct(api: API, track: Track?, old_track: Track?)
+                _api = api
+                _track = track
+                _old_track = old_track
+                ref()
+                Gdk.threads_add_idle(idle)
+
+            _api: API
+            _track: Track?
+            _old_track: Track?
+
+            def private idle(): bool
+                _api.track_change_gdk(_track, _old_track)
                 unref()
                 return false

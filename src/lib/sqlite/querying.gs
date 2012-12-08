@@ -74,7 +74,8 @@ namespace SqliteUtil
 
             var columns = _statement.column_count()
             if columns > 0
-                for var c = 0 to (columns - 1)
+                var last = columns - 1
+                for var c = 0 to last
                     _column_names[_statement.column_name(c)] = c
 
             _first = true

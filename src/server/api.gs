@@ -271,7 +271,8 @@ namespace Khovsgol.Server
                     return
                 
                 if positions is not null
-                    _crucible.libraries.move_transaction(album_path, destination, positions)
+                    stable_position: int = int.MIN
+                    _crucible.libraries.move_transaction(album_path, destination, positions, ref stable_position)
 
                     processed = true
             
@@ -291,14 +292,16 @@ namespace Khovsgol.Server
                     return
 
                 if paths is not null
-                    _crucible.libraries.add_transaction(album_path, destination, paths)
+                    stable_position: int = int.MIN
+                    _crucible.libraries.add_transaction(album_path, destination, paths, ref stable_position)
 
                     processed = true
 
             // Remove track pointers
             var remove = get_array_member_or_null(entity, "remove")
             if remove is not null
-                _crucible.libraries.remove_transaction(album_path, remove)
+                stable_position: int = int.MIN
+                _crucible.libraries.remove_transaction(album_path, remove, ref stable_position)
 
                 processed = true
             
@@ -681,7 +684,8 @@ namespace Khovsgol.Server
          * receive (fullrepresentation=false) {
          *  id: string
          *  version: double,
-         *  tracks: =get_tracks
+         *  tracks: =get_tracks,
+         *  albums: =get_albums
          * }
          */
         def get_play_list(conversation: Conversation) raises GLib.Error

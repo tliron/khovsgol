@@ -162,6 +162,17 @@ namespace JsonUtil
         for var e in source.get_elements()
             destination.add_element(e)
 
+    def array_clone(arr: Json.Array): Json.Array
+        var length = arr.get_length()
+        var new_arr = new Json.Array.sized(length)
+        if length > 0
+            var last = length - 1
+            for var i = 0 to last
+                var e = arr.get_element(i)
+                if e is not null
+                    new_arr.add_element(e.copy())
+        return new_arr
+
     def to_int_array(l: Gee.Collection of int): Json.Array
         var arr = new Json.Array.sized(l.size)
         for var e in l
@@ -187,9 +198,10 @@ namespace JsonUtil
         return arr
     
     def foreach_object_in_json_array(arr: Json.Array, do_on_json_object: DoOnJsonObject)
-        var l = arr.get_length()
-        if l > 0
-            for var i = 0 to (l - 1)
+        var length = arr.get_length()
+        if length > 0
+            var last = length - 1
+            for var i = 0 to last
                 var obj = get_object_element_or_null(arr, i)
                 if obj is not null
                     do_on_json_object(obj)

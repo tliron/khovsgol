@@ -174,8 +174,7 @@ namespace Khovsgol.Client.Plugins
                 _instance.api.play_mode_change.connect(on_play_mode_changed)
                 _instance.api.cursor_mode_change.connect(on_cursor_mode_changed)
                 _instance.api.position_in_track_change.connect(on_position_in_track_changed)
-                _instance.api.play_list_change.connect(on_play_list_changed)
-                _instance.api.position_in_play_list_change.connect(on_position_in_play_list_changed)
+                _instance.api.track_change.connect(on_track_changed)
 
                 var file = _instance.get_resource("khovsgol.svg")
                 if file is not null
@@ -185,8 +184,7 @@ namespace Khovsgol.Client.Plugins
                 _instance.api.play_mode_change.disconnect(on_play_mode_changed)
                 _instance.api.cursor_mode_change.disconnect(on_cursor_mode_changed)
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
-                _instance.api.play_list_change.disconnect(on_play_list_changed)
-                _instance.api.position_in_play_list_change.disconnect(on_position_in_play_list_changed)
+                _instance.api.track_change.disconnect(on_track_changed)
 
             prop PlaybackStatus: string
                 owned get
@@ -267,7 +265,6 @@ namespace Khovsgol.Client.Plugins
             
             _instance: Instance
             _position_in_track: double = double.MIN
-            _tracks: IterableOfTrack
             _Shuffle: bool
             _PlaybackStatus: string = "Stopped"
             _LoopStatus: string = "None"
@@ -286,9 +283,9 @@ namespace Khovsgol.Client.Plugins
                     _PlaybackStatus = "Stopped"
                     _CanPause = false
                     _CanPlay = true
-                _properties.set("PlaybackStatus", _PlaybackStatus)
-                _properties.set("CanPause", _CanPause)
-                _properties.set("CanPlay", _CanPlay)
+                _properties.@set("PlaybackStatus", _PlaybackStatus)
+                _properties.@set("CanPause", _CanPause)
+                _properties.@set("CanPlay", _CanPlay)
                 _properties.emit_changes()
 
             def private on_cursor_mode_changed(cursor_mode: string?, old_cursor_mode: string?)
@@ -313,8 +310,8 @@ namespace Khovsgol.Client.Plugins
                 else if cursor_mode == "repeat_shuffle"
                     _LoopStatus = "Playlist"
                     _Shuffle = true
-                _properties.set("LoopStatus", _LoopStatus)
-                _properties.set("Shuffle", _Shuffle)
+                _properties.@set("LoopStatus", _LoopStatus)
+                _properties.@set("Shuffle", _Shuffle)
                 _properties.emit_changes()
                 
             def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
@@ -323,24 +320,19 @@ namespace Khovsgol.Client.Plugins
                     _Position = (int64) (position_in_track * 1000000)
                 else
                     _Position = 0
-                _properties.set("Position", _Position)
+                _properties.@set("Position", _Position)
                 _properties.emit_changes()
 
-            def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
-                _tracks = tracks
+            def private on_track_changed(track: Track?, old_track: Track?)
+                _Metadata.remove_all()
 
-            def private on_position_in_play_list_changed(position_in_play_list: int, old_position_in_play_list: int)
-                for var track in _tracks
-                    var position = track.position
-                    if position == position_in_play_list
-                        var path = track.path
+                if track is not null
+                    var path = track.path
                         if path is not null
                             var title = track.title
                             var artist = track.artist
                             var album = track.album
                             var duration = track.duration
-
-                            _Metadata.remove_all()
                             
                             _Metadata.@set("mpris:trackid", path)
                             _Metadata.@set("xesam:title", title)
@@ -360,9 +352,8 @@ namespace Khovsgol.Client.Plugins
                             if art_url is not null
                                 _Metadata.@set("mpris:artUrl", art_url)
                                 
-                            _properties.set("Metadata", _Metadata)
-                            _properties.emit_changes()
-                            break
+                _properties.@set("Metadata", _Metadata)
+                _properties.emit_changes()
             
             _properties: Properties
             _default_art_url: string

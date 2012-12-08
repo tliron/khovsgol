@@ -48,7 +48,7 @@ namespace DBusUtil
             _object_path = object_path
             _interface_name = interface_name
 
-        def set(name: string, value: Variant)
+        def @set(name: string, value: Variant)
             var existing = _properties[name]
             if existing is not null
                 // Containers are not comparable, so we'll just consider

@@ -24,64 +24,55 @@ namespace Khovsgol.Client.Plugins
             if _notifications is null
                 try
                     _notifications = Bus.get_proxy_sync(BusType.SESSION, "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
-                    _instance.api.play_list_change.connect(on_play_list_changed)
-                    _instance.api.position_in_play_list_change.connect(on_position_in_play_list_changed)
+                    _instance.api.track_change.connect(on_track_changed)
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
         
         def stop()
             if _notifications is not null
-                _instance.api.position_in_play_list_change.disconnect(on_position_in_play_list_changed)
-                _instance.api.play_list_change.disconnect(on_play_list_changed)
+                _instance.api.track_change.disconnect(on_track_changed)
                 _notifications = null
                 _logger.message("Stopped")
         
         _notifications: Notifications?
         
-        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
-            _tracks = tracks
+        def private on_track_changed(track: Track?, old_track: Track?)
+            if track is not null
+                var title = track.title
+                if title is not null
+                    var artist = track.artist
+                    var album = track.album
+                    title = Markup.escape_text(title)
+                    title = format_annotation(title)
+                    if artist is not null
+                        artist = Markup.escape_text(artist)
+                    if album is not null
+                        album = Markup.escape_text(album)
+                        album = format_annotation(album)
+                    markup: string
+                    if (artist is not null) and (album is not null)
+                        markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>\r<span size=\"smaller\">In %s</span>".printf(title, artist, album)
+                    else if (artist is not null) and (album is null)
+                        markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>".printf(title, artist)
+                    else if (artist is null) and (album is not null)
+                        markup = "%s\r<span size=\"smaller\">In %s</span>".printf(title, album)
+                    else
+                        markup = title
+                        
+                    icon: string
+                    var file = find_cover(File.new_for_path(track.path).get_parent())
+                    if file is not null
+                        icon = file.get_path()
+                    else
+                        icon = _default_icon
+                        
+                    try
+                        _notifications.Notify("Khövsgöl", track.position, icon, "Khövsgöl", markup, _actions, _hints, 3000)
+                        _logger.info("Notified new track")
+                    except e: IOError
+                        _logger.exception(e)
 
-        def private on_position_in_play_list_changed(position_in_play_list: int, old_position_in_play_list: int)
-            for var track in _tracks
-                var position = track.position
-                if position == position_in_play_list
-                    var title = track.title
-                    if title is not null
-                        var artist = track.artist
-                        var album = track.album
-                        title = Markup.escape_text(title)
-                        title = format_annotation(title)
-                        if artist is not null
-                            artist = Markup.escape_text(artist)
-                        if album is not null
-                            album = Markup.escape_text(album)
-                            album = format_annotation(album)
-                        markup: string
-                        if (artist is not null) and (album is not null)
-                            markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>\r<span size=\"smaller\">In %s</span>".printf(title, artist, album)
-                        else if (artist is not null) and (album is null)
-                            markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>".printf(title, artist)
-                        else if (artist is null) and (album is not null)
-                            markup = "%s\r<span size=\"smaller\">In %s</span>".printf(title, album)
-                        else
-                            markup = title
-                            
-                        icon: string
-                        var file = find_cover(File.new_for_path(track.path).get_parent())
-                        if file is not null
-                            icon = file.get_path()
-                        else
-                            icon = _default_icon
-                            
-                        try
-                            _notifications.Notify("Khövsgöl", position, icon, "Khövsgöl", markup, _actions, _hints, 3000)
-                            _logger.info("Notified new track")
-                        except e: IOError
-                            _logger.exception(e)
-                    break
-
-        _tracks: IterableOfTrack
         _actions: array of string = new array of string[0] // {"close", "OK"}
         _hints: HashTable of string, Variant = new HashTable of string, Variant(str_hash, str_equal) // {x: 0, y: 0}
         _default_icon: string

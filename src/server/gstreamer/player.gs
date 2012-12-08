@@ -11,57 +11,52 @@ namespace Khovsgol.Server.GStreamer
             get
                 return _path
             set
-                _path = value
-                
-                if _pipeline != null
-                    _pipeline.pipeline.set_state(State.NULL)
-                if _path != null
-                    build()
-                    src: dynamic Element =_pipeline.pipeline.get_by_name("FileSource")
-                    src.location = _path
-                    _pipeline.pipeline.set_state(State.PLAYING)
+                if _path != value
+                    _path = value
+                    if _pipeline != null
+                        _pipeline.state = State.NULL
+                    if _path != null
+                        build()
+                        src: dynamic Element =_pipeline.pipeline.get_by_name("FileSource")
+                        if src is not null
+                            src.location = _path
+                            _pipeline.state = State.PLAYING
         
         prop override play_mode: PlayMode
             get
                 if _pipeline is not null
-                    state: State
-                    pending_state: State
-                    if _pipeline.pipeline.get_state(out state, out pending_state, CLOCK_TIME_NONE) == StateChangeReturn.SUCCESS
-                        if state == State.PLAYING
-                            return PlayMode.PLAYING
-                        else if state == State.PAUSED
-                            return PlayMode.PAUSED
+                    var state = _pipeline.state
+                    if state == State.PLAYING
+                        return PlayMode.PLAYING
+                    else if state == State.PAUSED
+                        return PlayMode.PAUSED
                 return PlayMode.STOPPED
             set
                 if _pipeline is not null
                     if value == PlayMode.PAUSED
-                        _pipeline.pipeline.set_state(State.PAUSED)
+                        _pipeline.state = State.PAUSED
                     else if value == PlayMode.PLAYING
-                        state: State
-                        pending_state: State
-                        if _pipeline.pipeline.get_state(out state, out pending_state, CLOCK_TIME_NONE) == StateChangeReturn.SUCCESS
-                            if state == State.PAUSED
-                                _pipeline.pipeline.set_state(State.PLAYING)
-                            else if state == State.NULL
-                                if position_in_play_list != int.MIN
-                                    _pipeline.pipeline.set_state(State.PLAYING)
-                                else
-                                    next()
+                        var state = _pipeline.state
+                        if state == State.PAUSED
+                            _pipeline.state = State.PLAYING
+                        else if state == State.NULL
+                            if position_in_play_list != int.MIN
+                                _pipeline.state = State.PLAYING
+                            else
+                                next()
                     else if value == PlayMode.TOGGLE_PAUSED
-                        state: State
-                        pending_state: State
-                        if _pipeline.pipeline.get_state(out state, out pending_state, CLOCK_TIME_NONE) == StateChangeReturn.SUCCESS
-                            if state == State.PLAYING
-                                _pipeline.pipeline.set_state(State.PAUSED)
-                            else if state == State.PAUSED
-                                _pipeline.pipeline.set_state(State.PLAYING)
-                            else if state == State.NULL
-                                if position_in_play_list != int.MIN
-                                    _pipeline.pipeline.set_state(State.PLAYING)
-                                else
-                                    next()
+                        var state = _pipeline.state
+                        if state == State.PLAYING
+                            _pipeline.state = State.PAUSED
+                        else if state == State.PAUSED
+                            _pipeline.state = State.PLAYING
+                        else if state == State.NULL
+                            if position_in_play_list != int.MIN
+                                _pipeline.state = State.PLAYING
+                            else
+                                next()
                     else
-                        _pipeline.pipeline.set_state(State.NULL)
+                        _pipeline.state = State.NULL
                 else
                     if (value == PlayMode.PLAYING) || (value == PlayMode.TOGGLE_PAUSED)
                         next()
@@ -77,7 +72,7 @@ namespace Khovsgol.Server.GStreamer
                 return double.MIN
             set
                 if _pipeline is not null
-                    var position = (int64)(value * 1000000000.0) // convert to nanoseconds
+                    var position = (int64) (value * 1000000000.0) // convert to nanoseconds
                     if position < 0
                         position = 0
                     _pipeline.pipeline.seek_simple(Format.TIME, SeekFlags.FLUSH, position)
@@ -85,29 +80,29 @@ namespace Khovsgol.Server.GStreamer
         prop override ratio_in_track: double
             get
                 if _pipeline is not null
-                    duration: int64
-                    if _pipeline.pipeline.query_duration(Gst.Format.TIME, out duration)
-                        position: int64
-                        if _pipeline.pipeline.query_position(Format.TIME, out position)
+                    var duration = _pipeline.duration
+                    if duration != int64.MIN
+                        var position = _pipeline.position
+                        if position != int64.MIN
                             return position / duration
                 return double.MIN
             set
                 if _pipeline is not null
-                    duration: int64
-                    if _pipeline.pipeline.query_duration(Gst.Format.TIME, out duration)
-                        var position = (int64)(value * duration)
-                        _pipeline.pipeline.seek_simple(Format.TIME, SeekFlags.FLUSH, position)
+                    var duration = _pipeline.duration
+                    if duration != int64.MIN
+                        _pipeline.position = (int64) (value * duration)
         
         prop override readonly track_duration: double
             get
                 if _pipeline is not null
-                    duration: int64
-                    if _pipeline.pipeline.query_duration(Gst.Format.TIME, out duration)
+                    var duration = _pipeline.duration
+                    if duration != int64.MIN
                         return duration / 1000000000.0 // convert to seconds
                 return double.MIN
 
         def private on_state_changed(new_state: State, old_state: State, pending_state: State)
-            //print new_state.to_string()
+            // TODO: state of which element?
+            _state = new_state
             pass
 
         def private on_eos()
@@ -138,10 +133,7 @@ namespace Khovsgol.Server.GStreamer
             _pipeline.error.connect(on_error)
 
             src: Element = ElementFactory.make("filesrc", "FileSource")
-            //src.location = "/home/emblemparade/Desktop/BootyWave.mp3"
-            //src.location = "/Depot/Music/50 Foot Wave/Power+Light [EP]/01 - Power+Light.flac"
-
-            decode: dynamic Element = ElementFactory.make("decodebin", "DecodeBin")
+            decode: Element = ElementFactory.make("decodebin", "DecodeBin")
 
             var convert = ElementFactory.make("audioconvert", "AudioConvert")
             var resample = ElementFactory.make("audioresample", "AudioResample")
@@ -155,6 +147,7 @@ namespace Khovsgol.Server.GStreamer
     
         _pipeline: GstUtil.Pipeline?
         _path: string?
+        _state: State
 
         _logger: static Logging.Logger
         

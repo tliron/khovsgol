@@ -23,7 +23,7 @@ namespace GstUtil
             initialize()
             _pipeline = new Gst.Pipeline(name)
             
-            // Note: Gst requires us to use the default GLib.MainContext
+            // Note: Gst requires us to use the *default* GLib.MainContext in order to get messages
             var bus = _pipeline.get_bus()
             bus.add_signal_watch()
             bus.message.connect(on_message)
@@ -31,11 +31,40 @@ namespace GstUtil
         prop readonly pipeline: Gst.Pipeline
         prop readonly ownerships: list of GLib.Object = new list of GLib.Object
 
+        prop state: State
+            get
+                state: State
+                pending_state: State
+                if _pipeline.get_state(out state, out pending_state, CLOCK_TIME_NONE) == StateChangeReturn.SUCCESS
+                    return state
+                else
+                    return State.VOID_PENDING
+            set
+                _pipeline.set_state(value)
+
+        prop readonly duration: int64
+            get
+                duration: int64
+                if _pipeline.query_duration(Gst.Format.TIME, out duration)
+                    return duration
+                else
+                    return int64.MIN
+
+        prop position: int64
+            get
+                position: int64
+                if _pipeline.query_position(Format.TIME, out position)
+                    return position
+                else
+                    return int64.MIN
+            set
+                _pipeline.seek_simple(Format.TIME, SeekFlags.FLUSH, value)
+
         event state_changed(new_state: State, old_state: State, pending_state: State)
         event eos()
         event tag(tag_list: TagList)
         event error(error: GLib.Error, text: string)
-
+        
         def private on_message(message: Message)
             var type = message.type
             if type == MessageType.STATE_CHANGED
@@ -70,8 +99,11 @@ namespace GstUtil
                 pad.link(_next.get_static_pad("sink"))
                 
             if _once
+                // Pad added, no need for us to exist anymore
                 element.pad_added.disconnect(on_pad_added)
-                unref() // Pad added, no need for us to exist anymore
+                unref()
+                
+            // TODO: we need this owned somewhere!!!
         
         _next: Element
         _once: bool

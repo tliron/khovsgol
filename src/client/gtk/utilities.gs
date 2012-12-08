@@ -8,6 +8,15 @@ namespace Khovsgol.Client.GTK
     //def get_stock_icon_pixbuf(window, name):
       //  return window.render_icon(getattr(Gtk, 'STOCK_' + name), Gtk.IconSize.MENU, None)
 
+    enum TargetInfo
+        UNKNOWN = 0
+        JSON_ARRAY = 1
+        JSON_NUMBER_ARRAY = 2
+        JSON_STRING_ARRAY = 3
+        TEXT = 4
+        STRING = 5
+        TEXT_PLAIN = 6
+
     /*
      * Basic interface for library and playlist styles.
      */

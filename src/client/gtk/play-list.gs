@@ -101,8 +101,8 @@ namespace Khovsgol.Client.GTK
             _tree_view.set_row_separator_func(on_row_separator)
             _tree_view.append_column(column)
             _tree_view.search_column = 1
-            _tree_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, DRAG_TARGETS, Gdk.DragAction.LINK|Gdk.DragAction.MOVE)
-            _tree_view.enable_model_drag_dest(DROP_TARGETS, Gdk.DragAction.LINK|Gdk.DragAction.MOVE)
+            _tree_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, DRAG_TARGETS, Gdk.DragAction.DEFAULT|Gdk.DragAction.MOVE|Gdk.DragAction.LINK)
+            _tree_view.enable_model_drag_dest(DROP_TARGETS, Gdk.DragAction.DEFAULT|Gdk.DragAction.MOVE)
             _tree_view.double_click.connect(on_double_clicked)
             _tree_view.right_click.connect(on_right_clicked)
             _tree_view.key_press_event.connect(on_key_pressed)
@@ -233,10 +233,9 @@ namespace Khovsgol.Client.GTK
             var selection = _tree_view.get_selection()
             var tree_paths = selection.get_selected_rows(null)
             var target = selection_data.get_target()
-            var target_name = target.name()
             iter: TreeIter
             value: Value
-            if target_name == "JSON_NUMBER_ARRAY"
+            if info == TargetInfo.JSON_NUMBER_ARRAY
                 // Playlist positions moved within the playlist
                 var data = get_selected_positions()
                 selection_data.@set(target, 8, array_to(data).data)
@@ -256,7 +255,7 @@ namespace Khovsgol.Client.GTK
                             if path is not null
                                 data.add_string_element(path)
                 selection_data.@set(target, 8, array_to(data).data)
-                    
+        
         def private on_dropped(context: Gdk.DragContext, x: int, y: int, selection_data: SelectionData, info: uint, time: uint)
             tree_path: TreePath
             drop_position: TreeViewDropPosition
@@ -268,8 +267,7 @@ namespace Khovsgol.Client.GTK
                     if (drop_position == TreeViewDropPosition.AFTER) || (drop_position == TreeViewDropPosition.INTO_OR_AFTER)
                         destination++
             
-            var target_name = selection_data.get_target().name()
-            if target_name == "JSON_NUMBER_ARRAY"
+            if info == TargetInfo.JSON_NUMBER_ARRAY
                 // Playlist positions moved within the playlist
                 var text = (string) selection_data.get_data()
                 if text is not null
@@ -279,11 +277,10 @@ namespace Khovsgol.Client.GTK
                         _instance.api.move_in_play_list(_instance.player, destination, positions, true)
                         API.in_gdk = false
                         Gdk.drop_finish(context, true, time)
-                        return
                     except e: GLib.Error
                         _logger.exception(e)
 
-            else if target_name == "JSON_STRING_ARRAY"
+            else if info == TargetInfo.JSON_STRING_ARRAY
                 // Track paths, likely from the library pane
                 var text = (string) selection_data.get_data()
                 if text is not null
@@ -293,11 +290,10 @@ namespace Khovsgol.Client.GTK
                         _instance.api.add_to_play_list(_instance.player, destination, tracks, true)
                         API.in_gdk = false
                         Gdk.drop_finish(context, true, time)
-                        return
                     except e: GLib.Error
                         _logger.exception(e)
-                        
-            Gdk.drop_finish(context, false, time)
+            else
+                Gdk.drop_finish(context, false, time)
 
         def private on_actions(e: Gdk.EventButton): bool
             on_right_clicked(e)
@@ -317,7 +313,10 @@ namespace Khovsgol.Client.GTK
         def private on_play()
             var position = get_first_selected_position()
             if position != int.MIN
-                _instance.api.set_position_in_play_list(_instance.player, position)
+                if _position_in_play_list != position
+                    _instance.api.set_position_in_play_list(_instance.player, position)
+                else
+                    _instance.api.set_position_in_track(_instance.player, 0)
         
         def private on_move_to_cursor()
             pass
@@ -507,15 +506,15 @@ namespace Khovsgol.Client.GTK
         const private SEPARATOR_POSITION: int = -1
 
         const private DRAG_TARGETS: array of TargetEntry = {
-            {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, 0},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1},
-            {"TEXT",              0,                       2},
-            {"STRING",            0,                       3},
-            {"text/plain",        0,                       4}}
+            {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, TargetInfo.JSON_NUMBER_ARRAY},
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY},
+            {"TEXT",              TargetFlags.OTHER_APP,   TargetInfo.TEXT},
+            {"STRING",            TargetFlags.OTHER_APP,   TargetInfo.STRING},
+            {"text/plain",        TargetFlags.OTHER_APP,   TargetInfo.TEXT_PLAIN}}
 
         const private DROP_TARGETS: array of TargetEntry = {
-            {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, 0},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1}}
+            {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, TargetInfo.JSON_NUMBER_ARRAY},
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY}}
         
         class private CreateCustomCompilation: Dialog
             construct(parent: Window)

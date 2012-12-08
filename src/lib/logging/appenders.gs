@@ -138,14 +138,16 @@ namespace Logging
                             start = 1
 
                             // Delete the extra older files
-                            for var p = _max_older_files to (olders.size - 1)
+                            var last = olders.size - 1
+                            for var p = _max_older_files to last
                                 var older = olders[p]
                                 file = directory.get_child(prefix + older.to_string())
                                 file.delete()
                         
                         // Rename the older files in order
                         position: int = 1
-                        for var p = start to min(_max_older_files - 1, olders.size - 1)
+                        var last = min(_max_older_files - 1, olders.size - 1)
+                        for var p = start to last
                             var older = olders[p]
                             if older != position
                                 var file = directory.get_child(prefix + older.to_string())

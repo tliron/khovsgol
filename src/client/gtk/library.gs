@@ -273,12 +273,12 @@ namespace Khovsgol.Client.GTK
             MARKUP2 = 3  // string
 
         const private DRAG_TARGETS: array of TargetEntry = {
-            {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, 0},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1}, // name, flags, id
-            {"TEXT",              0,                       2},
-            {"STRING",            0,                       3},
-            {"text/plain",        0,                       4}}
+            {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, TargetInfo.JSON_ARRAY},
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY}, // name, flags, id
+            {"TEXT",              TargetFlags.OTHER_APP,   TargetInfo.TEXT},
+            {"STRING",            TargetFlags.OTHER_APP,   TargetInfo.STRING},
+            {"text/plain",        TargetFlags.OTHER_APP,   TargetInfo.TEXT_PLAIN}}
 
         const private DROP_TARGETS: array of TargetEntry = {
-            {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, 0},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    1}}
+            {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, TargetInfo.JSON_ARRAY},
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY}}

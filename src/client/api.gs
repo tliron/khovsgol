@@ -45,6 +45,7 @@ namespace Khovsgol.Client
         event position_in_play_list_change(position_in_play_list: int, old_position_in_play_list: int)
         event position_in_track_change(position_in_track: double, old_position_in_track: double, track_duration: double)
         event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
+        event track_change(track: Track?, old_track: Track?)
 
         def new connect(host: string, port: uint)
             _watching_lock.lock()
@@ -60,13 +61,15 @@ namespace Khovsgol.Client
         def reset_watch()
             _watching_lock.lock()
             try
+                _last_base_url = null
                 _play_mode = null
                 _cursor_mode = null
                 _position_in_play_list = int.MIN
                 _position_in_track = double.MIN
                 _play_list_id = null
                 _play_list_version = int64.MIN
-                _last_base_url = null
+                _tracks = null
+                _track = null
             finally
                 _watching_lock.unlock()
             
@@ -785,7 +788,8 @@ namespace Khovsgol.Client
          * receive (fullrepresentation=false) {
          *  id: string
          *  version: double,
-         *  tracks: =get_tracks
+         *  tracks: =get_tracks,
+         *  albums: =get_albums
          * }
          */
         def get_play_list(player: string, full: bool = false): Json.Object?
@@ -967,13 +971,15 @@ namespace Khovsgol.Client
         // The following should only be accessed via mutex (including _client.base_url)
         _watching_lock: RecMutex = RecMutex()
         _watching_player: string?
+        _last_base_url: string?
         _play_mode: string?
         _cursor_mode: string?
         _position_in_play_list: int
         _position_in_track: double
         _play_list_id: string?
         _play_list_version: int64
-        _last_base_url: string?
+        _tracks: IterableOfTrack?
+        _track: Track?
 
         _logger: static Logging.Logger
 
@@ -1010,6 +1016,7 @@ namespace Khovsgol.Client
                         play_list_change(id, version, _play_list_id, _play_list_version, tracks)
                         _play_list_id = id
                         _play_list_version = version
+                        _tracks = tracks
 
                 var play_mode = get_string_member_or_null(player, "playMode")
                 if play_mode is not null
@@ -1029,6 +1036,18 @@ namespace Khovsgol.Client
                     if position_in_play_list != _position_in_play_list
                         position_in_play_list_change(position_in_play_list, _position_in_play_list)
                         _position_in_play_list = position_in_play_list
+
+                        if _position_in_play_list == int.MIN
+                            if _track is not null
+                                track_change(null, _track)
+                                _track = null
+                        else if _tracks is not null
+                            for var track in _tracks
+                                if track.position == _position_in_play_list
+                                    if (_track is null) || (_track.path != track.path)
+                                        track_change(track, _track)
+                                        _track = track
+                                    break
                         
                     var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
                     var track_duration = get_double_member_or_min(cursor, "trackDuration")
