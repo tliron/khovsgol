@@ -102,12 +102,12 @@ namespace Khovsgol.Client.GTK
             add(box)
             set(0, 0, 1, 1)
 
-            ((API) _instance.api).server_change_gdk.connect(on_server_changed)
+            ((API) _instance.api).connection_change_gdk.connect(on_connection_changed)
         
         prop readonly accel_group: AccelGroup
             
         def private on_unrealized()
-            ((API) _instance.api).server_change_gdk.disconnect(on_server_changed)
+            ((API) _instance.api).connection_change_gdk.disconnect(on_connection_changed)
 
         //def private on_progress_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
           //  pass
@@ -217,7 +217,7 @@ namespace Khovsgol.Client.GTK
             on_right_clicked(e)
             return false
 
-        def on_server_changed(base_url: string?, old_base_url: string?)
+        def on_connection_changed(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
             on_filter()
             
         def private gather_selected_tracks(): Json.Array?

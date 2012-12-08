@@ -51,7 +51,7 @@ namespace Khovsgol.Client.GTK
             // Only show IPv4
             if info.protocol == Avahi.Protocol.INET
                 var base_url = "http://%s:%u".printf(info.hostname, info.port)
-                var markup = "%s (port %u)".printf(Markup.escape_text(info.hostname), info.port)
+                var markup = "%s:%u".printf(Markup.escape_text(info.hostname), info.port)
             
                 iter: TreeIter
                 _store.append(out iter)

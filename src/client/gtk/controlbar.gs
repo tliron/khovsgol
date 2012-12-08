@@ -100,14 +100,14 @@ namespace Khovsgol.Client.GTK
             add(progress_item)
             add(visualization)
             
-            ((API) _instance.api).server_change_gdk.connect(on_server_changed)
+            ((API) _instance.api).connection_change_gdk.connect(on_connection_changed)
             ((API) _instance.api).play_mode_change_gdk.connect(on_play_mode_changed)
             ((API) _instance.api).position_in_track_change_gdk.connect(on_position_in_track_changed)
             
         prop readonly accel_group: AccelGroup
             
         def private on_unrealized()
-            ((API) _instance.api).server_change_gdk.disconnect(on_server_changed)
+            ((API) _instance.api).connection_change_gdk.disconnect(on_connection_changed)
             ((API) _instance.api).play_mode_change_gdk.disconnect(on_play_mode_changed)
             ((API) _instance.api).position_in_track_change_gdk.disconnect(on_position_in_track_changed)
             
@@ -169,9 +169,9 @@ namespace Khovsgol.Client.GTK
         def private on_visualization()
             pass
             
-        def private on_server_changed(base_url: string?, old_base_url: string?)
-            if base_url is not null
-                _info.label = "<b>%s</b>".printf(Markup.escape_text(base_url))
+        def private on_connection_changed(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
+            if (host is not null) && (player is not null)
+                _info.label = "<b>%s@%s:%u</b>".printf(Markup.escape_text(player), Markup.escape_text(host), port)
             else
                 _info.label = "<b>Not connected</b>"
 

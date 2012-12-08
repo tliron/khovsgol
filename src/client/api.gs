@@ -39,18 +39,20 @@ namespace Khovsgol.Client
             get
                 return AtomicInt.get(ref _is_watching) == 1
 
-        event server_change(base_url: string?, old_base_url: string?)
-        event play_mode_change(play_mode: string?, old_play_mode: string?)
-        event cursor_mode_change(cursor_mode: string?, old_cursor_mode: string?)
-        event position_in_play_list_change(position_in_play_list: int, old_position_in_play_list: int)
-        event position_in_track_change(position_in_track: double, old_position_in_track: double, track_duration: double)
+        event connection_change(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
+        event play_mode_change(play_mode: string?, old_last_play_mode: string?)
+        event cursor_mode_change(cursor_mode: string?, old_last_cursor_mode: string?)
+        event position_in_play_list_change(position_in_last_play_list: int, old_position_in_last_play_list: int)
+        event position_in_track_change(position_in_last_track: double, old_position_in_last_track: double, track_duration: double)
         event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
-        event track_change(track: Track?, old_track: Track?)
+        event track_change(track: Track?, old_last_track: Track?)
 
         def new connect(host: string, port: uint)
             _watching_lock.lock()
             try
-                _client.base_url = "http://%s:%u".printf(host, port)
+                _host = host
+                _port = port
+                _client.base_url = "http://%s:%u".printf(_host, _port)
                 watch()
             finally
                 _watching_lock.unlock()
@@ -61,15 +63,17 @@ namespace Khovsgol.Client
         def reset_watch()
             _watching_lock.lock()
             try
-                _last_base_url = null
-                _play_mode = null
-                _cursor_mode = null
-                _position_in_play_list = int.MIN
-                _position_in_track = double.MIN
-                _play_list_id = null
-                _play_list_version = int64.MIN
-                _tracks = null
-                _track = null
+                _last_watching_player = null
+                _last_host = null
+                _last_port = uint.MIN
+                _last_play_mode = null
+                _last_cursor_mode = null
+                _last_position_in_last_play_list = int.MIN
+                _last_position_in_last_track = double.MIN
+                _last_play_list_id = null
+                _last_play_list_version = int64.MIN
+                _last_tracks = null
+                _last_track = null
             finally
                 _watching_lock.unlock()
             
@@ -968,18 +972,22 @@ namespace Khovsgol.Client
         _is_poll_stopping: int
         _is_watching: int
 
-        // The following should only be accessed via mutex (including _client.base_url)
+        // The following should only be accessed via mutex
         _watching_lock: RecMutex = RecMutex()
         _watching_player: string?
-        _last_base_url: string?
-        _play_mode: string?
-        _cursor_mode: string?
-        _position_in_play_list: int
-        _position_in_track: double
-        _play_list_id: string?
-        _play_list_version: int64
-        _tracks: IterableOfTrack?
-        _track: Track?
+        _last_watching_player: string?
+        _host: string?
+        _port: uint
+        _last_host: string?
+        _last_port: uint
+        _last_play_mode: string?
+        _last_cursor_mode: string?
+        _last_position_in_last_play_list: int
+        _last_position_in_last_track: double
+        _last_play_list_id: string?
+        _last_play_list_version: int64
+        _last_tracks: IterableOfTrack?
+        _last_track: Track?
 
         _logger: static Logging.Logger
 
@@ -996,9 +1004,11 @@ namespace Khovsgol.Client
             
             _watching_lock.lock()
             try
-                if _last_base_url != _client.base_url
-                    server_change(_client.base_url, _last_base_url)
-                    _last_base_url = _client.base_url
+                if (_host != _last_host) || (_port != _last_port) || (_watching_player != _last_watching_player)
+                    connection_change(_host, _port, _watching_player, _last_host, _last_port, _last_watching_player)
+                    _last_host = _host
+                    _last_port = _port
+                    _last_watching_player = _watching_player
             
                 if player is null
                     return
@@ -1011,49 +1021,49 @@ namespace Khovsgol.Client
                 if play_list is not null
                     var id = get_string_member_or_null(play_list, "id")
                     var version = get_int64_member_or_min(play_list, "version")
-                    if (id != _play_list_id) || (version != _play_list_version)
+                    if (id != _last_play_list_id) || (version != _last_play_list_version)
                         var tracks = new JsonTracks(get_array_member_or_null(play_list, "tracks"))
-                        play_list_change(id, version, _play_list_id, _play_list_version, tracks)
-                        _play_list_id = id
-                        _play_list_version = version
-                        _tracks = tracks
+                        play_list_change(id, version, _last_play_list_id, _last_play_list_version, tracks)
+                        _last_play_list_id = id
+                        _last_play_list_version = version
+                        _last_tracks = tracks
 
                 var play_mode = get_string_member_or_null(player, "playMode")
                 if play_mode is not null
-                    if play_mode != _play_mode
-                        play_mode_change(play_mode, _play_mode)
-                        _play_mode = play_mode
+                    if play_mode != _last_play_mode
+                        play_mode_change(play_mode, _last_play_mode)
+                        _last_play_mode = play_mode
 
                 var cursor_mode = get_string_member_or_null(player, "cursorMode")
                 if cursor_mode is not null
-                    if cursor_mode != _cursor_mode
-                        cursor_mode_change(cursor_mode, _cursor_mode)
-                        _cursor_mode = cursor_mode
+                    if cursor_mode != _last_cursor_mode
+                        cursor_mode_change(cursor_mode, _last_cursor_mode)
+                        _last_cursor_mode = cursor_mode
 
                 var cursor = get_object_member_or_null(player, "cursor")
                 if cursor is not null
-                    var position_in_play_list = get_int_member_or_min(cursor, "positionInPlayList")
-                    if position_in_play_list != _position_in_play_list
-                        position_in_play_list_change(position_in_play_list, _position_in_play_list)
-                        _position_in_play_list = position_in_play_list
+                    var position_in_last_play_list = get_int_member_or_min(cursor, "positionInPlayList")
+                    if position_in_last_play_list != _last_position_in_last_play_list
+                        position_in_play_list_change(position_in_last_play_list, _last_position_in_last_play_list)
+                        _last_position_in_last_play_list = position_in_last_play_list
 
-                        if _position_in_play_list == int.MIN
-                            if _track is not null
-                                track_change(null, _track)
-                                _track = null
-                        else if _tracks is not null
-                            for var track in _tracks
-                                if track.position == _position_in_play_list
-                                    if (_track is null) || (_track.path != track.path)
-                                        track_change(track, _track)
-                                        _track = track
+                        if _last_position_in_last_play_list == int.MIN
+                            if _last_track is not null
+                                track_change(null, _last_track)
+                                _last_track = null
+                        else if _last_tracks is not null
+                            for var track in _last_tracks
+                                if track.position == _last_position_in_last_play_list
+                                    if (_last_track is null) || (_last_track.path != track.path)
+                                        track_change(track, _last_track)
+                                        _last_track = track
                                     break
                         
-                    var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
+                    var position_in_last_track = get_double_member_or_min(cursor, "positionInTrack")
                     var track_duration = get_double_member_or_min(cursor, "trackDuration")
-                    if position_in_track != _position_in_track
-                        position_in_track_change(position_in_track, _position_in_track, track_duration)
-                        _position_in_track = position_in_track
+                    if position_in_last_track != _last_position_in_last_track
+                        position_in_track_change(position_in_last_track, _last_position_in_last_track, track_duration)
+                        _last_position_in_last_track = position_in_last_track
             finally
                 _watching_lock.unlock()
 

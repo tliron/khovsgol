@@ -12,7 +12,7 @@ namespace Khovsgol.Client.GTK
      */
     class API: Client.API
         construct()
-            server_change.connect(on_server_change)
+            connection_change.connect(on_connection_change)
             play_mode_change.connect(on_play_mode_change)
             cursor_mode_change.connect(on_cursor_mode_change)
             position_in_play_list_change.connect(on_position_in_play_list_change)
@@ -20,7 +20,7 @@ namespace Khovsgol.Client.GTK
             play_list_change.connect(on_play_list_change)
             track_change.connect(on_track_change)
 
-        event server_change_gdk(base_url: string?, old_base_url: string?)
+        event connection_change_gdk(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
         event play_mode_change_gdk(play_mode: string?, old_play_mode: string?)
         event cursor_mode_change_gdk(cursor_mode: string?, old_cursor_mode: string?)
         event position_in_play_list_change_gdk(position_in_play_list: int, old_position_in_play_list: int)
@@ -36,11 +36,11 @@ namespace Khovsgol.Client.GTK
 
         _in_gdk: static int = 0
 
-        def private on_server_change(base_url: string?, old_base_url: string?)
+        def private on_connection_change(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
             if in_gdk
-                server_change_gdk(base_url, old_base_url)
+                connection_change_gdk(host, port, player, old_host, old_port, old_player)
             else
-                new ServerChangeGdk(self, base_url, old_base_url)
+                new ConnectionChangeGdk(self, host, port, player, old_host, old_port, old_player)
             
         def private on_play_mode_change(play_mode: string?, old_play_mode: string?)
             if in_gdk
@@ -78,20 +78,28 @@ namespace Khovsgol.Client.GTK
             else
                 new TrackChangeGdk(self, track, old_track)
 
-        class private ServerChangeGdk: Object
-            construct(api: API, base_url: string?, old_base_url: string?)
+        class private ConnectionChangeGdk: Object
+            construct(api: API, host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
                 _api = api
-                _base_url = base_url
-                _old_base_url = old_base_url
+                _host = host
+                _port = port
+                _player = player
+                _old_host = old_host
+                _old_port = old_port
+                _old_player = old_player
                 ref()
                 Gdk.threads_add_idle(idle)
 
             _api: API
-            _base_url: string?
-            _old_base_url: string?
+            _host: string?
+            _port: uint
+            _player: string?
+            _old_host: string?
+            _old_port: uint
+            _old_player: string?
 
             def private idle(): bool
-                _api.server_change_gdk(_base_url, _old_base_url)
+                _api.connection_change_gdk(_host, _port, _player, _old_host, _old_port, _old_player)
                 unref()
                 return false
 
