@@ -108,47 +108,54 @@ namespace Logging
         def log(level: LogLevelFlags, message: string)
             GLib.log(_domain, level, "%s", message)
 
+        [PrintfFormat]
         def logf(level: LogLevelFlags, message: string, ...)
             GLib.logv(_domain, level, message, va_list())
 
         def error(message: string)
             g_log(_domain, LogLevelFlags.LEVEL_ERROR, "%s", message)
 
+        [PrintfFormat]
         def errorf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_ERROR, message, va_list())
 
         def critical(message: string)
             g_log(_domain, LogLevelFlags.LEVEL_CRITICAL, "%s", message)
 
+        [PrintfFormat]
         def criticalf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_CRITICAL, message, va_list())
 
         def warning(message: string)
             g_log(_domain, LogLevelFlags.LEVEL_WARNING, "%s", message)
 
+        [PrintfFormat]
         def warningf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_WARNING, message, va_list())
 
         def message(message: string)
             g_log(_domain, LogLevelFlags.LEVEL_MESSAGE, "%s", message)
 
+        [PrintfFormat]
         def messagef(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_MESSAGE, message, va_list())
 
         def info(message: string)
             g_log(_domain, LogLevelFlags.LEVEL_INFO, "%s", message)
 
+        [PrintfFormat]
         def infof(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_INFO, message, va_list())
 
         def debug(message: string)
             g_log(_domain, LogLevelFlags.LEVEL_DEBUG, "%s", message)
             
+        [PrintfFormat]
         def debugf(message: string, ...)
             GLib.logv(_domain, LogLevelFlags.LEVEL_DEBUG, message, va_list())
         
         def exception(e: Error)
-            warning(e.message)
+            warningf("Exception %s.%d: %s", e.domain.to_string(), e.code, e.message)
             
         _handler_id: uint = 0
         _appender: Appender?

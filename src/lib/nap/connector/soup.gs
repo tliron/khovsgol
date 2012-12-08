@@ -145,7 +145,7 @@ namespace Nap._Soup
      * Soup implementation of a Nap client conversation.
      */
     class ClientConversation: Object implements Nap.Conversation
-        construct(soup_session: Soup.Session, base_url: string)
+        construct(soup_session: Soup.Session, base_url: string?)
             _soup_session = soup_session
             _base_url = base_url
         
@@ -220,6 +220,9 @@ namespace Nap._Soup
                 pass
         
         def commit()
+            if _base_url is null
+                return
+        
             // If we have variables, render as template
             var p = _path
             if !_variables.is_empty
@@ -261,7 +264,7 @@ namespace Nap._Soup
                 
         _soup_session: Soup.Session
         _soup_message: Soup.Message
-        _base_url: string
+        _base_url: string?
         _request_text: string?
         _request_json_object: Json.Object?
         _request_json_array: Json.Array?
@@ -289,10 +292,6 @@ namespace Nap._Soup
         prop thread_pool: ThreadPool?
         prop readonly port: uint
         
-        prop readonly hostname: string
-            get
-                return _soup_server.@interface.physical
-
         def get_handler(): unowned Handler?
             return _handler
             
@@ -340,8 +339,7 @@ namespace Nap._Soup
      * An HTTP client using Soup.
      */
     class Client: Object implements Nap.Client
-        construct(base_url: string)
-            _base_url = base_url
+        construct()
             _soup_session = new Soup.SessionSync()
             
         prop base_url: string

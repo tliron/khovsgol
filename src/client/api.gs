@@ -21,26 +21,23 @@ namespace Khovsgol.Client
      * A polling thread can be started to regularly watch the player.
      */
     class API: GLib.Object
-        construct(host: string, port: uint) raises GLib.Error
-            _client = new Nap._Soup.Client("http://%s:%u".printf(host, port))
-        
         prop watching_player: string?
             get
-                _watching_player_lock.lock()
+                _watching_lock.lock()
                 try
                     return _watching_player
                 finally
-                    _watching_player_lock.unlock()
+                    _watching_lock.unlock()
             set
-                _watching_player_lock.lock()
+                _watching_lock.lock()
                 try
                     _watching_player = value
                 finally
-                    _watching_player_lock.unlock()
+                    _watching_lock.unlock()
 
-        prop readonly is_polling: bool
+        prop readonly is_watching: bool
             get
-                return AtomicInt.get(ref _is_polling) == 1
+                return AtomicInt.get(ref _is_watching) == 1
 
         event server_change(base_url: string?, old_base_url: string?)
         event play_mode_change(play_mode: string?, old_play_mode: string?)
@@ -50,13 +47,18 @@ namespace Khovsgol.Client
         event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
 
         def new connect(host: string, port: uint)
-            _client.base_url = "http://%s:%u".printf(host, port)
+            _watching_lock.lock()
+            try
+                _client.base_url = "http://%s:%u".printf(host, port)
+                watch()
+            finally
+                _watching_lock.unlock()
 
         def update()
             get_player(watching_player)
         
         def reset_watch()
-            _watching_player_lock.lock()
+            _watching_lock.lock()
             try
                 _play_mode = null
                 _cursor_mode = null
@@ -64,16 +66,17 @@ namespace Khovsgol.Client
                 _position_in_track = double.MIN
                 _play_list_id = null
                 _play_list_version = int64.MIN
+                _last_base_url = null
             finally
-                _watching_player_lock.unlock()
+                _watching_lock.unlock()
             
-        def start_player_poll(): bool
+        def start_watch_thread(): bool
             AtomicInt.set(ref _is_poll_stopping, 0)
-            AtomicInt.set(ref _is_polling, 1)
+            AtomicInt.set(ref _is_watching, 1)
             _poll_thread = new Thread of bool("PollPlayer", poll)
             return false
         
-        def stop_player_poll(block: bool = false)
+        def stop_watch_thread(block: bool = false)
             AtomicInt.set(ref _is_poll_stopping, 1)
             if block
                 _poll_thread.join()
@@ -587,7 +590,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object)
+                    watch(player_object)
                     return player_object
                 else
                     return null
@@ -613,7 +616,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object)
+                    watch(player_object)
                     return player_object
                 else
                     return null
@@ -639,7 +642,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object)
+                    watch(player_object)
                     return player_object
                 else
                     return null
@@ -667,7 +670,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object)
+                    watch(player_object)
                     return player_object
                 else
                     return null
@@ -695,7 +698,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object)
+                    watch(player_object)
                     return player_object
                 else
                     return null
@@ -723,7 +726,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object)
+                    watch(player_object)
                     return player_object
                 else
                     return null
@@ -751,7 +754,7 @@ namespace Khovsgol.Client
                 conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
-                    process_player(player_object)
+                    watch(player_object)
                     return player_object
                 else
                     return null
@@ -797,7 +800,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity)
+                        watch(entity)
                     return entity
                 else
                     return null
@@ -826,7 +829,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity)
+                        watch(entity)
                     return entity
                 else
                     return null
@@ -862,7 +865,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity)
+                        watch(entity)
                     return entity
                 else
                     return null
@@ -898,7 +901,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity)
+                        watch(entity)
                     return entity
                 else
                     return null
@@ -927,7 +930,7 @@ namespace Khovsgol.Client
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
-                        process_player(entity)
+                        watch(entity)
                     return entity
                 else
                     return null
@@ -952,17 +955,17 @@ namespace Khovsgol.Client
         def delete_plug(player: string, plug: string): Json.Object?
             return null
         
-        _client: Nap.Client
+        _client: Nap.Client = new Nap._Soup.Client()
 
         _poll_thread: Thread of bool
         _poll_interval: ulong = 1000000
 
         // The following should only be accessed atomically
         _is_poll_stopping: int
-        _is_polling: int
+        _is_watching: int
 
-        // The following should only be accessed via mutex
-        _watching_player_lock: RecMutex = RecMutex()
+        // The following should only be accessed via mutex (including _client.base_url)
+        _watching_lock: RecMutex = RecMutex()
         _watching_player: string?
         _play_mode: string?
         _cursor_mode: string?
@@ -981,18 +984,19 @@ namespace Khovsgol.Client
             // TODO: special handling for network errors
             _logger.exception(e)
         
-        def private process_player(player: Json.Object?)
-            if player is null
-                return
-            if !is_polling
+        def private watch(player: Json.Object? = null)
+            if !is_watching
                 return
             
-            _watching_player_lock.lock()
+            _watching_lock.lock()
             try
                 if _last_base_url != _client.base_url
                     server_change(_client.base_url, _last_base_url)
                     _last_base_url = _client.base_url
             
+                if player is null
+                    return
+
                 var name = get_string_member_or_null(player, "name")
                 if name != _watching_player
                     return
@@ -1032,7 +1036,7 @@ namespace Khovsgol.Client
                         position_in_track_change(position_in_track, _position_in_track, track_duration)
                         _position_in_track = position_in_track
             finally
-                _watching_player_lock.unlock()
+                _watching_lock.unlock()
 
         def private poll(): bool
             while true
@@ -1045,6 +1049,6 @@ namespace Khovsgol.Client
                     break
             
             // We've stopped polling
-            AtomicInt.set(ref _is_polling, 0)
+            AtomicInt.set(ref _is_watching, 0)
             AtomicInt.set(ref _is_poll_stopping, 0)
             return true

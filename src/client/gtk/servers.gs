@@ -42,12 +42,10 @@ namespace Khovsgol.Client.GTK
             set_position(WindowPosition.CENTER)
             set_default_size(500, 400)
             
-            try
-                _browser = new Browser("_khovsgol._tcp")
-                _browser.found.connect(on_avahi_found)
-                _browser.removed.connect(on_avahi_removed)
-            except e: Avahi.Error
-                _logger.exception(e)
+            _browser = new Browser("_khovsgol._tcp")
+            _browser.found.connect(on_avahi_found)
+            _browser.removed.connect(on_avahi_removed)
+            _browser.start()
             
         def private on_avahi_found(info: ServiceFoundInfo)
             // Only show IPv4

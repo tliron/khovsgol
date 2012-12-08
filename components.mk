@@ -35,6 +35,7 @@ find-sources=$(shell find "$(SRC)/$1" \( -name '*.gs' -o -name '*.vala' \))
 
 VALAC=valac \
 	--basedir=$(SRC) \
+	--vapidir=$(SRC) \
 	--directory=$(BIN) \
 	--thread \
 	--debug \
@@ -45,6 +46,7 @@ VALAC=valac \
 VALAC.C=valac \
 	--ccode \
 	--basedir=$(SRC) \
+	--vapidir=$(SRC) \
 	--thread \
 	--debug \
 	--target-glib=2.32 \
@@ -77,12 +79,12 @@ KHOVSGOLD_PACKAGES=\
 	--pkg=libdaemon \
 	--pkg=gstreamer-1.0 \
 	--pkg=taglib_c \
-	--pkg=avahi-gobject
+	--pkg=avahi-gobject --pkg=lib/avahi/avahi-direct
 
 khovsgold:
 	$(VALAC) --output=khovsgold $(KHOVSGOLD_SOURCES) $(KHOVSGOLD_PACKAGES)
 
-khovsgold.c:
+khovsgold.ccode:
 	$(VALAC.C) --directory=c/khovsgold $(KHOVSGOLD_SOURCES) $(KHOVSGOLD_PACKAGES)
 
 #
@@ -104,12 +106,12 @@ KHOVSGOLC_PACKAGES=\
 	--pkg=gee-1.0 \
 	--pkg=json-glib-1.0 \
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
-	--pkg=avahi-gobject
+	--pkg=avahi-gobject --pkg=lib/avahi/avahi-direct
 
 khovsgolc:
 	$(VALAC) --output=khovsgolc $(KHOVSGOLC_SOURCES) $(KHOVSGOLC_PACKAGES)
 
-khovsgolc.c:
+khovsgolc.ccode:
 	$(VALAC.C) --directory=c/khovsgolc $(KHOVSGOLC_SOURCES) $(KHOVSGOLC_PACKAGES)
 
 #
@@ -138,10 +140,10 @@ KHOVSGOL_PACKAGES=\
 	--pkg=gtk+-3.0 \
 	--pkg=unity \
 	--pkg=Indicate-0.7 --Xcc=-I/usr/include/libindicate-0.7 --Xcc=-lindicate \
-	--pkg=avahi-gobject
+	--pkg=avahi-gobject --pkg=lib/avahi/avahi-direct
 
 khovsgol:
 	$(VALAC) --output=khovsgol $(KHOVSGOL_SOURCES) $(KHOVSGOL_PACKAGES)
 
-khovsgol.c:
+khovsgol.ccode:
 	$(VALAC.C) --directory=c/khovsgol $(KHOVSGOL_SOURCES) $(KHOVSGOL_PACKAGES)

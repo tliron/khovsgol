@@ -11,14 +11,13 @@ namespace Khovsgol.Client.GTK
      * via Gdk.threads_add_idle(), guaranteeing them for safe use with GTK+.
      */
     class API: Client.API
-        construct(host: string, port: uint) raises GLib.Error
-            super(host, port)
-                server_change.connect(on_server_change)
-                play_mode_change.connect(on_play_mode_change)
-                cursor_mode_change.connect(on_cursor_mode_change)
-                position_in_play_list_change.connect(on_position_in_play_list_change)
-                position_in_track_change.connect(on_position_in_track_change)
-                play_list_change.connect(on_play_list_change)
+        construct()
+            server_change.connect(on_server_change)
+            play_mode_change.connect(on_play_mode_change)
+            cursor_mode_change.connect(on_cursor_mode_change)
+            position_in_play_list_change.connect(on_position_in_play_list_change)
+            position_in_track_change.connect(on_position_in_track_change)
+            play_list_change.connect(on_play_list_change)
 
         event server_change_gdk(base_url: string?, old_base_url: string?)
         event play_mode_change_gdk(play_mode: string?, old_play_mode: string?)
@@ -33,8 +32,7 @@ namespace Khovsgol.Client.GTK
             set
                 AtomicInt.set(ref _in_gdk, value ? 1 : 0)
 
-        // TODO: make sure this is a thread local!!!!
-        _in_gdk: static int
+        _in_gdk: static int = 0
 
         def private on_server_change(base_url: string?, old_base_url: string?)
             if in_gdk
@@ -72,7 +70,7 @@ namespace Khovsgol.Client.GTK
             else
                 new PlayListChangeGdk(self, id, version, old_id, old_version, tracks)
 
-        class private ServerChangeGdk: GLib.Object
+        class private ServerChangeGdk: Object
             construct(api: API, base_url: string?, old_base_url: string?)
                 _api = api
                 _base_url = base_url
@@ -89,7 +87,7 @@ namespace Khovsgol.Client.GTK
                 unref()
                 return false
 
-        class private PlayModeChangeGdk: GLib.Object
+        class private PlayModeChangeGdk: Object
             construct(api: API, play_mode: string?, old_play_mode: string?)
                 _api = api
                 _play_mode = play_mode
@@ -106,7 +104,7 @@ namespace Khovsgol.Client.GTK
                 unref()
                 return false
 
-        class private CursorModeChangeGdk: GLib.Object
+        class private CursorModeChangeGdk: Object
             construct(api: API, cursor_mode: string?, old_cursor_mode: string?)
                 _api = api
                 _cursor_mode = cursor_mode
@@ -123,7 +121,7 @@ namespace Khovsgol.Client.GTK
                 unref()
                 return false
 
-        class private PositionInPlayListChangeGdk: GLib.Object
+        class private PositionInPlayListChangeGdk: Object
             construct(api: API, position_in_play_list: int, old_position_in_play_list: int)
                 _api = api
                 _position_in_play_list = position_in_play_list
@@ -140,7 +138,7 @@ namespace Khovsgol.Client.GTK
                 unref()
                 return false
 
-        class private PositionInTrackChangeGdk: GLib.Object
+        class private PositionInTrackChangeGdk: Object
             construct(api: API, position_in_track: double, old_position_in_track: double, track_duration: double)
                 _api = api
                 _position_in_track = position_in_track
@@ -159,7 +157,7 @@ namespace Khovsgol.Client.GTK
                 unref()
                 return false
 
-        class private PlayListChangeGdk: GLib.Object
+        class private PlayListChangeGdk: Object
             construct(api: API, id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
                 _api = api
                 _id = id

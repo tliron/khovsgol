@@ -9,7 +9,8 @@ namespace Khovsgol.Client.CLI
     class Instance: GLib.Object
         construct(args: array of string) raises GLib.Error
             _arguments = new Arguments(args)
-            _api = new Client.API(_arguments.host, _arguments.port)
+            _api = new Client.API()
+            _api.connect(_arguments.host, _arguments.port)
             
         def start() raises GLib.Error
             var command = _arguments.args[1]
@@ -185,18 +186,16 @@ namespace Khovsgol.Client.CLI
                                     stdout.printf("\n")
                                     
             else if command == "servers"
-                try
-                    print "Scanning for servers, press any key to exit..."
-                    
-                    _browser = new Browser("_khovsgol._tcp")
-                    _browser.found.connect(on_avahi_found)
-                    _browser.removed.connect(on_avahi_removed)
+                print "Scanning for servers, press any key to exit..."
+                
+                _browser = new Browser("_khovsgol._tcp")
+                _browser.found.connect(on_avahi_found)
+                _browser.removed.connect(on_avahi_removed)
+                _browser.start()
 
-                    var main_loop = new MainLoop()
-                    new ExitOnKeyPress(main_loop)
-                    main_loop.run()
-                except e: Avahi.Error
-                    stderr.printf("%s\n", e.message)
+                var main_loop = new MainLoop()
+                new ExitOnKeyPress(main_loop)
+                main_loop.run()
 
             else
                 stderr.printf("Unknown command: %s\n", command)

@@ -2,6 +2,7 @@
 
 uses
     DBusUtil
+    AvahiUtil
 
 namespace Khovsgol.Client.GTK
 
@@ -11,9 +12,9 @@ namespace Khovsgol.Client.GTK
 
             initialize_logging()
             
-            _dir = File.new_for_path(args[0]).get_parent()
-            _api = new API("localhost", 8181)
             player = Environment.get_user_name()
+
+            _dir = File.new_for_path(args[0]).get_parent()
             _window = new MainWindow(self)
             
             add_plugin(new Plugins.NotificationsPlugin())
@@ -25,7 +26,7 @@ namespace Khovsgol.Client.GTK
             
         prop readonly configuration: Configuration
         prop readonly dir: File
-        prop readonly api: Client.API
+        prop readonly api: Client.API = new API()
         prop readonly window: MainWindow
 
         prop player: string
@@ -45,13 +46,15 @@ namespace Khovsgol.Client.GTK
                 
             for var plugin in _plugins
                 plugin.start()
-
-            _api.start_player_poll()
+                
+            _api.start_watch_thread()
+            
+            connect_to_first_local_service()
             
             Gtk.main()
         
         def stop()
-            _api.stop_player_poll(true)
+            _api.stop_watch_thread(true)
             
             for var plugin in _plugins
                 plugin.stop()
@@ -75,7 +78,19 @@ namespace Khovsgol.Client.GTK
         
         _player: string
         _plugins: list of Plugin = new list of Plugin
+        _browser: Browser?
         
+        def private connect_to_first_local_service()
+            _browser = new Browser("_khovsgol._tcp")
+            _browser.found.connect(on_avahi_found)
+            _browser.start()
+        
+        def private on_avahi_found(info: ServiceFoundInfo)
+            // Connect to first local service found
+            if (info.flags & Avahi.LookupResultFlags.LOCAL) != 0
+                _api.connect(info.hostname, info.port)
+                _browser = null
+
         def private start_server()
             try
                 Process.spawn_sync(dir.get_path(), {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null)

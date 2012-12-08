@@ -107,13 +107,7 @@ namespace Khovsgol.Server
             _main_loop.run()
             
         def private publish()
-            //var name = NetworkAddress.hostname
-            //print "host"
-            //print _server.hostname
-            try
-                _publisher = new Publisher("emblemparade@durkheim", "_khovsgol._tcp", (uint16) _configuration.port)
-            except e: Avahi.Error
-                _logger.exception(e)
+            _publisher = new Publisher(Environment.get_user_name(), "_khovsgol._tcp", (uint16) _configuration.port)
 
         _arguments: Arguments
         _server: Nap.Server
