@@ -157,20 +157,22 @@ namespace Khovsgol.Client.GTK
             add(box)
             set(0, 0, 1, 1)
             
-            ((API) _instance.api).cursor_mode_change_gdk.connect(on_cursor_mode_changed)
-            ((API) _instance.api).play_mode_change_gdk.connect(on_play_mode_changed)
-            ((API) _instance.api).play_list_change_gdk.connect(on_play_list_changed)
-            ((API) _instance.api).position_in_play_list_change_gdk.connect(on_position_in_play_list_changed)
-            ((API) _instance.api).position_in_track_change_gdk.connect(on_position_in_track_changed)
+            var api = (API) _instance.api
+            api.cursor_mode_change_gdk.connect(on_cursor_mode_changed)
+            api.play_mode_change_gdk.connect(on_play_mode_changed)
+            api.play_list_change_gdk.connect(on_play_list_changed)
+            api.position_in_play_list_change_gdk.connect(on_position_in_play_list_changed)
+            api.position_in_track_change_gdk.connect(on_position_in_track_changed)
 
         prop readonly accel_group: AccelGroup
         
         def private on_unrealized()
-            ((API) _instance.api).cursor_mode_change_gdk.disconnect(on_cursor_mode_changed)
-            ((API) _instance.api).play_mode_change_gdk.disconnect(on_play_mode_changed)
-            ((API) _instance.api).play_list_change_gdk.disconnect(on_play_list_changed)
-            ((API) _instance.api).position_in_play_list_change_gdk.disconnect(on_position_in_play_list_changed)
-            ((API) _instance.api).position_in_track_change_gdk.disconnect(on_position_in_track_changed)
+            var api = (API) _instance.api
+            api.cursor_mode_change_gdk.disconnect(on_cursor_mode_changed)
+            api.play_mode_change_gdk.disconnect(on_play_mode_changed)
+            api.play_list_change_gdk.disconnect(on_play_list_changed)
+            api.position_in_play_list_change_gdk.disconnect(on_position_in_play_list_changed)
+            api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
        
         def private on_progress_render(layout: CellLayout, renderer: dynamic CellRenderer, model: TreeModel, iter: TreeIter)
             position: Value
@@ -230,30 +232,15 @@ namespace Khovsgol.Client.GTK
             return false
  
         def private on_dragged(context: Gdk.DragContext, selection_data: SelectionData, info: uint, time: uint)
-            var selection = _tree_view.get_selection()
-            var tree_paths = selection.get_selected_rows(null)
             var target = selection_data.get_target()
-            iter: TreeIter
-            value: Value
             if info == TargetInfo.JSON_NUMBER_ARRAY
                 // Playlist positions moved within the playlist
                 var data = get_selected_positions()
                 selection_data.@set(target, 8, array_to(data).data)
                 
             else
-                // Track paths, likely to a custom compilation in the library pane
-                
-                // TODO: from style
-                var data = new Json.Array.sized(tree_paths.length())
-                for var tree_path in tree_paths
-                    if _store.get_iter(out iter, tree_path)
-                        _store.get_value(iter, Column.NODE, out value)
-                        var node = (Json.Node) value
-                        if is_object(node)
-                            var track = node.get_object()
-                            var path = get_string_member_or_null(track, "path")
-                            if path is not null
-                                data.add_string_element(path)
+                // Track paths, likely dragged to a custom compilation in the library pane
+                var data = get_selected_paths()
                 selection_data.@set(target, 8, array_to(data).data)
         
         def private on_dropped(context: Gdk.DragContext, x: int, y: int, selection_data: SelectionData, info: uint, time: uint)
@@ -366,7 +353,6 @@ namespace Khovsgol.Client.GTK
             pass
             
         def private on_cursor_mode_changed(cursor_mode: string?, old_cursor_mode: string?)
-            //var v = SignalHandler.block_by_func(_mode_box.combo_box, (void*) on_cursor_mode, self)
             SignalHandler.block(_mode_box.combo_box, _on_cursor_mode_id)
             _mode_box.active = cursor_mode
             SignalHandler.unblock(_mode_box.combo_box, _on_cursor_mode_id)
@@ -394,10 +380,10 @@ namespace Khovsgol.Client.GTK
             _tree_view.model = null
             _store.clear()
             if _tracks is not null
-                var style = _style_box.active_style
+                var style = (PlayListStyle) _style_box.active_style
                 if style is not null
                     var node = new PlayListNode(_instance, _tree_view, _store, _tracks)
-                    ((PlayListStyle) style).fill(node)
+                    style.fill(node)
             _tree_view.model = _store
             _tree_view.thaw_child_notify()
             
@@ -422,11 +408,24 @@ namespace Khovsgol.Client.GTK
             var positions = new Json.Array()
             for var tree_path in tree_paths
                 if _store.get_iter(out iter, tree_path)
-                    var style = _style_box.active_style
+                    var style = (PlayListStyle) _style_box.active_style
                     if style is not null
                         var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
-                        ((PlayListStyle) style).gather_positions(node, ref positions)
+                        style.gather_positions(node, ref positions)
             return positions
+
+        def private get_selected_paths(): Json.Array
+            var selection = _tree_view.get_selection()
+            var tree_paths = selection.get_selected_rows(null)
+            iter: TreeIter
+            var paths = new Json.Array()
+            for var tree_path in tree_paths
+                if _store.get_iter(out iter, tree_path)
+                    var style = (PlayListStyle) _style_box.active_style
+                    if style is not null
+                        var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
+                        style.gather_paths(node, ref paths)
+            return paths
 
         def private get_first_selected_position(): int
             var selection = _tree_view.get_selection()
@@ -438,10 +437,10 @@ namespace Khovsgol.Client.GTK
             return int.MIN
 
         def private get_first_position(iter: TreeIter): int
-            var style = _style_box.active_style
+            var style = (PlayListStyle) _style_box.active_style
             if style is not null
                 var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
-                var position = ((PlayListStyle) style).get_first_position(node)
+                var position = style.get_first_position(node)
                 if position != int.MIN
                     return position
             return int.MIN

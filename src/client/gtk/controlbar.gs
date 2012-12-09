@@ -100,16 +100,18 @@ namespace Khovsgol.Client.GTK
             add(progress_item)
             add(visualization)
             
-            ((API) _instance.api).connection_change_gdk.connect(on_connection_changed)
-            ((API) _instance.api).play_mode_change_gdk.connect(on_play_mode_changed)
-            ((API) _instance.api).position_in_track_change_gdk.connect(on_position_in_track_changed)
+            var api = (API) _instance.api
+            api.connection_change_gdk.connect(on_connection_changed)
+            api.play_mode_change_gdk.connect(on_play_mode_changed)
+            api.position_in_track_change_gdk.connect(on_position_in_track_changed)
             
         prop readonly accel_group: AccelGroup
             
         def private on_unrealized()
-            ((API) _instance.api).connection_change_gdk.disconnect(on_connection_changed)
-            ((API) _instance.api).play_mode_change_gdk.disconnect(on_play_mode_changed)
-            ((API) _instance.api).position_in_track_change_gdk.disconnect(on_position_in_track_changed)
+            var api = (API) _instance.api
+            api.connection_change_gdk.disconnect(on_connection_changed)
+            api.play_mode_change_gdk.disconnect(on_play_mode_changed)
+            api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
             
         def private on_quit()
             _instance.stop()

@@ -8,6 +8,7 @@ namespace Khovsgol.Client.GTK
 
     interface LibraryStyle: Style
         def abstract fill(node: LibraryNode)
+        def abstract filter(node: LibraryNode, filter: string)
         def abstract gather_tracks(node: LibraryNode, ref paths: Json.Array)
     
     /*
@@ -60,6 +61,9 @@ namespace Khovsgol.Client.GTK
                     args.in_album = path
                     args.sort.add("position")
                     fill_tracks_in_album(node.instance.api.get_tracks(args), compilation > 0, node)
+        
+        def filter(node: LibraryNode, filter: string)
+            pass
         
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
@@ -120,6 +124,9 @@ namespace Khovsgol.Client.GTK
                     args.sort.add("title_sort")
                     fill_tracks(node.instance.api.get_tracks(args), node)
 
+        def filter(node: LibraryNode, filter: string)
+            pass
+        
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
             if level == 1
@@ -182,6 +189,9 @@ namespace Khovsgol.Client.GTK
                     args.sort.add("position")
                     fill_tracks_in_album(node.instance.api.get_tracks(args), compilation > 0, node)
 
+        def filter(node: LibraryNode, filter: string)
+            pass
+        
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
             if level == 1
@@ -233,6 +243,9 @@ namespace Khovsgol.Client.GTK
                     args.sort.add("position")
                     fill_tracks_in_album(node.instance.api.get_tracks(args), compilation > 0, node)
 
+        def filter(node: LibraryNode, filter: string)
+            pass
+        
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
             if level == 1
@@ -275,6 +288,9 @@ namespace Khovsgol.Client.GTK
                     args.sort.add("position")
                     fill_tracks_in_album(node.instance.api.get_tracks(args), true, node)
 
+        def filter(node: LibraryNode, filter: string)
+            pass
+        
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
             if level == 1
@@ -308,6 +324,7 @@ namespace Khovsgol.Client.GTK
                             node.append_separator()
                             
                 var markup = Markup.escape_text(name)
+                
                 node.append_object(artist.to_json(), artist.name, markup, null, true)
                 first = false
         return !first
@@ -318,11 +335,13 @@ namespace Khovsgol.Client.GTK
             if title is not null
                 var file_type = album.file_type
                 var date = album.date
+                
                 title = Markup.escape_text(title)
                 title = format_annotation(title)
                 if !is_lossless(file_type)
                     title = format_washed_out(title)
                 var markup = date != int64.MIN ? "%d: %s".printf((int) date, title) : title
+                
                 node.append_object(album.to_json(), album.title, markup, null, true)
 
     def private fill_albums(albums: IterableOfAlbum, node: LibraryNode)
@@ -350,7 +369,9 @@ namespace Khovsgol.Client.GTK
                 if !is_lossless(file_type)
                     title = format_washed_out(title)
                 var markup = artist is not null ? "%s - <i>%s</i>".printf(title, artist) : title
+                
                 node.append_object(album.to_json(), album.title, markup, null, true)
+                
                 first = false
 
     def private fill_tracks_in_album(tracks: IterableOfTrack, is_compilation: bool, node: LibraryNode)
@@ -361,6 +382,7 @@ namespace Khovsgol.Client.GTK
                 var position = track.position
                 var duration = track.duration
                 var artist = is_compilation ? track.artist : null
+                
                 title = Markup.escape_text(title)
                 title = format_annotation(title)
                 if artist is not null
@@ -377,6 +399,7 @@ namespace Khovsgol.Client.GTK
                 else
                     markup1 = title
                 var markup2 = duration != double.MIN ? format_duration(duration) : null
+                
                 node.append_object(track.to_json(), track.title, markup1, markup2)
 
     def private fill_tracks(tracks: IterableOfTrack, node: LibraryNode)
@@ -410,9 +433,10 @@ namespace Khovsgol.Client.GTK
                     markup1 = "%s - %s".printf(title, album)
                 else
                     markup1 = title
-                    
                 var markup2 = duration != double.MIN ? format_duration(duration) : null
+                
                 node.append_object(track.to_json(), track.title, markup1, markup2)
+                
                 first = false
 
     def private gather_from_albums(albums: IterableOfAlbum, node: LibraryNode, ref paths: Json.Array)

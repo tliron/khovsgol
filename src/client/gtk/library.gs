@@ -102,12 +102,14 @@ namespace Khovsgol.Client.GTK
             add(box)
             set(0, 0, 1, 1)
 
-            ((API) _instance.api).connection_change_gdk.connect(on_connection_changed)
+            var api = (API) _instance.api
+            api.connection_change_gdk.connect(on_connection_changed)
         
         prop readonly accel_group: AccelGroup
             
         def private on_unrealized()
-            ((API) _instance.api).connection_change_gdk.disconnect(on_connection_changed)
+            var api = (API) _instance.api
+            api.connection_change_gdk.disconnect(on_connection_changed)
 
         //def private on_progress_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
           //  pass
@@ -152,10 +154,14 @@ namespace Khovsgol.Client.GTK
                 if (Json.Node) value == null
                     // We found the placeholder, so use the active style to fill
                     _store.remove(ref placeholder_iter)
-                    var style = _style_box.active_style
+                    var style = (LibraryStyle) _style_box.active_style
                     if style is not null
                         var node = new LibraryNode(_instance, _tree_view, _store, iter)
-                        ((LibraryStyle) style).fill(node)
+                        var filter = _filter_box.entry.text
+                        if (filter is not null) && (filter.length > 0)
+                            style.filter(node, filter)
+                        else
+                            style.fill(node)
                         if node.is_frozen
                             _tree_view.thaw_child_notify()
             return false
@@ -172,12 +178,16 @@ namespace Khovsgol.Client.GTK
             _tree_view.freeze_child_notify()
             _tree_view.model = null
             _store.clear()
-            var style = _style_box.active_style
+            var style = (LibraryStyle) _style_box.active_style
             if style is not null
                 var node = new LibraryNode(_instance, _tree_view, _store)
                 node.is_frozen = true
-                ((LibraryStyle) style).fill(node)
-            _tree_view.model = _store
+                var filter = _filter_box.entry.text
+                if (filter is not null) && (filter.length > 0)
+                    style.filter(node, filter)
+                else
+                    style.fill(node)
+                _tree_view.model = _store
             _tree_view.thaw_child_notify()
         
         def private on_clear_filter()
@@ -221,17 +231,18 @@ namespace Khovsgol.Client.GTK
             on_filter()
             
         def private gather_selected_tracks(): Json.Array?
-            var style = _style_box.active_style
+            var style = (LibraryStyle) _style_box.active_style
             if style is not null
                 var selection = _tree_view.get_selection()
                 var tree_paths = selection.get_selected_rows(null)
                 if tree_paths.length() > 0
+                    //var filter = _filter_box.entry.text
                     iter: TreeIter
                     var data = new Json.Array()
                     for var tree_path in tree_paths
                         if _store.get_iter(out iter, tree_path)
                             var node = new LibraryNode(_instance, _tree_view, _store, iter)
-                            ((LibraryStyle) style).gather_tracks(node, ref data)
+                            style.gather_tracks(node, ref data)
                     return data
             return null
 
