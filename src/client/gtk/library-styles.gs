@@ -122,8 +122,6 @@ namespace Khovsgol.Client.GTK
                         album_node.set_string_member("path", current_album_path)
                         album_node.set_array_member("tracks", current_tracks)
                         
-                        // TODO: is it possible to sort albums by date here???
-                        
                         if album_type == AlbumType.COMPILATION
                             compilations.add_object_element(album_node)
                         if album_type == AlbumType.CUSTOM_COMPILATION
@@ -154,6 +152,7 @@ namespace Khovsgol.Client.GTK
                 if albums is not null
                     var length = albums.get_length()
                     if length > 0
+                        var albums_list = new Gee.LinkedList of Album
                         var last = length - 1
                         for var i = 0 to last
                             var album_node = get_object_element_or_null(albums, i)
@@ -166,8 +165,12 @@ namespace Khovsgol.Client.GTK
                                         if tracks is not null
                                             // Transfer tracks cache to album node
                                             album.to_json().set_array_member("tracks", tracks)
-                                        fill_album_by(album, node)
-            
+                                        albums_list.add(album)
+                        
+                        albums_list.sort((CompareFunc) compare_albums_by_date)
+                        for var album in albums_list
+                            fill_album_by(album, node)
+
             else if level == 2
                 // Tracks in album (from cache)
                 var album_node = node.as_object
@@ -593,3 +596,6 @@ namespace Khovsgol.Client.GTK
         var path = track.path
         if path is not null
             paths.add_string_element(path)
+            
+    def private compare_albums_by_date(album1: Album, album2: Album): int
+        return (int) (album1.date - album2.date)
