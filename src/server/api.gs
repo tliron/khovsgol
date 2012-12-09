@@ -98,19 +98,19 @@ namespace Khovsgol.Server
             args.album_like = conversation.query["albumlike"]
             args.libraries.add_all(get_list_of_libraries(conversation))
             args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-            var compilation = conversation.query["compilation"]
-            var compilation_type = CompilationType.ANY
-            if compilation is not null
-                compilation_type = (CompilationType) int.parse(compilation)
+            var album_type_string = conversation.query["type"]
+            var album_type = AlbumType.ANY
+            if album_type_string is not null
+                album_type = (AlbumType) int.parse(album_type_string)
             json: Json.Array = null
 
-            // Note: 'compilation=1' handling is identical to 'compilation=0'
-            // Note: custom compilation tracks are always put *after* regular tracks, whatever the sort order
-            if compilation_type != CompilationType.CUSTOM_COMPILATION
+            // Note: AlbumType.COMPILATION handling is identical to AlbumType.ARTIST
+            if album_type != AlbumType.CUSTOM_COMPILATION
                 var iterator = _crucible.libraries.iterate_tracks(args)
                 json = iterator.to_json()
                 foreach_object_in_json_array(json, get_album_path_dynamic)
-            if (compilation_type == CompilationType.ANY) || (compilation_type == CompilationType.CUSTOM_COMPILATION)
+            // Note: custom compilation tracks are always put *after* regular tracks, whatever the sort order
+            if (album_type == AlbumType.ANY) || (album_type == AlbumType.CUSTOM_COMPILATION)
                 var json2 = _crucible.libraries.iterate_track_pointers(args).to_json()
                 if json is null
                     json = json2
@@ -163,9 +163,9 @@ namespace Khovsgol.Server
             var args = new IterateAlbumsArgs()
             args.libraries.add_all(get_list_of_libraries(conversation))
             args.sort.add_all(get_list_of_string(conversation.query["sort"]))
-            var compilation = conversation.query["compilation"]
-            if compilation is not null
-                args.compilation_type = (CompilationType) int.parse(compilation)
+            var album_type_string = conversation.query["type"]
+            if album_type_string is not null
+                args.album_type = (AlbumType) int.parse(album_type_string)
             set_response_json_array_or_not_found(_crucible.libraries.iterate_albums(args).to_json(), conversation)
 
         /*
@@ -335,7 +335,7 @@ namespace Khovsgol.Server
                 album.title = title
                 album.title_sort = to_sortable(title)
                 album.library = library
-                album.compilation_type = CompilationType.CUSTOM_COMPILATION
+                album.album_type = AlbumType.CUSTOM_COMPILATION
                 
                 _crucible.libraries.begin()
                 try

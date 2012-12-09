@@ -268,7 +268,7 @@ namespace Khovsgol.Server
         prop sort: list of string = new list of string
     
     class IterateAlbumsArgs
-        prop compilation_type: CompilationType = CompilationType.ANY
+        prop album_type: AlbumType = AlbumType.ANY
         prop libraries: list of string = new list of string
         prop sort: list of string = new list of string
 

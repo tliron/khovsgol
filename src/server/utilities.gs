@@ -25,7 +25,7 @@ namespace Khovsgol.Server
         var track = new Track.from_json(obj)
         track.album_path = File.new_for_path(track.path).get_parent().get_path()
 
-    class static AlbumPathConstant
+    class AlbumPathConstant
         construct(album_path: string)
             _album_path = album_path
     
@@ -34,3 +34,13 @@ namespace Khovsgol.Server
             track.album_path = _album_path
             
         _album_path: string
+
+    class Sortables
+        def @get(text: string): string
+            var sortable = _sortables[text]
+            if sortable is null
+                sortable = to_sortable(text)
+                _sortables[text] = sortable
+            return sortable
+
+        _sortables: dict of string, string = new dict of string, string

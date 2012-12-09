@@ -132,7 +132,7 @@ namespace Khovsgol.Client.CLI
 
             else if command == "compilations"
                 var args = new Client.API.GetAlbumsArgs()
-                args.compilation_type = 1
+                args.album_type = 1
                 for var album in _api.get_albums(args)
                     var path = album.path
                     if path is not null

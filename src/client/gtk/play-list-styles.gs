@@ -40,7 +40,7 @@ namespace Khovsgol.Client.GTK
                         album = node.instance.api.get_album(current_album_path)
                     if album is not null
                         albums[current_album_path] = album
-                        var compilation = album.compilation_type
+                        var compilation = album.album_type
                         if compilation != int.MIN
                             show_artist = compilation != 0
                         
@@ -64,8 +64,9 @@ namespace Khovsgol.Client.GTK
                             
                             current_album_positions = new Json.Array()
                             current_album_paths = new Json.Array()
-                            album.to_json().set_array_member("positions", current_album_positions)
-                            album.to_json().set_array_member("paths", current_album_paths)
+                            var json = album.to_json()
+                            json.set_array_member("positions", current_album_positions)
+                            json.set_array_member("paths", current_album_paths)
                             first = false
                         
                 var title = track.title

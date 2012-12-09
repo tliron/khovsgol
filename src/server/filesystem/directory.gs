@@ -27,13 +27,15 @@ namespace Khovsgol.Server.Filesystem
             _logger.messagef("Started scanning: %s", path)
 
             var libraries = crucible.libraries
-            count: int = 0
+            var sortables = new Sortables()
+            count: uint = 0
             var timer = new Timer()
 
             // Phase 1: Add tracks and albums
             _logger.infof("Phase 1: Add tracks and albums: %s", path)
             
             var enumerators = new Gee.LinkedList of FileEnumerator
+            var tracks = new list of Track 
             enumerator: FileEnumerator? = null
             info: FileInfo? = null
             album: Album? = null
@@ -53,16 +55,23 @@ namespace Khovsgol.Server.Filesystem
                     if info is null
                         if album is not null
                             libraries.save_album(album)
-                            _logger.infof("Added album: %s", album.path)
-                            album = null
+                            batch(libraries, ref count)
+                            if _logger.can(LogLevelFlags.LEVEL_INFO)
+                                _logger.infof("Added album: %s", album.path)
 
-                            if ++count % BATCH_SIZE == 0
-                                libraries.commit()
-                                Thread.usleep(1)
-                                libraries.begin()
+                            var album_type = album.album_type
+                            for track in tracks
+                                track.album_type = album_type
+                                libraries.save_track(track)
+                                batch(libraries, ref count)
+                                if _logger.can(LogLevelFlags.LEVEL_INFO)
+                                    _logger.infof("Added track: %s", track.path)
+                            
+                            album = null
+                            tracks.clear()
 
                         enumerator = enumerators.poll_tail()
-                        if enumerator is not null
+                        if (enumerator is not null) && _logger.can(LogLevelFlags.LEVEL_DEBUG)
                             _logger.debugf("Moved out: %s", enumerator.get_container().get_path())
                         continue
                         
@@ -80,11 +89,12 @@ namespace Khovsgol.Server.Filesystem
                             album = new Album()
                             album.path = file_path
                             album.library = library.name
-                            album.compilation_type = CompilationType.NOT
+                            album.album_type = AlbumType.ARTIST
 
                             enumerators.offer_tail(enumerator)
                             enumerator = file.enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
-                            _logger.debugf("Moved in: %s", enumerator.get_container().get_path())
+                            if _logger.can(LogLevelFlags.LEVEL_DEBUG)
+                                _logger.debugf("Moved in: %s", enumerator.get_container().get_path())
                             continue
                         
                         var taglib_file = new TagLib.File(file_path)
@@ -95,11 +105,11 @@ namespace Khovsgol.Server.Filesystem
                             track.path = file_path
                             track.library = library.name
                             track.title = tag.title
-                            track.title_sort = to_sortable(track.title)
+                            track.title_sort = sortables.@get(track.title)
                             track.artist = tag.artist
-                            track.artist_sort = to_sortable(track.artist)
+                            track.artist_sort = sortables.@get(track.artist)
                             track.album = tag.album
-                            track.album_sort = to_sortable(track.album)
+                            track.album_sort = sortables.@get(track.album)
                             track.position = (int) tag.track
                             track.duration = (double) taglib_file.audioproperties.length
                             track.date = (int) tag.year
@@ -107,24 +117,18 @@ namespace Khovsgol.Server.Filesystem
                             if last_dot != -1
                                 file_path.get_next_char(ref last_dot, null)
                                 track.file_type = file_path.substring(last_dot)
-
-                            libraries.save_track(track)
-                            _logger.infof("Added track: %s", file_path)
-
-                            if ++count % BATCH_SIZE == 0
-                                libraries.commit()
-                                Thread.usleep(1)
-                                libraries.begin()
+                                
+                            tracks.add(track)
 
                             if album is not null
                                 album.title = track.album
                                 album.title_sort = track.album_sort
                                 if album.artist != track.artist
-                                    if (album.compilation_type == CompilationType.NOT) && (album.artist is null)
+                                    if (album.album_type == AlbumType.ARTIST) && (album.artist is null)
                                         album.artist = track.artist
                                         album.artist_sort = track.artist_sort
                                     else
-                                        album.compilation_type = CompilationType.COMPILATION
+                                        album.album_type = AlbumType.COMPILATION
                                         album.artist = null
                                         album.artist_sort = null
                                 album.date = track.date
@@ -164,12 +168,8 @@ namespace Khovsgol.Server.Filesystem
 
                     if !File.new_for_path(album_path).query_exists()
                         libraries.delete_album(album_path)
+                        batch(libraries, ref count)
                         _logger.infof("Pruned album: %s", album_path)
-
-                        if ++count % BATCH_SIZE == 0
-                            libraries.commit()
-                            Thread.usleep(1)
-                            libraries.begin()
 
                 // Phase 3: Delete missing tracks
                 _logger.infof("Phase 3: Prune missing tracks: %s", path)
@@ -182,12 +182,8 @@ namespace Khovsgol.Server.Filesystem
 
                     if !File.new_for_path(track_path).query_exists()
                         libraries.delete_track(track_path)
+                        batch(libraries, ref count)
                         _logger.infof("Pruned track: %s", track_path)
-
-                        if ++count % BATCH_SIZE == 0
-                            libraries.commit()
-                            Thread.usleep(1)
-                            libraries.begin()
                 
                 pass
             except e: GLib.Error
@@ -200,7 +196,7 @@ namespace Khovsgol.Server.Filesystem
 
             timer.stop()
             var seconds = timer.elapsed()
-            _logger.messagef("Scanning ended: %s (%.2f seconds, %d operations)", path, seconds, count)
+            _logger.messagef("Scanning ended: %s (%.2f seconds, %u operations)", path, seconds, count)
             
             // We've stopped scanning
             AtomicInt.set(ref _is_scanning, 0)
@@ -208,9 +204,16 @@ namespace Khovsgol.Server.Filesystem
             return true
 
         const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.TIME_MODIFIED
-        const private BATCH_SIZE: int = 200
+        const private BATCH_SIZE: uint = 200
 
         _logger: static Logging.Logger
+
+        def private static batch(libraries: Libraries, ref count: uint) raises GLib.Error
+            if ++count % BATCH_SIZE == 0
+                libraries.commit()
+                _logger.debugf("Batch commit: %u", count)
+                Thread.usleep(1)
+                libraries.begin()
     
         init
             _logger = Logging.get_logger("khovsgol.directory")

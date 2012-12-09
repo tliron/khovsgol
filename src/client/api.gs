@@ -109,7 +109,7 @@ namespace Khovsgol.Client
             prop search_title: string?
             prop search_artist: string?
             prop search_album: string?
-            prop compilation_type: int = int.MIN
+            prop album_type: int = int.MIN
             prop sort: list of string = new list of string
 
         /*
@@ -129,13 +129,13 @@ namespace Khovsgol.Client
                     conversation.query["album"] = args.in_album
                 else
                     if args.search_title is not null
-                        conversation.query["liketitle"] = args.search_title
+                        conversation.query["titlelike"] = args.search_title
                     if args.search_artist is not null
-                        conversation.query["likeartist"] = args.search_artist
+                        conversation.query["artistlike"] = args.search_artist
                     if args.search_album is not null
-                        conversation.query["likealbum"] = args.search_album
-                    if args.compilation_type != int.MIN
-                        conversation.query["compilation"] = args.compilation_type.to_string()
+                        conversation.query["albumlike"] = args.search_album
+                    if args.album_type != int.MIN
+                        conversation.query["type"] = args.album_type.to_string()
                 if !args.sort.is_empty
                     conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
@@ -148,7 +148,7 @@ namespace Khovsgol.Client
             prop by_artist: string?
             prop with_artist: string?
             prop at_date: int = int.MIN
-            prop compilation_type: int = int.MIN
+            prop album_type: int = int.MIN
             prop sort: list of string = new list of string
 
         /*
@@ -166,8 +166,8 @@ namespace Khovsgol.Client
                         conversation.query["artist"] = args.with_artist
                     else if args.at_date != int.MIN
                         conversation.query["date"] = args.at_date.to_string()
-                    if args.compilation_type != int.MIN
-                        conversation.query["compilation"] = args.compilation_type.to_string()
+                    if args.album_type != int.MIN
+                        conversation.query["type"] = args.album_type.to_string()
                     if !args.sort.is_empty
                         conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()

@@ -70,6 +70,12 @@ namespace Khovsgol
             set
                 set_string_member_not_null(_json, "album_path", value)
         
+        prop album_type: AlbumType
+            get
+                return (AlbumType) get_int_member_or_min(_json, "album_type")
+            set
+                set_int_member_not_min(_json, "album_type", value)
+
         prop position: int
             get
                 return get_int_member_or_min(_json, "position")
@@ -90,9 +96,9 @@ namespace Khovsgol
                 
         prop file_type: string
             owned get
-                return get_string_member_or_null(_json, "type")
+                return get_string_member_or_null(_json, "file_type")
             set
-                set_string_member_not_null(_json, "type", value)
+                set_string_member_not_null(_json, "file_type", value)
         
         def clone(): Track
             var track = new Track()
@@ -104,6 +110,7 @@ namespace Khovsgol
             track.album = album
             track.album_sort = album_sort
             track.album_path = album_path
+            track.album_type = album_type
             track.position = position
             track.duration = duration
             track.date = date
@@ -163,9 +170,9 @@ namespace Khovsgol
     // Album
     //
     
-    enum CompilationType
+    enum AlbumType
         ANY = -1
-        NOT = 0
+        ARTIST = 0
         COMPILATION = 1
         CUSTOM_COMPILATION = 2
 
@@ -219,17 +226,17 @@ namespace Khovsgol
             set
                 set_int64_member_not_min(_json, "date", value != 0 ? (int64) value : int64.MIN)
 
-        prop compilation_type: CompilationType
+        prop album_type: AlbumType
             get
-                return (CompilationType) get_int_member_or_min(_json, "compilation")
+                return (AlbumType) get_int_member_or_min(_json, "album_type")
             set
-                set_int_member_not_min(_json, "compilation", value)
+                set_int_member_not_min(_json, "album_type", value)
 
         prop file_type: string
             owned get
-                return get_string_member_or_null(_json, "type")
+                return get_string_member_or_null(_json, "file_type")
             set
-                set_string_member_not_null(_json, "type", value)
+                set_string_member_not_null(_json, "file_type", value)
         
         def to_json(): Json.Object
             return _json

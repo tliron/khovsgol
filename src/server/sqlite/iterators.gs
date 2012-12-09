@@ -51,10 +51,11 @@ namespace Khovsgol.Server._Sqlite
             track.artist_sort = row.get_text("artist_sort")
             track.album = row.get_text("album")
             track.album_sort = row.get_text("album_sort")
+            track.album_type = (AlbumType) row.get_int("album_type")
             track.position = row.get_int("position")
             track.duration = row.get_double("duration")
             track.date = row.get_int("date")
-            track.file_type = row.get_text("type")
+            track.file_type = row.get_text("file_type")
             if _album_path
                 track.album_path = row.get_text("album_path")
             return track
@@ -152,8 +153,8 @@ namespace Khovsgol.Server._Sqlite
             album.artist = row.get_text("artist")
             album.artist_sort = row.get_text("artist_sort")
             album.date = row.get_int("date")
-            album.compilation_type = (CompilationType) row.get_int("compilation")
-            album.file_type = row.get_text("type")
+            album.album_type = (AlbumType) row.get_int("album_type")
+            album.file_type = row.get_text("file_type")
             return album
         
         def first(): bool

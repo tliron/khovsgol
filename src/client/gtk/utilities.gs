@@ -143,9 +143,10 @@ namespace Khovsgol.Client.GTK
             _store.@set(child_iter, Library.Column.NODE, node, Library.Column.SEARCH, search, Library.Column.MARKUP1, markup1, Library.Column.MARKUP2, markup2, -1)
             if is_expandable
                 // Add placeholder
-                _store.append(out child_iter, child_iter)
-                _store.@set(child_iter, Library.Column.NODE, null, -1)
-
+                placeholder_iter: TreeIter
+                _store.append(out placeholder_iter, child_iter)
+                _store.@set(placeholder_iter, Library.Column.NODE, null, -1)
+        
         def append_object(obj: Json.Object, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
             var node = new Json.Node(Json.NodeType.OBJECT)
             node.set_object(obj)
