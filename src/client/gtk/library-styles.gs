@@ -65,7 +65,7 @@ namespace Khovsgol.Client.GTK
         def filter(node: LibraryNode, filter: string)
             var level = node.level
             if level == 0
-                // Album artists (with all albums and tracks cached inside its node)
+                // Album artists (with all albums and tracks cached inside each node)
                 first: bool = true
                 current_album_path: string? = null
                 current_albums: Json.Array? = null
@@ -81,7 +81,8 @@ namespace Khovsgol.Client.GTK
                 args.search_album = like
                 args.search_title = like
                 args.album_type = AlbumType.ARTIST
-                args.sort.add("album")
+                args.sort.add("artist_sort")
+                args.sort.add("album") // we will later sort albums by date
                 args.sort.add("position")
                 for var track in node.instance.api.get_tracks(args)
                     var artist_name = track.artist
@@ -245,7 +246,66 @@ namespace Khovsgol.Client.GTK
                     fill_tracks(node.instance.api.get_tracks(args), node)
 
         def filter(node: LibraryNode, filter: string)
-            pass
+            var level = node.level
+            if level == 0
+                // Artists (with all tracks cached inside each node)
+                first: bool = true
+                current_tracks: Json.Array? = null
+                current_letter: unichar = 0
+                last_artist_name: string? = null
+
+                var args = new Client.API.GetTracksArgs()
+                var like = "%" + filter + "%"
+                args.search_artist = like
+                args.search_album = like
+                args.search_title = like
+                args.album_type = AlbumType.ARTIST
+                args.sort.add("artist_sort")
+                args.sort.add("title_sort")
+                for var track in node.instance.api.get_tracks(args)
+                    var artist_name = track.artist
+                    
+                    if artist_name != last_artist_name
+                        // New artist
+                        var sort = track.artist_sort
+                        last_artist_name = artist_name
+
+                        // Separate by first letter
+                        if (sort is not null) && (sort.length > 0)
+                            var letter = sort.get_char(0)
+                            if letter != current_letter
+                                current_letter = letter
+                                if !first
+                                    node.append_separator()
+
+                        var artist = new Artist()
+                        artist.name = artist_name
+                        artist.sort = sort
+                        var json = fill_artist(artist, node)
+                        if json is not null
+                            current_tracks = new Json.Array()
+                            json.set_array_member("tracks", current_tracks)
+                        else
+                            current_tracks = null
+                        
+                        first = false
+
+                    if current_tracks is not null
+                        current_tracks.add_object_element(track.to_json())
+
+            else if level == 1
+                // Tracks in album (from cache)
+                var artist_node = node.as_object
+                var tracks = get_array_member_or_null(artist_node, "tracks")
+                if tracks is not null
+                    var length = tracks.get_length()
+                    if length > 0
+                        var last = length - 1
+                        for var i = 0 to last
+                            var track_node = get_object_element_or_null(tracks, i)
+                            if track_node is not null
+                                var track = new Track.from_json(track_node)
+                                fill_track(track, node)
         
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
@@ -310,7 +370,97 @@ namespace Khovsgol.Client.GTK
                     fill_tracks_in_album(node.instance.api.get_tracks(args), compilation > 0, node)
 
         def filter(node: LibraryNode, filter: string)
-            pass
+            var level = node.level
+            if level == 0
+                // Dates (with all albums and tracks cached inside each node)
+                first: bool = true
+                current_album_path: string? = null
+                current_albums: Json.Array? = null
+                current_tracks: Json.Array? = null
+                current_decade: uint = 0
+                last_date: uint = 0
+
+                var args = new Client.API.GetTracksArgs()
+                var like = "%" + filter + "%"
+                args.search_artist = like
+                args.search_album = like
+                args.search_title = like
+                args.album_type = AlbumType.ARTIST
+                args.sort.add("date")
+                args.sort.add("album") // we will later sort albums by date
+                args.sort.add("position")
+                for var track in node.instance.api.get_tracks(args)
+                    var date = track.date
+                    var album_path = track.album_path
+                    
+                    if (date != last_date) || (last_date == 0)
+                        // New date
+                        last_date = date
+
+                        // Seperate by decade
+                        var decade = date / 10
+                        if decade != current_decade
+                            current_decade = decade
+                            if !first
+                                node.append_separator()
+
+                        var date_string = date.to_string()
+                        var date_node = new Json.Object()
+                        date_node.set_int_member("date", date)
+                        node.append_object(date_node, date_string, date_string, null, true)
+                        current_albums = new Json.Array()
+                        date_node.set_array_member("albums", current_albums)
+                        
+                        first = false
+
+                    if (album_path is not null) && (current_album_path != album_path)
+                        // New album
+                        current_album_path = album_path
+                        current_tracks = new Json.Array()
+                        
+                        if current_albums is not null
+                            var album_node = new Json.Object()
+                            album_node.set_string_member("path", current_album_path)
+                            album_node.set_array_member("tracks", current_tracks)
+                            current_albums.add_object_element(album_node)
+                    
+                    if current_tracks is not null
+                        current_tracks.add_object_element(track.to_json())
+
+            else if level == 1
+                // Albums at date (from cache)
+                var date_node = node.as_object
+                var albums = get_array_member_or_null(date_node, "albums")
+                if albums is not null
+                    var length = albums.get_length()
+                    if length > 0
+                        var last = length - 1
+                        for var i = 0 to last
+                            var album_node = get_object_element_or_null(albums, i)
+                            if album_node is not null
+                                var path = get_string_member_or_null(album_node, "path")
+                                if path is not null
+                                    var album = node.instance.api.get_album(path)
+                                    if album is not null
+                                        var tracks = get_array_member_or_null(album_node, "tracks")
+                                        if tracks is not null
+                                            // Transfer tracks cache to album node
+                                            album.to_json().set_array_member("tracks", tracks)
+                                        fill_album(album, node)
+
+            else if level == 2
+                // Tracks in album (from cache)
+                var album_node = node.as_object
+                var tracks = get_array_member_or_null(album_node, "tracks")
+                if tracks is not null
+                    var length = tracks.get_length()
+                    if length > 0
+                        var last = length - 1
+                        for var i = 0 to last
+                            var track_node = get_object_element_or_null(tracks, i)
+                            if track_node is not null
+                                var track = new Track.from_json(track_node)
+                                fill_track_in_album(track, false, node)
         
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
@@ -482,8 +632,6 @@ namespace Khovsgol.Client.GTK
             var title = album.title
             if title is not null
                 var title_sort = album.title_sort
-                var file_type = album.file_type
-                var artist = album.artist
 
                 // Separate by first letter
                 if (title_sort is not null) && (title_sort.length > 0)
@@ -492,18 +640,26 @@ namespace Khovsgol.Client.GTK
                         current_letter = letter
                         if !first
                             node.append_separator()
-
-                title = Markup.escape_text(title)
-                title = format_annotation(title)
-                if artist is not null
-                    artist = Markup.escape_text(artist)
-                if !is_lossless(file_type)
-                    title = format_washed_out(title)
-                var markup = artist is not null ? "%s - <i>%s</i>".printf(title, artist) : title
                 
-                node.append_object(album.to_json(), album.title, markup, null, true)
+                fill_album(album, node)
                 
                 first = false
+
+    def private fill_album(album: Album, node: LibraryNode)
+        var title = album.title
+        if title is not null
+            var file_type = album.file_type
+            var artist = album.artist
+
+            title = Markup.escape_text(title)
+            title = format_annotation(title)
+            if artist is not null
+                artist = Markup.escape_text(artist)
+            if !is_lossless(file_type)
+                title = format_washed_out(title)
+            var markup = artist is not null ? "%s - <i>%s</i>".printf(title, artist) : title
+            
+            node.append_object(album.to_json(), album.title, markup, null, true)
 
     def private fill_tracks_in_album(tracks: IterableOfTrack, is_compilation: bool, node: LibraryNode)
         for var track in tracks
@@ -543,9 +699,6 @@ namespace Khovsgol.Client.GTK
             var title = track.title
             if title is not null
                 var title_sort = track.title_sort
-                var album = track.album
-                var file_type = track.file_type
-                var duration = track.duration
 
                 // Separate by first letter
                 if (title_sort is not null) && (title_sort.length > 0)
@@ -554,24 +707,33 @@ namespace Khovsgol.Client.GTK
                         current_letter = letter
                         if !first
                             node.append_separator()
-
-                title = Markup.escape_text(title)
-                title = format_annotation(title)
-                if !is_lossless(file_type)
-                    title = format_washed_out(title)
-                
-                markup1: string
-                if album is not null
-                    album = Markup.escape_text(album)
-                    album = format_annotation(album)
-                    markup1 = "%s - %s".printf(title, album)
-                else
-                    markup1 = title
-                var markup2 = duration != double.MIN ? format_duration(duration) : null
-                
-                node.append_object(track.to_json(), track.title, markup1, markup2)
+                            
+                fill_track(track, node)
                 
                 first = false
+
+    def private fill_track(track: Track, node: LibraryNode)
+        var title = track.title
+        if title is not null
+            var album = track.album
+            var file_type = track.file_type
+            var duration = track.duration
+
+            title = Markup.escape_text(title)
+            title = format_annotation(title)
+            if !is_lossless(file_type)
+                title = format_washed_out(title)
+            
+            markup1: string
+            if album is not null
+                album = Markup.escape_text(album)
+                album = format_annotation(album)
+                markup1 = "%s - %s".printf(title, album)
+            else
+                markup1 = title
+            var markup2 = duration != double.MIN ? format_duration(duration) : null
+            
+            node.append_object(track.to_json(), track.title, markup1, markup2)
 
     def private gather_from_albums(albums: IterableOfAlbum, node: LibraryNode, ref paths: Json.Array)
         for var album in albums
