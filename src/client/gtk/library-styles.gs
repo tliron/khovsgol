@@ -108,7 +108,7 @@ namespace Khovsgol.Client.GTK
                         var json = fill_artist(artist, node)
                         if json is not null
                             current_albums = new Json.Array()
-                            json.set_array_member("albums", current_albums)
+                            json.set_array_member("_albums", current_albums)
                         else
                             current_albums = null
                         
@@ -138,18 +138,18 @@ namespace Khovsgol.Client.GTK
                 
                 if compilations.get_length() > 0
                     var special = new Json.Object()
-                    special.set_array_member("albums", compilations)
+                    special.set_array_member("_albums", compilations)
                     node.append_object(special, "compilations", "<b>Compilations</b>", null, true)
 
                 if custom_compilations.get_length() > 0
                     var special = new Json.Object()
-                    special.set_array_member("albums", custom_compilations)
+                    special.set_array_member("_albums", custom_compilations)
                     node.append_object(special, "customcompilations", "<b>Custom Compilations</b>", null, true)
 
             else if level == 1
                 // Albums by artist (from cache)
                 var artist_node = node.as_object
-                var albums = get_array_member_or_null(artist_node, "albums")
+                var albums = get_array_member_or_null(artist_node, "_albums")
                 if albums is not null
                     var length = albums.get_length()
                     if length > 0
@@ -284,7 +284,7 @@ namespace Khovsgol.Client.GTK
                         var json = fill_artist(artist, node)
                         if json is not null
                             current_tracks = new Json.Array()
-                            json.set_array_member("tracks", current_tracks)
+                            json.set_array_member("_tracks", current_tracks)
                         else
                             current_tracks = null
                         
@@ -296,7 +296,7 @@ namespace Khovsgol.Client.GTK
             else if level == 1
                 // Tracks in album (from cache)
                 var artist_node = node.as_object
-                var tracks = get_array_member_or_null(artist_node, "tracks")
+                var tracks = get_array_member_or_null(artist_node, "_tracks")
                 if tracks is not null
                     var length = tracks.get_length()
                     if length > 0
