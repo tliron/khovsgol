@@ -19,6 +19,9 @@ namespace Khovsgol.Client.Plugins
      * The Ubuntu sound indicator will automatically create an entry
      * for us when it first discovers us, which will persist even when
      * we are not running.
+     * 
+     * See:
+     *  http://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata
      */
     class Mpris2Plugin: Object implements Plugin
         prop instance: Instance

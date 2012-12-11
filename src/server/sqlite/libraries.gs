@@ -69,20 +69,20 @@ namespace Khovsgol.Server._Sqlite
             _db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp INTEGER(8))")
             
         def override begin() raises GLib.Error
-            _transaction_lock.lock()
+            _write_lock.lock()
             _db.execute("BEGIN")
 
         def override commit() raises GLib.Error
             try
                 _db.execute("COMMIT")
             finally
-                _transaction_lock.unlock()
+                _write_lock.unlock()
 
         def override rollback() raises GLib.Error
             try
                 _db.execute("ROLLBACK")
             finally
-                _transaction_lock.unlock()
+                _write_lock.unlock()
             
         //
         // Tracks
@@ -596,7 +596,7 @@ namespace Khovsgol.Server._Sqlite
 
         _db: SqliteUtil.Database
         
-        _transaction_lock: GLib.Mutex = GLib.Mutex()
+        _write_lock: GLib.Mutex = GLib.Mutex()
         
         _get_track: Statement
         _get_track_lock: GLib.Mutex = GLib.Mutex()

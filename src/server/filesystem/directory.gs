@@ -23,42 +23,65 @@ namespace Khovsgol.Server.Filesystem
         _is_scan_stopping: int
         _is_scanning: int
         
+        class Node
+            construct(enumerator: FileEnumerator, album: Album, tracks: list of Track)
+                self.enumerator = enumerator
+                self.album = album
+                self.tracks = tracks
+        
+            enumerator: FileEnumerator?
+            album: Album
+            tracks: list of Track
+        
         def private do_scan(): bool
             _logger.messagef("Started scanning: %s", path)
-
+            
             var libraries = crucible.libraries
+            var library_name = library.name
             var sortables = new Sortables()
             count: uint = 0
             var timer = new Timer()
 
             // Phase 1: Add tracks and albums
             _logger.infof("Phase 1: Add tracks and albums: %s", path)
-            
-            var enumerators = new Gee.LinkedList of FileEnumerator
-            var tracks = new list of Track 
+
             enumerator: FileEnumerator? = null
             info: FileInfo? = null
-            album: Album? = null
+
+            var album = new Album()
+            album.path = path
+            album.library = library_name
+            album.album_type = AlbumType.ARTIST
+
+            var tracks = new list of Track
+
+            var stack = new Gee.LinkedList of Node
+
             try
                 libraries.begin()
                 
                 enumerator = File.new_for_path(path).enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
                 _logger.debugf("Switched to: %s", enumerator.get_container().get_path())
 
-                while enumerator is not null
+                while true
                     // Should we stop scanning?
                     if AtomicInt.get(ref _is_scan_stopping) == 1
                         _logger.messagef("Scanning aborted: %s", path)
                         break
-                    
+
                     info = enumerator.next_file()
+                    
+                    // Have we finished enumerating files in this directory?
                     if info is null
-                        if album is not null
+                        // Make sure the album has tracks
+                        if (album is not null) && !tracks.is_empty
+                            // Save album
                             libraries.save_album(album)
                             batch(libraries, ref count)
                             if _logger.can(LogLevelFlags.LEVEL_INFO)
                                 _logger.infof("Added album: %s", album.path)
 
+                            // Save tracks
                             var album_type = album.album_type
                             for track in tracks
                                 track.album_type = album_type
@@ -67,32 +90,43 @@ namespace Khovsgol.Server.Filesystem
                                 if _logger.can(LogLevelFlags.LEVEL_INFO)
                                     _logger.infof("Added track: %s", track.path)
                             
-                            album = null
-                            tracks.clear()
-
-                        enumerator = enumerators.poll_tail()
-                        if (enumerator is not null) && _logger.can(LogLevelFlags.LEVEL_DEBUG)
-                            _logger.debugf("Moved out: %s", enumerator.get_container().get_path())
-                        continue
+                        // Go back to previous node in stack
+                        var node = stack.poll_tail()
+                        if node is not null
+                            enumerator = node.enumerator
+                            album = node.album
+                            tracks = node.tracks
+                            if _logger.can(LogLevelFlags.LEVEL_DEBUG)
+                                _logger.debugf("Moved out: %s", enumerator.get_container().get_path())
+                            continue
+                        else
+                            break
                         
-                    // TODO: ignore hidden files
+                    // Ignore hidden and unreadable files
+                    if info.get_is_hidden() || !info.get_attribute_boolean(FileAttribute.ACCESS_CAN_READ)
+                        continue
 
                     var file = enumerator.get_container().resolve_relative_path(info.get_name())
                     var file_path = file.get_path()
                     var timestamp = new DateTime.from_timeval_utc(info.get_modification_time()).to_unix()
                     var stored_timestamp = libraries.get_timestamp(file_path)
-                    
+
                     if timestamp > stored_timestamp
                         libraries.set_timestamp(file_path, timestamp)
 
                         if info.get_file_type() == FileType.DIRECTORY
+                            // Put current node on stack
+                            var node = new Node(enumerator, album, tracks)
+                            stack.offer_tail(node)
+                            
+                            // New directory means new album
+                            enumerator = file.enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
                             album = new Album()
                             album.path = file_path
-                            album.library = library.name
+                            album.library = library_name
                             album.album_type = AlbumType.ARTIST
-
-                            enumerators.offer_tail(enumerator)
-                            enumerator = file.enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
+                            tracks = new list of Track
+                            
                             if _logger.can(LogLevelFlags.LEVEL_DEBUG)
                                 _logger.debugf("Moved in: %s", enumerator.get_container().get_path())
                             continue
@@ -121,8 +155,13 @@ namespace Khovsgol.Server.Filesystem
                             tracks.add(track)
 
                             if album is not null
-                                album.title = track.album
-                                album.title_sort = track.album_sort
+                                if album.title is null
+                                    album.title = track.album
+                                    album.title_sort = track.album_sort
+                                    album.date = track.date
+                                    album.file_type = track.file_type
+                                
+                                // If an album has tracks by more than one artist, it is a compilation
                                 if album.artist != track.artist
                                     if (album.album_type == AlbumType.ARTIST) && (album.artist is null)
                                         album.artist = track.artist
@@ -131,8 +170,6 @@ namespace Khovsgol.Server.Filesystem
                                         album.album_type = AlbumType.COMPILATION
                                         album.artist = null
                                         album.artist_sort = null
-                                album.date = track.date
-                                album.file_type = track.file_type
             except e: GLib.Error
                 _logger.exception(e)
             finally
@@ -148,9 +185,9 @@ namespace Khovsgol.Server.Filesystem
                         enumerator.close()
                     except e: GLib.Error
                         _logger.exception(e)
-                for var e in enumerators
+                for var node in stack
                     try
-                        e.close()
+                        node.enumerator.close()
                     except e: GLib.Error
                         _logger.exception(e)
             
@@ -203,8 +240,8 @@ namespace Khovsgol.Server.Filesystem
             AtomicInt.set(ref _is_scan_stopping, 0)
             return true
 
-        const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.TIME_MODIFIED
-        const private BATCH_SIZE: uint = 200
+        const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_IS_HIDDEN + "," + FileAttribute.ACCESS_CAN_READ + "," + FileAttribute.TIME_MODIFIED
+        const private BATCH_SIZE: uint = 100
 
         _logger: static Logging.Logger
 
@@ -212,7 +249,10 @@ namespace Khovsgol.Server.Filesystem
             if ++count % BATCH_SIZE == 0
                 libraries.commit()
                 _logger.debugf("Batch commit: %u", count)
+                
+                // This gives an opportunity for other threads to access the database
                 Thread.usleep(1)
+                
                 libraries.begin()
     
         init
