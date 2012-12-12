@@ -27,39 +27,7 @@ namespace Khovsgol.Client.Plugins
         
         def stop()
             if _purple is not null
-                _instance.api.track_change.disconnect(on_track_changed)
-                
-                // Return all accounts to their saved statuses
-                try
-                    var accounts = _purple.purple_accounts_get_all_active()
-                    if accounts is not null
-                        for var account in accounts
-                            var protocol = _purple.purple_account_get_protocol_name(account)
-                            var username = _purple.purple_account_get_username(account)
-                            var status = _purple.purple_account_get_active_status(account)
-                            
-                            // Set the "message" attribute in the active status
-                            if has_attribute(status, "message")
-                                // Return to saved status
-                                message: string? = null
-                                var saved_status = _purple.purple_savedstatus_get_current()
-                                if saved_status != 0
-                                    var saved_sub_status = _purple.purple_savedstatus_get_substatus(saved_status, account)
-                                    if saved_sub_status != 0
-                                        // Saved sub-status
-                                        message = _purple.purple_savedstatus_substatus_get_message(saved_sub_status)
-                                        _logger.messagef("Setting account %s/%s status %d to saved sub-status: \"%s\"", protocol, username, status, message)
-                                    else
-                                        // Saved status
-                                        message = _purple.purple_savedstatus_get_message(saved_sub_status)
-                                        _logger.messagef("Setting account %s/%s status %d to saved status: \"%s\"", protocol, username, status, message)
-
-                                if message is not null
-                                    _purple.purple_status_set_attr_string(status, "message", message)
-                                    _purple.purple_status_set_active(status, 1) // TODO: aren't we already active?
-                except e: IOError
-                    _logger.exception(e)
-                    
+                on_track_changed(null, null)
                 _purple = null
                 _logger.message("Stopped")
 
@@ -89,7 +57,7 @@ namespace Khovsgol.Client.Plugins
                         // Set the "message" attribute in the active status
                         if has_attribute(status, "message")
                             if track is not null
-                                _logger.messagef("Setting account %s/%s status %d to: \"%s\"", protocol, username, status, message)
+                                _logger.infof("Setting account %s/%s status %d to: \"%s\"", protocol, username, status, message)
                             else
                                 // Return to saved status
                                 var saved_status = _purple.purple_savedstatus_get_current()
@@ -98,15 +66,15 @@ namespace Khovsgol.Client.Plugins
                                     if saved_sub_status != 0
                                         // Saved sub-status
                                         message = _purple.purple_savedstatus_substatus_get_message(saved_sub_status)
-                                        _logger.messagef("Setting account %s/%s status %d to saved sub-status: \"%s\"", protocol, username, status, message)
+                                        _logger.infof("Setting account %s/%s status %d to saved sub-status: \"%s\"", protocol, username, status, message)
                                     else
                                         // Saved status
                                         message = _purple.purple_savedstatus_get_message(saved_sub_status)
-                                        _logger.messagef("Setting account %s/%s status %d to saved status: \"%s\"", protocol, username, status, message)
+                                        _logger.infof("Setting account %s/%s status %d to saved status: \"%s\"", protocol, username, status, message)
 
                             if message is not null
                                 _purple.purple_status_set_attr_string(status, "message", message)
-                                _purple.purple_status_set_active(status, 1) // TODO: aren't we already active?
+                                _purple.purple_status_set_active(status, 1)
                     
                         // Some accounts support a special "tune" status in their presence
                         var presence = _purple.purple_account_get_presence(account)
@@ -115,21 +83,28 @@ namespace Khovsgol.Client.Plugins
                             if tune_status != 0
                                 // Set tune status
                                 if track is not null
-                                    _logger.messagef("Setting account %s/%s tune status %d", protocol, username, tune_status)
+                                    _logger.infof("Setting account %s/%s tune status %d", protocol, username, tune_status)
                                     _purple.purple_status_set_attr_string(tune_status, "tune_artist", track.artist)
                                     _purple.purple_status_set_attr_string(tune_status, "tune_title", track.title)
                                     _purple.purple_status_set_attr_string(tune_status, "tune_album", track.album)
                                     _purple.purple_status_set_attr_string(tune_status, "tune_year", track.date.to_string())
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_track", track.position.to_string())
                                     _purple.purple_status_set_active(tune_status, 1)
                                 else
-                                    _logger.messagef("Resetting account %s/%s tune status %d", protocol, username, tune_status)
-                                    _purple.purple_status_set_active(tune_status, 0)
+                                    _logger.infof("Resetting account %s/%s tune status %d", protocol, username, tune_status)
                                     
                                     // It seems that we need to explicitly reset the fields
                                     _purple.purple_status_set_attr_string(tune_status, "tune_artist", "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_title", "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_album", "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_year", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_time", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_genre", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_comment", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_track", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_url", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_full", "")
+                                    _purple.purple_status_set_active(tune_status, 0)
             except e: IOError
                 _logger.exception(e)
                 
@@ -156,7 +131,7 @@ namespace Khovsgol.Client.Plugins
         init
             _logger = Logging.get_logger("khovsgol.client.purple")
     
-    enum private StatusType
+    enum StatusType
         NONE = 0
         OFFLINE = 1
         AVAILABLE = 2
@@ -168,7 +143,7 @@ namespace Khovsgol.Client.Plugins
         TUNE = 8
 
     [DBus(name="im.pidgin.purple.PurpleService")]
-    interface private PurpleObject: Object
+    interface PurpleObject: Object
         def abstract purple_accounts_get_all_active(): array of int raises IOError
         
         // Account
@@ -179,9 +154,10 @@ namespace Khovsgol.Client.Plugins
         
         // Status
         def abstract purple_status_get_type(status: int): int raises IOError
-        def abstract purple_status_set_active(status: int, active: int) raises IOError
-        def abstract purple_status_set_attr_string(status: int, attribute: string, value: string) raises IOError
         def abstract purple_status_attr_get_id(attribute_id: int): string raises IOError
+        def abstract purple_status_set_attr_string(status: int, attribute: string, value: string) raises IOError
+        def abstract purple_status_set_active(status: int, active: int) raises IOError
+        //def abstract purple_status_set_active_with_attrs_list(status: int, active: int, attributes: HashTable of string, string) raises IOError
 
         // Status Type
         def abstract purple_status_type_get_attrs(status_type: int): array of int raises IOError
