@@ -5,7 +5,7 @@ uses
 
 namespace Khovsgol.Client.GTK
 
-    class MainWindow: Window
+    class MainWindow: ApplicationWindow
         construct(instance: Instance)
             _instance = instance
             
@@ -47,6 +47,7 @@ namespace Khovsgol.Client.GTK
 
             add(main_box)
             
+            startup_id = "khovsgol"
             title = "Khövsgöl"
             deletable = false
             border_width = 10
