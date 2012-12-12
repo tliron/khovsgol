@@ -364,7 +364,7 @@ namespace Khovsgol.Client.GTK
                                 node.append_separator()
                     
                         var date_string = date.to_string()
-                        node.append_int(date, date_string, date_string, null, true)
+                        node.append_int(date, date_string, date != 0 ? date_string : "Unknown", null, true)
                         first = false
                 else
                     // Dates (with all albums and tracks cached inside each node)

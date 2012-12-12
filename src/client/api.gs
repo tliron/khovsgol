@@ -214,11 +214,13 @@ namespace Khovsgol.Client
         /*
          * receive [int, ...]
          */
-        def get_dates(): IterableOfInt
+        def get_dates(by_album: bool = true): IterableOfInt
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/dates/"
+                if by_album
+                    conversation.query["album"] = "true"
                 conversation.commit()
                 return new JsonInts(conversation.response_json_array)
             except e: GLib.Error
