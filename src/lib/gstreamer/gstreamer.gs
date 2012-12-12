@@ -18,34 +18,34 @@ namespace GstUtil
         for var e in l
             print e.get_name()
     
-    class Pipeline
+    class Pipeline: Gst.Pipeline
         construct(name: string)
             initialize()
-            _pipeline = new Gst.Pipeline(name)
+
+            GLib.Object(name: name)
             
             // Note: Gst requires us to use the *default* GLib.MainContext in order to get messages
-            var bus = _pipeline.get_bus()
+            var bus = get_bus()
             bus.add_signal_watch()
             bus.message.connect(on_message)
             
-        prop readonly pipeline: Gst.Pipeline
         prop readonly ownerships: list of GLib.Object = new list of GLib.Object
 
         prop state: State
             get
                 state: State
                 pending_state: State
-                if _pipeline.get_state(out state, out pending_state, CLOCK_TIME_NONE) == StateChangeReturn.SUCCESS
+                if get_state(out state, out pending_state, CLOCK_TIME_NONE) == StateChangeReturn.SUCCESS
                     return state
                 else
                     return State.VOID_PENDING
             set
-                _pipeline.set_state(value)
+                set_state(value)
 
         prop readonly duration: int64
             get
                 duration: int64
-                if _pipeline.query_duration(Gst.Format.TIME, out duration)
+                if query_duration(Gst.Format.TIME, out duration)
                     return duration
                 else
                     return int64.MIN
@@ -53,14 +53,14 @@ namespace GstUtil
         prop position: int64
             get
                 position: int64
-                if _pipeline.query_position(Format.TIME, out position)
+                if query_position(Format.TIME, out position)
                     return position
                 else
                     return int64.MIN
             set
-                _pipeline.seek_simple(Format.TIME, SeekFlags.FLUSH, value)
+                seek_simple(Format.TIME, SeekFlags.FLUSH, value)
 
-        event state_changed(new_state: State, old_state: State, pending_state: State)
+        event state_change(new_state: State, old_state: State, pending_state: State)
         event eos()
         event tag(tag_list: TagList)
         event error(error: GLib.Error, text: string)

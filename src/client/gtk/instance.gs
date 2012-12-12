@@ -7,7 +7,7 @@ uses
 namespace Khovsgol.Client.GTK
 
     class Instance: Object implements Client.Instance
-        construct(args: array of string) raises GLib.Error
+        construct(application: Application, args: array of string) raises GLib.Error
             _configuration = new Configuration()
 
             initialize_logging()
@@ -28,6 +28,7 @@ namespace Khovsgol.Client.GTK
         prop readonly dir: File
         prop readonly api: Client.API = new API()
         prop readonly window: MainWindow
+        prop readonly application: Application
 
         prop player: string
             get
@@ -113,10 +114,3 @@ namespace Khovsgol.Client.GTK
         appender.deepest_level = LogLevelFlags.LEVEL_MESSAGE
         appender.set_path("%s/.khovsgol/log/client.log".printf(Environment.get_home_dir()))
         Logging.get_logger().appender = appender
-
-init
-    try
-        GtkUtil.initialize()
-        new Khovsgol.Client.GTK.Instance(args).start()
-    except e: GLib.Error
-        stderr.printf("%s\n", e.message)

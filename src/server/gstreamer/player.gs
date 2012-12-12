@@ -17,7 +17,7 @@ namespace Khovsgol.Server.GStreamer
                         _pipeline.state = State.NULL
                     if _path != null
                         build()
-                        src: dynamic Element =_pipeline.pipeline.get_by_name("FileSource")
+                        src: dynamic Element =_pipeline.get_by_name("FileSource")
                         if src is not null
                             src.location = _path
                             _pipeline.state = State.PLAYING
@@ -66,8 +66,8 @@ namespace Khovsgol.Server.GStreamer
         prop override position_in_track: double
             get
                 if _pipeline is not null
-                    position: int64
-                    if _pipeline.pipeline.query_position(Format.TIME, out position)
+                    var position = _pipeline.position
+                    if position != int64.MIN
                         return position / 1000000000.0 // convert to seconds
                 return double.MIN
             set
@@ -75,7 +75,7 @@ namespace Khovsgol.Server.GStreamer
                     var position = (int64) (value * 1000000000.0) // convert to nanoseconds
                     if position < 0
                         position = 0
-                    _pipeline.pipeline.seek_simple(Format.TIME, SeekFlags.FLUSH, position)
+                    _pipeline.position = position
         
         prop override ratio_in_track: double
             get
@@ -127,7 +127,7 @@ namespace Khovsgol.Server.GStreamer
                 return
         
             _pipeline = new GstUtil.Pipeline(name)
-            _pipeline.state_changed.connect(on_state_changed)
+            _pipeline.state_change.connect(on_state_changed)
             _pipeline.eos.connect(on_eos)
             _pipeline.tag.connect(on_tag)
             _pipeline.error.connect(on_error)
@@ -139,7 +139,7 @@ namespace Khovsgol.Server.GStreamer
             var resample = ElementFactory.make("audioresample", "AudioResample")
             var sink = ElementFactory.make("pulsesink", "PulseSink")
 
-            _pipeline.pipeline.add_many(src, decode, convert, resample, sink)
+            _pipeline.add_many(src, decode, convert, resample, sink)
 
             src.link(decode)
             _pipeline.ownerships.add(new LinkDecodeBinLater(decode, convert))

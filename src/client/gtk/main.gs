@@ -7,6 +7,8 @@ namespace Khovsgol.Client.GTK
 
     class MainWindow: ApplicationWindow
         construct(instance: Instance)
+            Object(application: instance.application)
+        
             _instance = instance
             
             // Try to use icon directly from file
