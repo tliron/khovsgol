@@ -1003,7 +1003,7 @@ namespace Khovsgol.Client
         _logger: static Logging.Logger
 
         init
-            _logger = Logging.get_logger("khovsgol.client")
+            _logger = Logging.get_logger("khovsgol.client.api")
         
         def private on_error(e: GLib.Error)
             // TODO: special handling for network errors

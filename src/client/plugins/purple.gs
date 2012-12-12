@@ -19,28 +19,36 @@ namespace Khovsgol.Client.Plugins
             if _purple is null
                 try
                     _purple = Bus.get_proxy_sync(BusType.SESSION, "im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
-                    _tune_id = _purple.purple_primitive_get_id_from_type(StatusType.TUNE)
+                    _tune_status_type_id = _purple.purple_primitive_get_id_from_type(StatusTypePrimitive.TUNE)
                     _instance.api.track_change.connect(on_track_changed)
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
         
         def stop()
+            _instance.api.track_change.disconnect(on_track_changed)
+            on_track_changed(null, null)
             if _purple is not null
-                on_track_changed(null, null)
                 _purple = null
                 _logger.message("Stopped")
 
         _purple: PurpleObject?
-        _tune_id: string
+        _tune_status_type_id: string
 
         def private on_track_changed(track: Track?, old_track: Track?)
             if _purple is null
                 return
         
             message: string? = null
-            if track is not null
-                message = "♪ %s by %s on %s".printf(track.title, track.artist, track.album)
+            if (track is not null) && (track.title is not null)
+                if (track.artist is not null) && (track.album is not null)
+                    message = "♪ %s by %s on %s".printf(track.title, track.artist, track.album)
+                else if track.artist is not null
+                    message = "♪ %s by %s".printf(track.title, track.artist)
+                else if track.album is not null
+                    message = "♪ %s on %s".printf(track.title, track.album)
+                else
+                    message = "♪ %s".printf(track.title)
         
             try
                 var accounts = _purple.purple_accounts_get_all_active()
@@ -79,16 +87,21 @@ namespace Khovsgol.Client.Plugins
                         // Some accounts support a special "tune" status in their presence
                         var presence = _purple.purple_account_get_presence(account)
                         if presence != 0
-                            var tune_status = _purple.purple_presence_get_status(presence, _tune_id)
+                            var tune_status = _purple.purple_presence_get_status(presence, _tune_status_type_id)
                             if tune_status != 0
                                 // Set tune status
                                 if track is not null
                                     _logger.infof("Setting account %s/%s tune status %d", protocol, username, tune_status)
-                                    _purple.purple_status_set_attr_string(tune_status, "tune_artist", track.artist)
-                                    _purple.purple_status_set_attr_string(tune_status, "tune_title", track.title)
-                                    _purple.purple_status_set_attr_string(tune_status, "tune_album", track.album)
-                                    _purple.purple_status_set_attr_string(tune_status, "tune_year", track.date.to_string())
-                                    _purple.purple_status_set_attr_string(tune_status, "tune_track", track.position.to_string())
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_artist", track.artist is not null ? track.artist : "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_title", track.title is not null ? track.title : "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_album", track.album is not null ? track.album : "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_year", track.date != int64.MIN ? track.date.to_string() : "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_time", track.duration != double.MIN ? "%.2f".printf(track.duration) : "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_genre", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_comment", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_track", track.position != int.MIN ? track.position.to_string() : "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_url", "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_full", "")
                                     _purple.purple_status_set_active(tune_status, 1)
                                 else
                                     _logger.infof("Resetting account %s/%s tune status %d", protocol, username, tune_status)
@@ -111,8 +124,8 @@ namespace Khovsgol.Client.Plugins
         def private is_offline_or_invisible(status: int): bool raises IOError
             var status_type = _purple.purple_status_get_type(status)
             if status_type != 0
-                var primitive = _purple.purple_status_type_get_primitive(status_type)
-                return (primitive == StatusType.OFFLINE) || (primitive == StatusType.INVISIBLE)
+                var status_type_primitive = _purple.purple_status_type_get_primitive(status_type)
+                return (status_type_primitive == StatusTypePrimitive.OFFLINE) || (status_type_primitive == StatusTypePrimitive.INVISIBLE)
             return true
             
         def private has_attribute(status: int, attribute: string): bool raises IOError
@@ -131,7 +144,7 @@ namespace Khovsgol.Client.Plugins
         init
             _logger = Logging.get_logger("khovsgol.client.purple")
     
-    enum StatusType
+    enum StatusTypePrimitive
         NONE = 0
         OFFLINE = 1
         AVAILABLE = 2
@@ -147,32 +160,30 @@ namespace Khovsgol.Client.Plugins
         def abstract purple_accounts_get_all_active(): array of int raises IOError
         
         // Account
-        def abstract purple_account_get_protocol_name(account: int): string raises IOError
-        def abstract purple_account_get_username(account: int): string raises IOError
+        def abstract purple_account_get_protocol_name(account: int): string? raises IOError
+        def abstract purple_account_get_username(account: int): string? raises IOError
         def abstract purple_account_get_active_status(account: int): int raises IOError
         def abstract purple_account_get_presence(account: int): int raises IOError
         
+        // Presence
+        def abstract purple_presence_get_status(presence: int, status_type_id: string): int raises IOError
+        
         // Status
         def abstract purple_status_get_type(status: int): int raises IOError
-        def abstract purple_status_attr_get_id(attribute_id: int): string raises IOError
+        def abstract purple_status_attr_get_id(attribute_id: int): string? raises IOError
         def abstract purple_status_set_attr_string(status: int, attribute: string, value: string) raises IOError
         def abstract purple_status_set_active(status: int, active: int) raises IOError
         //def abstract purple_status_set_active_with_attrs_list(status: int, active: int, attributes: HashTable of string, string) raises IOError
-
-        // Status Type
-        def abstract purple_status_type_get_attrs(status_type: int): array of int raises IOError
-        def abstract purple_status_type_get_primitive(status_type: int): StatusType raises IOError
         
         // Saved Status
         def abstract purple_savedstatus_get_current(): int raises IOError
         def abstract purple_savedstatus_get_substatus(saved_status: int, account: int): int raises IOError
-        def abstract purple_savedstatus_get_message(saved_status: int): string raises IOError
+        def abstract purple_savedstatus_get_message(saved_status: int): string? raises IOError
 
         // Saved Sub-status
-        def abstract purple_savedstatus_substatus_get_message(saved_sub_status: int): string raises IOError
-        
-        // Presence
-        def abstract purple_presence_get_status(presence: int, id: string): int raises IOError
+        def abstract purple_savedstatus_substatus_get_message(saved_sub_status: int): string? raises IOError
 
-        // Primitive
-        def abstract purple_primitive_get_id_from_type(status_type: StatusType): string raises IOError
+        // Status Type
+        def abstract purple_status_type_get_attrs(status_type: int): array of int raises IOError
+        def abstract purple_status_type_get_primitive(status_type: int): StatusTypePrimitive raises IOError
+        def abstract purple_primitive_get_id_from_type(status_type_primitive: StatusTypePrimitive): string? raises IOError

@@ -130,19 +130,18 @@ namespace Khovsgol.Client.GTK
             on_add()
 
         def private on_right_clicked(e: Gdk.EventButton)
-            var selections = _tree_view.get_selection().count_selected_rows()
-            if selections == 0
-                _popup_none.popup(null, null, null, e.button, e.time)
-            else
-                _popup.popup(null, null, null, e.button, e.time)
+            on_actions(e)
 
         def private on_key_pressed(e: Gdk.EventKey): bool
-            if e.keyval == Gdk.Key.Menu
+            var keyval = e.keyval
+            if keyval == Gdk.Key.Menu
                 var selections = _tree_view.get_selection().count_selected_rows()
                 if selections == 0
                     _popup_none.popup(null, null, null, 0, e.time)
                 else
                     _popup.popup(null, null, null, 0, e.time)
+            if keyval == Gdk.Key.Delete
+                on_delete()
             return false
         
         def private on_expanded(iter: TreeIter, path: TreePath): bool
@@ -154,16 +153,8 @@ namespace Khovsgol.Client.GTK
                 if (Json.Node) value == null
                     // We found the placeholder, so use the active style to fill
                     _store.remove(ref placeholder_iter)
-                    var style = (LibraryStyle) _style_box.active_style
-                    if style is not null
-                        var node = new LibraryNode(_instance, _tree_view, _store, iter)
-                        var filter = _filter_box.entry.text
-                        if (filter is not null) && (filter.length > 0)
-                            style.filter(node, filter)
-                        else
-                            style.fill(node)
-                        if node.is_frozen
-                            _tree_view.thaw_child_notify()
+                    if fill_at(iter)
+                        _tree_view.thaw_child_notify()
             return false
         
         def private on_dragged(context: Gdk.DragContext, selection_data: SelectionData, info: uint, time: uint)
@@ -178,16 +169,8 @@ namespace Khovsgol.Client.GTK
             _tree_view.freeze_child_notify()
             _tree_view.model = null
             _store.clear()
-            var style = (LibraryStyle) _style_box.active_style
-            if style is not null
-                var node = new LibraryNode(_instance, _tree_view, _store)
-                node.is_frozen = true
-                var filter = _filter_box.entry.text
-                if (filter is not null) && (filter.length > 0)
-                    style.filter(node, filter)
-                else
-                    style.fill(node)
-                _tree_view.model = _store
+            fill_all()
+            _tree_view.model = _store
             _tree_view.thaw_child_notify()
         
         def private on_clear_filter()
@@ -224,12 +207,36 @@ namespace Khovsgol.Client.GTK
             window.show_all()
 
         def private on_actions(e: Gdk.EventButton): bool
-            on_right_clicked(e)
+            var selections = _tree_view.get_selection().count_selected_rows()
+            if selections == 0
+                _popup_none.popup(null, null, null, e.button, e.time)
+            else
+                _popup.popup(null, null, null, e.button, e.time)
             return false
 
         def on_connection_changed(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
             on_filter()
             
+        def private fill_at(iter: TreeIter): bool
+            return _fill(false, false, iter)
+
+        def private fill_all()
+            _fill(true, true, null)
+            
+        def private _fill(is_frozen: bool, can_filter: bool, iter: TreeIter?): bool
+            var style = (LibraryStyle) _style_box.active_style
+            if style is not null
+                var node = new LibraryNode(_instance, _tree_view, _store, iter)
+                node.is_frozen = is_frozen
+                filter: string? = can_filter ? _filter_box.entry.text : null
+                if filter is not null
+                    filter = filter.strip()
+                    if filter.length < MINIMUM_FILTER_LENGTH
+                        filter = null
+                style.fill(node, filter)
+                return node.is_frozen
+            return false
+        
         def private gather_selected_tracks(): Json.Array?
             var style = (LibraryStyle) _style_box.active_style
             if style is not null
@@ -276,6 +283,8 @@ namespace Khovsgol.Client.GTK
         _popup_none: Gtk.Menu
         _popup: Gtk.Menu
         _popup_custom: Gtk.Menu
+        
+        const MINIMUM_FILTER_LENGTH: int = 1
 
         enum private Column
             NODE = 0     // Json.Node

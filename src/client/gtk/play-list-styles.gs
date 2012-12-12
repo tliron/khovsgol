@@ -143,7 +143,10 @@ namespace Khovsgol.Client.GTK
                     return new Track.from_json(track).position
             
             return int.MIN
-            
+    
+    /*
+     * Base for styles which have one track per line.
+     */
     class abstract CommonPlayListStyle: GLib.Object implements Style, PlayListStyle
         prop abstract readonly name: string
         prop abstract readonly label: string

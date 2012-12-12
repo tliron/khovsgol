@@ -33,10 +33,11 @@ namespace Khovsgol.Client.GTK
             var tree_frame = new Frame(null)
             tree_frame.add(tree_scrolled)
 
-            // Right box
+            // Button box
             
-            // Note: Newer GNOME desktops tend to disable image visability by default,
-            // so we will explicitly show the images
+            // Note: Newer GNOME desktops tend to disable image visibility by default,
+            // but we will explicitly show the images because we think it's easier to
+            // understand at a glance!
             
             _connect_button = new Button.with_mnemonic("_Connect")
             _connect_button.image = new Image.from_stock(Stock.NETWORK, IconSize.MENU)
@@ -104,9 +105,9 @@ namespace Khovsgol.Client.GTK
         def private on_connect()
             var selection = _tree_view.get_selection()
             var tree_paths = selection.get_selected_rows(null)
-            iter: TreeIter
-            for var tree_path in tree_paths
-                if _store.get_iter(out iter, tree_path)
+            if tree_paths.length() > 0
+                iter: TreeIter
+                if _store.get_iter(out iter, tree_paths.data)
                     value: Value
                     _store.get_value(iter, Column.NODE, out value)
                     
@@ -131,7 +132,6 @@ namespace Khovsgol.Client.GTK
                         _instance.api.connect(server_node.host, server_node.port)
                         _instance.player = player
                         destroy()
-                break
 
         def private on_connect_other()
             pass
@@ -164,7 +164,9 @@ namespace Khovsgol.Client.GTK
                 return false
                 
         def private on_selection_changed()
-            pass
+            var selection = _tree_view.get_selection()
+            var tree_paths = selection.get_selected_rows(null)
+            _connect_button.sensitive = tree_paths.length() > 0
             
         // TODO: are we in the Gdk thread?!
         def private on_avahi_found(info: ServiceFoundInfo)

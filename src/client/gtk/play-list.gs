@@ -201,17 +201,7 @@ namespace Khovsgol.Client.GTK
             on_play()
 
         def private on_right_clicked(e: Gdk.EventButton)
-            iter: TreeIter
-            if _store.get_iter_first(out iter)
-                var selections = get_selected_positions().get_length()
-                if selections == 0
-                    _popup_none.popup(null, null, null, e.button, e.time)
-                else if selections == 1
-                    _popup_one.popup(null, null, null, e.button, e.time)
-                else
-                    _popup_many.popup(null, null, null, e.button, e.time)
-            else
-                _popup_empty.popup(null, null, null, e.button, e.time)
+            on_actions(e)
 
         def private on_key_pressed(e: Gdk.EventKey): bool
             var keyval = e.keyval
@@ -283,7 +273,17 @@ namespace Khovsgol.Client.GTK
                 Gdk.drop_finish(context, false, time)
 
         def private on_actions(e: Gdk.EventButton): bool
-            on_right_clicked(e)
+            iter: TreeIter
+            if _store.get_iter_first(out iter)
+                var selections = get_selected_positions().get_length()
+                if selections == 0
+                    _popup_none.popup(null, null, null, e.button, e.time)
+                else if selections == 1
+                    _popup_one.popup(null, null, null, e.button, e.time)
+                else
+                    _popup_many.popup(null, null, null, e.button, e.time)
+            else
+                _popup_empty.popup(null, null, null, e.button, e.time)
             return false
             
         _on_cursor_mode_id: ulong

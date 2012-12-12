@@ -172,7 +172,7 @@ namespace Khovsgol.Client.Plugins
         [DBus(name="org.mpris.MediaPlayer2.Player")]
         class Mpris2Player: Object
             construct(instance: Instance, connector: Connector)
-                _properties = new Properties(connector, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player")
+                _properties = new Properties(connector, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player", _logger)
                 _instance = instance
                 _instance.api.play_mode_change.connect(on_play_mode_changed)
                 _instance.api.cursor_mode_change.connect(on_cursor_mode_changed)
@@ -189,13 +189,13 @@ namespace Khovsgol.Client.Plugins
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
                 _instance.api.track_change.disconnect(on_track_changed)
 
-            prop PlaybackStatus: string
+            prop PlaybackStatus: string?
                 owned get
                     return _PlaybackStatus
                 set
                     pass
 
-            prop LoopStatus: string
+            prop LoopStatus: string?
                 owned get
                     return _LoopStatus
                 set
@@ -359,4 +359,4 @@ namespace Khovsgol.Client.Plugins
                 _properties.emit_changes()
             
             _properties: Properties
-            _default_art_url: string
+            _default_art_url: string?
