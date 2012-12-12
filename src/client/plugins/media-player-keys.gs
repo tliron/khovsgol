@@ -22,8 +22,8 @@ namespace Khovsgol.Client.Plugins
         
             if _media_keys is not null
                 try
-                    _media_keys.GrabMediaPlayerKeys("Khövsgöl", 0)
-                    _media_keys.MediaPlayerKeyPressed.connect(on_key_pressed)
+                    _media_keys.grab_media_player_keys("Khövsgöl", 0)
+                    _media_keys.media_player_key_pressed.connect(on_key_pressed)
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
@@ -31,8 +31,8 @@ namespace Khovsgol.Client.Plugins
         def stop()
             if _media_keys is not null
                 try
-                    _media_keys.MediaPlayerKeyPressed.disconnect(on_key_pressed)
-                    _media_keys.ReleaseMediaPlayerKeys("Khövsgöl")
+                    _media_keys.media_player_key_pressed.disconnect(on_key_pressed)
+                    _media_keys.release_media_player_keys("Khövsgöl")
                     _media_keys = null
                     _logger.message("Stopped")
                 except e: IOError
@@ -66,41 +66,41 @@ namespace Khovsgol.Client.Plugins
             construct() raises IOError
                 try
                     _media_keys = Bus.get_proxy_sync(BusType.SESSION, "org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon/MediaKeys")
-                    _media_keys.MediaPlayerKeyPressed.connect(on_key_pressed)
+                    _media_keys.media_player_key_pressed.connect(on_key_pressed)
                 except e: IOError
                     _media_keys_legacy = Bus.get_proxy_sync(BusType.SESSION, "org.gnome.SettingsDaemon", "/org/gnome/SettingsDaemon")
-                    _media_keys_legacy.MediaPlayerKeyPressed.connect(on_key_pressed)
+                    _media_keys_legacy.media_player_key_pressed.connect(on_key_pressed)
             
-            def GrabMediaPlayerKeys(application: string, time: uint32) raises IOError
+            def grab_media_player_keys(application: string, time: uint32) raises IOError
                 if _media_keys is not null
-                    _media_keys.GrabMediaPlayerKeys(application, time)
+                    _media_keys.grab_media_player_keys(application, time)
                 else
-                    _media_keys_legacy.GrabMediaPlayerKeys(application, time)
+                    _media_keys_legacy.grab_media_player_keys(application, time)
 
-            def ReleaseMediaPlayerKeys(application: string) raises IOError
+            def release_media_player_keys(application: string) raises IOError
                 if _media_keys is not null
-                    _media_keys.ReleaseMediaPlayerKeys(application)
+                    _media_keys.release_media_player_keys(application)
                 else
-                    _media_keys_legacy.ReleaseMediaPlayerKeys(application)
+                    _media_keys_legacy.release_media_player_keys(application)
             
-            event MediaPlayerKeyPressed(application: string, key: string)
+            event media_player_key_pressed(application: string, key: string)
             
             _media_keys: MediaKeys
             _media_keys_legacy: MediaKeysLegacy
             
             def private on_key_pressed(application: string, key: string)
-                MediaPlayerKeyPressed(application, key)
+                media_player_key_pressed(application, key)
 
     // GNOME 2.22+
     [DBus(name="org.gnome.SettingsDaemon.MediaKeys")]
     interface private MediaKeys: Object
-        def abstract GrabMediaPlayerKeys(application: string, time: uint32) raises IOError
-        def abstract ReleaseMediaPlayerKeys(application: string) raises IOError
-        event abstract MediaPlayerKeyPressed(application: string, key: string)
+        def abstract grab_media_player_keys(application: string, time: uint32) raises IOError
+        def abstract release_media_player_keys(application: string) raises IOError
+        event abstract media_player_key_pressed(application: string, key: string)
             
     // GNOME 2.20
     [DBus(name="org.gnome.SettingsDaemon")]
     interface private MediaKeysLegacy: Object
-        def abstract GrabMediaPlayerKeys(application: string, time: uint32) raises IOError
-        def abstract ReleaseMediaPlayerKeys(application: string) raises IOError
-        event abstract MediaPlayerKeyPressed(application: string, key: string)
+        def abstract grab_media_player_keys(application: string, time: uint32) raises IOError
+        def abstract release_media_player_keys(application: string) raises IOError
+        event abstract media_player_key_pressed(application: string, key: string)

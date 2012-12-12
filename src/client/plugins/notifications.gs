@@ -68,7 +68,7 @@ namespace Khovsgol.Client.Plugins
                         icon = _default_icon
                         
                     try
-                        _notifications.Notify("Khövsgöl", track.position, icon, "Khövsgöl", markup, _actions, _hints, 3000)
+                        _notifications.notify("Khövsgöl", track.position, icon, "Khövsgöl", markup, _actions, _hints, 3000)
                         _logger.info("Notified new track")
                     except e: IOError
                         _logger.exception(e)

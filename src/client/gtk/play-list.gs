@@ -326,7 +326,7 @@ namespace Khovsgol.Client.GTK
                 if dialog.do()
                     var title = dialog.compilation_name
                     if title.length > 0
-                        var album_path = "*" + DBus.generate_guid()
+                        var album_path = "*" + GLib.DBus.generate_guid()
                         var paths = new Json.Array()
                         for var track in _tracks
                             var path = track.path
