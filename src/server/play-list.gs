@@ -159,6 +159,7 @@ namespace Khovsgol.Server
             var timestamp = get_monotonic_time()
             var album = new Album()
             album.path = _album_path
+            album.album_type = AlbumType.OTHER
             album.date = timestamp
             _crucible.libraries.save_album(album)
             return timestamp

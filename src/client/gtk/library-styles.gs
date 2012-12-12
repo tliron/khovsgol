@@ -168,11 +168,11 @@ namespace Khovsgol.Client.GTK
                     var album = new Album.from_json(album_node)
                     var path = album.path
                     if path is not null
-                        var compilation = album.album_type
+                        var album_type = album.album_type
                         var args = new Client.API.GetTracksArgs()
                         args.in_album = path
                         args.sort.add("position")
-                        fill_tracks_in_album(node.instance.api.get_tracks(args), compilation > 0, node)
+                        fill_tracks_in_album(node.instance.api.get_tracks(args), album_type > AlbumType.ARTIST, node)
         
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
@@ -459,11 +459,11 @@ namespace Khovsgol.Client.GTK
                     var album = new Album.from_json(album_node)
                     var path = album.path
                     if path is not null
-                        var compilation = album.album_type
+                        var album_type = album.album_type
                         var args = new Client.API.GetTracksArgs()
                         args.in_album = path
                         args.sort.add("position")
-                        fill_tracks_in_album(node.instance.api.get_tracks(args), compilation > 0, node)
+                        fill_tracks_in_album(node.instance.api.get_tracks(args), album_type > AlbumType.ARTIST, node)
         
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level
@@ -545,25 +545,25 @@ namespace Khovsgol.Client.GTK
                         
                         if (album_path is not null) and (current_album_path != album_path)
                             // New album
-                            var sort = track.album_sort
-
-                            // Separate by first letter
-                            if (sort is not null) and (sort.length > 0)
-                                var letter = sort.get_char(0)
-                                if letter != current_letter
-                                    current_letter = letter
-                                    if !first
-                                        node.append_separator()
-
                             current_album_path = album_path
                             current_tracks = new Json.Array()
                             
                             var album = node.instance.api.get_album(current_album_path)
                             if album is not null
+                                var sort = album.title_sort
+                            
+                                // Separate by first letter
+                                if (sort is not null) and (sort.length > 0)
+                                    var letter = sort.get_char(0)
+                                    if letter != current_letter
+                                        current_letter = letter
+                                        if !first
+                                            node.append_separator()
+
                                 album.to_json().set_array_member("_tracks", current_tracks)
                                 fill_album(album, node)
                             
-                            first = false
+                                first = false
                         
                         if current_tracks is not null
                             current_tracks.add_object_element(track.to_json())
@@ -582,11 +582,11 @@ namespace Khovsgol.Client.GTK
                     var album = new Album.from_json(album_node)
                     var path = album.path
                     if path is not null
-                        var compilation = album.album_type
+                        var album_type = album.album_type
                         var args = new Client.API.GetTracksArgs()
                         args.in_album = path
                         args.sort.add("position")
-                        fill_tracks_in_album(node.instance.api.get_tracks(args), compilation > 0, node)
+                        fill_tracks_in_album(node.instance.api.get_tracks(args), album_type > AlbumType.ARTIST, node)
 
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
             var level = node.level

@@ -183,6 +183,7 @@ namespace Khovsgol
         ARTIST = 0
         COMPILATION = 1
         CUSTOM_COMPILATION = 2
+        OTHER = 3
 
     class Album: Object implements HasJsonObject
         construct()
