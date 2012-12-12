@@ -43,6 +43,8 @@ namespace Khovsgol.Client.Plugins
                 if title is not null
                     var artist = track.artist
                     var album = track.album
+                    var position = track.position_in_album
+                    
                     title = Markup.escape_text(title)
                     title = format_annotation(title)
                     if artist is not null
@@ -51,7 +53,9 @@ namespace Khovsgol.Client.Plugins
                         album = Markup.escape_text(album)
                         album = format_annotation(album)
                     markup: string
-                    if (artist is not null) and (album is not null)
+                    if (artist is not null) and (album is not null) and (position != int.MIN)
+                        markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>\r<span size=\"smaller\">%s in %s</span>".printf(title, artist, format_ordinal(position), album)
+                    else if (artist is not null) and (album is not null)
                         markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>\r<span size=\"smaller\">In %s</span>".printf(title, artist, album)
                     else if (artist is not null) and (album is null)
                         markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>".printf(title, artist)
@@ -68,7 +72,7 @@ namespace Khovsgol.Client.Plugins
                         icon = _default_icon
                         
                     try
-                        _notifications.notify("Khövsgöl", track.position, icon, "Khövsgöl", markup, _actions, _hints, 3000)
+                        _notifications.notify("Khövsgöl", track.position_in_play_list, icon, "Khövsgöl", markup, _actions, _hints, 3000)
                         _logger.info("Notified new track")
                     except e: IOError
                         _logger.exception(e)

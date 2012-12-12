@@ -18,7 +18,7 @@ namespace Nap
          * True is the template does not require a regex.
          */
         def static is_trivial(pattern: string): bool
-            return !pattern.has_suffix("*") && (pattern.index_of_char('{') < 0)
+            return !pattern.has_suffix("*") and (pattern.index_of_char('{') < 0)
         
         /*
          * Renders a pattern, filling the variables in order from the

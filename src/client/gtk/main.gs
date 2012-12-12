@@ -56,14 +56,14 @@ namespace Khovsgol.Client.GTK
             
             var x = _instance.configuration.x
             var y = _instance.configuration.y
-            if (x != int.MIN) && (y != int.MIN)
+            if (x != int.MIN) and (y != int.MIN)
                 move(x, y)
             else
                 set_position(WindowPosition.CENTER)
 
             var width = _instance.configuration.width
             var height = _instance.configuration.height
-            if (width != int.MIN) && (height != int.MIN)
+            if (width != int.MIN) and (height != int.MIN)
                 set_default_size(width, height)
             else
                 set_default_size(900, 600)
@@ -99,7 +99,7 @@ namespace Khovsgol.Client.GTK
             height: int
             get_position(out x, out y)
             get_size(out width, out height)
-            if (x != _instance.configuration.x) || (y != _instance.configuration.y) || (width != _instance.configuration.width) || (height != _instance.configuration.height)
+            if (x != _instance.configuration.x) or (y != _instance.configuration.y) or (width != _instance.configuration.width) or (height != _instance.configuration.height)
                 _instance.configuration.x = x
                 _instance.configuration.y = y
                 _instance.configuration.width = width

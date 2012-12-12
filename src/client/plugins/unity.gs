@@ -40,7 +40,7 @@ namespace Khovsgol.Client.Plugins
 
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             if _launcher_entry is not null
-                if (position_in_track != double.MIN) && (track_duration != double.MIN)
+                if (position_in_track != double.MIN) and (track_duration != double.MIN)
                     _launcher_entry.progress = position_in_track / track_duration
                     _launcher_entry.progress_visible = true
                 else

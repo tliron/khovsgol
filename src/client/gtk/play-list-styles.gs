@@ -72,7 +72,7 @@ namespace Khovsgol.Client.GTK
                 var title = track.title
                 if title is not null
                     var path = track.path
-                    var position = track.position
+                    var position = track.position_in_play_list
                     var duration = track.duration
                     
                     title = Markup.escape_text(title)
@@ -91,9 +91,9 @@ namespace Khovsgol.Client.GTK
                     
                     node.append_object(track.to_json(), position, track.title, markup1, markup2)
                     
-                    if (current_album_positions is not null) && (position != int.MIN)
+                    if (current_album_positions is not null) and (position != int.MIN)
                         current_album_positions.add_int_element(position)
-                    if (current_album_paths is not null) && (path is not null)
+                    if (current_album_paths is not null) and (path is not null)
                         current_album_paths.add_string_element(path)
                         
         def gather_positions(node: PlayListNode, ref positions: Json.Array)
@@ -108,7 +108,7 @@ namespace Khovsgol.Client.GTK
             else if position > 0
                 var track = node.as_object
                 if track is not null
-                    var track_position = new Track.from_json(track).position
+                    var track_position = new Track.from_json(track).position_in_play_list
                     if track_position != int.MIN
                         positions.add_int_element(track_position)
 
@@ -134,13 +134,13 @@ namespace Khovsgol.Client.GTK
                 var album = node.as_object
                 if album is not null
                     var album_positions = get_array_member_or_null(album, "positions")
-                    if (album_positions is not null) && (album_positions.get_length() > 0)
+                    if (album_positions is not null) and (album_positions.get_length() > 0)
                         return get_int_element_or_min(album_positions, 0)
                     
             else if position > 0
                 var track = node.as_object
                 if track is not null
-                    return new Track.from_json(track).position
+                    return new Track.from_json(track).position_in_play_list
             
             return int.MIN
     
@@ -156,7 +156,7 @@ namespace Khovsgol.Client.GTK
         def gather_positions(node: PlayListNode, ref positions: Json.Array)
             var track = node.as_object
             if track is not null
-                var position = new Track.from_json(track).position
+                var position = new Track.from_json(track).position_in_play_list
                 if position != int.MIN
                     positions.add_int_element(position)
 
@@ -170,7 +170,7 @@ namespace Khovsgol.Client.GTK
         def get_first_position(node: PlayListNode): int
             var track = node.as_object
             if track is not null
-                return new Track.from_json(track).position
+                return new Track.from_json(track).position_in_play_list
             else
                 return int.MIN
     
@@ -185,7 +185,7 @@ namespace Khovsgol.Client.GTK
             for var track in node.tracks
                 var title = track.title
                 if title is not null
-                    var position = track.position
+                    var position = track.position_in_play_list
                     var duration = track.duration
                     var artist = track.artist
                     
@@ -212,7 +212,8 @@ namespace Khovsgol.Client.GTK
             for var track in node.tracks
                 var title = track.title
                 if title is not null
-                    var position = track.position
+                    var position_in_play_list = track.position_in_play_list
+                    var position_in_album = track.position_in_album
                     var duration = track.duration
                     var artist = track.artist
                     var album = track.album
@@ -225,14 +226,16 @@ namespace Khovsgol.Client.GTK
                         album = Markup.escape_text(album)
                         album = format_annotation(album)
                     markup1: string
-                    if (artist is not null) and (album is not null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">In %s</span>".printf(position, title, artist, album)
+                    if (artist is not null) and (album is not null) and (position_in_album != int.MIN)
+                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">%s in %s</span>".printf(position_in_play_list, title, artist, format_ordinal(position_in_album), album)
+                    else if (artist is not null) and (album is not null)
+                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">In %s</span>".printf(position_in_play_list, title, artist, album)
                     else if (artist is not null) and (album is null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>".printf(position, title, artist)
+                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>".printf(position_in_play_list, title, artist)
                     else if (artist is null) and (album is not null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position, title, album)
+                        markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position_in_play_list, title, album)
                     else
-                        markup1 = "%d\t%s".printf(position, title)
+                        markup1 = "%d\t%s".printf(position_in_play_list, title)
                     var markup2 = Markup.escape_text(format_duration(duration))
                     
-                    node.append_object(track.to_json(), position, track.title, markup1, markup2)
+                    node.append_object(track.to_json(), position_in_play_list, track.title, markup1, markup2)

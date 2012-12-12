@@ -29,7 +29,7 @@ namespace Nap._Soup
         prop request_text: string?
             owned get
                 var entity = (string) _soup_message.request_body.data
-                if (entity is not null) && (entity.length > 0)
+                if (entity is not null) and (entity.length > 0)
                     return entity
                 return null
             set
@@ -75,7 +75,7 @@ namespace Nap._Soup
                 _response_object = value
                 if value is not null
                     var jsonp = _query["jsonp"]
-                    var human = jsonp is null && _query["human"] == "true"
+                    var human = jsonp is null and _query["human"] == "true"
                     _response_text = JsonUtil.object_to(value, human)
                     if jsonp is not null
                         _response_text = "%s(%s)".printf(jsonp, _response_text)
@@ -89,7 +89,7 @@ namespace Nap._Soup
                 _response_array = value
                 if value is not null
                     var jsonp = _query["jsonp"]
-                    var human = jsonp is null && _query["human"] == "true"
+                    var human = jsonp is null and _query["human"] == "true"
                     _response_text = JsonUtil.array_to(value, human)
                     if jsonp is not null
                         _response_text = "%s(%s)".printf(jsonp, _response_text)
@@ -119,7 +119,7 @@ namespace Nap._Soup
                 entry.user_identifier = _soup_client.get_auth_user()
                 entry.method = _soup_message.method
                 var query = _soup_message.get_uri().get_query()
-                if (query is not null) && (query.length > 0)
+                if (query is not null) and (query.length > 0)
                     entry.path = "%s?%s".printf(_path, query)
                 else
                     entry.path = _path
@@ -189,7 +189,7 @@ namespace Nap._Soup
             owned get
                 if _soup_message is not null
                     var entity = (string) _soup_message.response_body.data
-                    if (entity is not null) && (entity.length > 0)
+                    if (entity is not null) and (entity.length > 0)
                         return entity
                 return null
             set

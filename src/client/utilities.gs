@@ -42,7 +42,22 @@ namespace Khovsgol.Client
      * True if the file type is known to be lossless.
      */
     def is_lossless(file_type: string): bool
-        return (file_type == "flac") || (file_type == "ape") || (file_type == "wav") || (file_type == "wv") || (file_type == "tta")
+        return (file_type == "flac") or (file_type == "ape") or (file_type == "wav") or (file_type == "wv") or (file_type == "tta")
+        
+    /*
+     * Format integer as an ordinal.
+     */
+    def format_ordinal(number: int): string
+        var last = number % 10
+        var str = number.to_string()
+        if last == 1
+            return str + "st"
+        else if last == 2
+            return str + "nd"
+        else if last == 3
+            return str + "rd"
+        else
+            return str + "th"
     
     /*
      * Formats a duration in seconds as "hh:mm:ss".

@@ -20,10 +20,10 @@ namespace Khovsgol.Client.GTK
             _popup_empty.show_all()
 
             _popup_none = new Gtk.Menu()
-            var item = new Gtk.MenuItem.with_mnemonic("Clear playlist")
+            var item = new Gtk.MenuItem.with_mnemonic("_Clear playlist")
             item.activate.connect(on_clear)
             _popup_none.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Save playlist as compilation")
+            item = new Gtk.MenuItem.with_mnemonic("_Save playlist as compilation")
             item.activate.connect(on_save_as_compilation)
             _popup_none.append(item)
             _popup_none.append(new SeparatorMenuItem())
@@ -32,20 +32,20 @@ namespace Khovsgol.Client.GTK
             _popup_none.show_all()
 
             _popup_one = new Gtk.Menu()
-            item = new Gtk.MenuItem.with_mnemonic("Play this track")
+            item = new Gtk.MenuItem.with_mnemonic("_Play this track")
             item.activate.connect(on_play)
             _popup_one.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Move this track to after the currently playing track")
+            item = new Gtk.MenuItem.with_mnemonic("_Move this track to after the currently playing track")
             item.activate.connect(on_move_to_cursor)
             _popup_one.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Remove this track from playlist")
+            item = new Gtk.MenuItem.with_mnemonic("_Remove this track from playlist")
             item.activate.connect(on_delete)
             _popup_one.append(item)
             _popup_one.append(new SeparatorMenuItem())
-            item = new Gtk.MenuItem.with_mnemonic("Clear playlist")
+            item = new Gtk.MenuItem.with_mnemonic("_Clear playlist")
             item.activate.connect(on_clear)
             _popup_one.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Save playlist as compilation")
+            item = new Gtk.MenuItem.with_mnemonic("_Save playlist as compilation")
             item.activate.connect(on_save_as_compilation)
             _popup_one.append(item)
             _popup_one.append(new SeparatorMenuItem())
@@ -54,17 +54,17 @@ namespace Khovsgol.Client.GTK
             _popup_one.show_all()
 
             _popup_many = new Gtk.Menu()
-            item = new Gtk.MenuItem.with_mnemonic("Move these tracks to after the currently playing track")
+            item = new Gtk.MenuItem.with_mnemonic("_Move these tracks to after the currently playing track")
             item.activate.connect(on_move_to_cursor)
             _popup_many.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Remove these tracks from playlist")
+            item = new Gtk.MenuItem.with_mnemonic("_Remove these tracks from playlist")
             item.activate.connect(on_delete)
             _popup_many.append(item)
             _popup_many.append(new SeparatorMenuItem())
-            item = new Gtk.MenuItem.with_mnemonic("Clear playlist")
+            item = new Gtk.MenuItem.with_mnemonic("_Clear playlist")
             item.activate.connect(on_clear)
             _popup_many.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Save playlist as compilation")
+            item = new Gtk.MenuItem.with_mnemonic("_Save playlist as compilation")
             item.activate.connect(on_save_as_compilation)
             _popup_many.append(item)
             _popup_many.append(new SeparatorMenuItem())
@@ -179,7 +179,7 @@ namespace Khovsgol.Client.GTK
             _store.get_value(iter, Column.POSITION, out position)
             if _position_in_play_list == (int) position
                 renderer.visible = true
-                if (_position_in_track != double.MIN) && (_track_duration != double.MIN)
+                if (_position_in_track != double.MIN) and (_track_duration != double.MIN)
                     var percent = (_position_in_track / _track_duration) * 100.0
                     renderer.value = (int) percent
                     renderer.text = first_upper(_play_mode)
@@ -241,7 +241,7 @@ namespace Khovsgol.Client.GTK
                 iter: TreeIter
                 if _store.get_iter(out iter, tree_path)
                     destination = get_first_position(iter)
-                    if (drop_position == TreeViewDropPosition.AFTER) || (drop_position == TreeViewDropPosition.INTO_OR_AFTER)
+                    if (drop_position == TreeViewDropPosition.AFTER) or (drop_position == TreeViewDropPosition.INTO_OR_AFTER)
                         destination++
             
             if info == TargetInfo.JSON_NUMBER_ARRAY
@@ -292,7 +292,7 @@ namespace Khovsgol.Client.GTK
         
         def private on_style()
             var style = _style_box.active_style
-            if (style is not null) && (style.name != _instance.configuration.play_list_style)
+            if (style is not null) and (style.name != _instance.configuration.play_list_style)
                 _instance.configuration.play_list_style = style.name
                 _instance.configuration.save()
             update()
@@ -447,31 +447,31 @@ namespace Khovsgol.Client.GTK
         
         def private create_import_menu(): Gtk.MenuItem
             var submenu = new Gtk.Menu()
-            var item = new Gtk.MenuItem.with_mnemonic("From XSPF file...")
+            var item = new Gtk.MenuItem.with_mnemonic("From _XSPF file...")
             item.activate.connect(on_import_xspf)
             submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("From PLS file...")
+            item = new Gtk.MenuItem.with_mnemonic("From _PLS file...")
             item.activate.connect(on_import_pls)
             submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("From M3U file...")
+            item = new Gtk.MenuItem.with_mnemonic("From _M3U file...")
             item.activate.connect(on_import_m3u)
             submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Import playlist...")
+            item = new Gtk.MenuItem.with_mnemonic("_Import playlist...")
             item.submenu = submenu
             return item
 
         def private create_export_menu(): Gtk.MenuItem
             var submenu = new Gtk.Menu()
-            var item = new Gtk.MenuItem.with_mnemonic("To XSPF file...")
+            var item = new Gtk.MenuItem.with_mnemonic("To _XSPF file...")
             item.activate.connect(on_export_xspf)
             submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("To PLS file...")
+            item = new Gtk.MenuItem.with_mnemonic("To _PLS file...")
             item.activate.connect(on_export_pls)
             submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("To M3U file...")
+            item = new Gtk.MenuItem.with_mnemonic("To _M3U file...")
             item.activate.connect(on_export_m3u)
             submenu.append(item)
-            item = new Gtk.MenuItem.with_mnemonic("Export playlist...")
+            item = new Gtk.MenuItem.with_mnemonic("_Export playlist...")
             item.submenu = submenu
             return item
         

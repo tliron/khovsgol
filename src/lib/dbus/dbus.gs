@@ -52,7 +52,7 @@ namespace DBusUtil
         def @set(name: string, value: Variant?)
             if value is not null
                 var existing = _properties[name]
-                if (existing is null) || existing.is_container() || (existing.compare(value) != 0)
+                if (existing is null) or existing.is_container() or (existing.compare(value) != 0)
                     // Note: containers are not comparable, so we'll just consider them always to be different
                     _changes[name] = value
                     _properties[name] = value
@@ -64,7 +64,7 @@ namespace DBusUtil
         
         def emit_changes()
             var connection = _connector.connection
-            if (connection is not null) && (!_changes.is_empty)
+            if (connection is not null) and (!_changes.is_empty)
                 // Copy changes to variant dict
                 var builder = new VariantBuilder(VariantType.ARRAY)
                 for var name in _changes.keys

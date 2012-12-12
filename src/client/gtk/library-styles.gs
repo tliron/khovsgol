@@ -29,7 +29,7 @@ namespace Khovsgol.Client.GTK
         
                     // Compilation section
                     node.append_string("compilations", "compilations", "<b>Compilations</b>", null, true)
-                    node.append_string("custom", "customcompilations", "<b>Custom Compilations</b>", null, true)
+                    node.append_string("custom_compilations", "playlists", "<b>Playlists</b>", null, true)
                 else
                     // Album artists (with all albums and tracks cached inside each node)
                     first: bool = true
@@ -55,13 +55,13 @@ namespace Khovsgol.Client.GTK
                         var album_path = track.album_path
                         var album_type = track.album_type
                         
-                        if (album_type == AlbumType.ARTIST) && (artist_name != last_artist_name)
+                        if (album_type == AlbumType.ARTIST) and (artist_name != last_artist_name)
                             // New artist
                             var sort = track.artist_sort
                             last_artist_name = artist_name
 
                             // Separate by first letter
-                            if (sort is not null) && (sort.length > 0)
+                            if (sort is not null) and (sort.length > 0)
                                 var letter = sort.get_char(0)
                                 if letter != current_letter
                                     current_letter = letter
@@ -80,7 +80,7 @@ namespace Khovsgol.Client.GTK
                             
                             first = false
 
-                        if (album_path is not null) && (current_album_path != album_path)
+                        if (album_path is not null) and (current_album_path != album_path)
                             // New album
                             current_album_path = album_path
                             current_tracks = new Json.Array()
@@ -99,7 +99,7 @@ namespace Khovsgol.Client.GTK
                         if current_tracks is not null
                             current_tracks.add_object_element(track.to_json())
 
-                    if !first && ((compilations.get_length() > 0) || (custom_compilations.get_length() > 0))
+                    if !first and ((compilations.get_length() > 0) or (custom_compilations.get_length() > 0))
                         node.append_separator()
                     
                     if compilations.get_length() > 0
@@ -110,7 +110,7 @@ namespace Khovsgol.Client.GTK
                     if custom_compilations.get_length() > 0
                         var special = new Json.Object()
                         special.set_array_member("_albums", custom_compilations)
-                        node.append_object(special, "customcompilations", "<b>Custom Compilations</b>", null, true)
+                        node.append_object(special, "playlists", "<b>Playlists</b>", null, true)
             
             else if level == 1
                 var node_type = node.node_type
@@ -149,7 +149,7 @@ namespace Khovsgol.Client.GTK
                 else
                     // Compilations
                     var args = new Client.API.GetAlbumsArgs()
-                    args.album_type = node.as_string == "custom" ? 2 : 1
+                    args.album_type = node.as_string == "custom" ? AlbumType.CUSTOM_COMPILATION : AlbumType.COMPILATION
                     args.sort.add("date")
                     args.sort.add("title_sort")
                     fill_albums_by(node.instance.api.get_albums(args), node)
@@ -276,7 +276,7 @@ namespace Khovsgol.Client.GTK
                             last_artist_name = artist_name
 
                             // Separate by first letter
-                            if (sort is not null) && (sort.length > 0)
+                            if (sort is not null) and (sort.length > 0)
                                 var letter = sort.get_char(0)
                                 if letter != current_letter
                                     current_letter = letter
@@ -388,7 +388,7 @@ namespace Khovsgol.Client.GTK
                         var date = track.date
                         var album_path = track.album_path
                         
-                        if (date != last_date) || (last_date == 0)
+                        if (date != last_date) or (last_date == 0)
                             // New date
                             last_date = date
 
@@ -408,7 +408,7 @@ namespace Khovsgol.Client.GTK
                             
                             first = false
 
-                        if (album_path is not null) && (current_album_path != album_path)
+                        if (album_path is not null) and (current_album_path != album_path)
                             // New album
                             current_album_path = album_path
                             current_tracks = new Json.Array()
@@ -543,12 +543,12 @@ namespace Khovsgol.Client.GTK
                     for var track in node.instance.api.get_tracks(args)
                         var album_path = track.album_path
                         
-                        if (album_path is not null) && (current_album_path != album_path)
+                        if (album_path is not null) and (current_album_path != album_path)
                             // New album
                             var sort = track.album_sort
 
                             // Separate by first letter
-                            if (sort is not null) && (sort.length > 0)
+                            if (sort is not null) and (sort.length > 0)
                                 var letter = sort.get_char(0)
                                 if letter != current_letter
                                     current_letter = letter
@@ -618,7 +618,7 @@ namespace Khovsgol.Client.GTK
      */
     class AllAlbums: CommonAlbums
         prop override readonly name: string = "albums"
-        prop override readonly label: string = "All albums"
+        prop override readonly label: string = "Albums and playlists"
     
     /*
      * Custom compilations only.
@@ -628,7 +628,7 @@ namespace Khovsgol.Client.GTK
             super(AlbumType.CUSTOM_COMPILATION)
     
         prop override readonly name: string = "custom_compilations"
-        prop override readonly label: string = "Custom compilations only"
+        prop override readonly label: string = "Playlists"
     
     //
     // Utilities
@@ -642,7 +642,7 @@ namespace Khovsgol.Client.GTK
                 var sort = artist.sort
                 
                 // Separate by first letter
-                if (sort is not null) && (sort.length > 0)
+                if (sort is not null) and (sort.length > 0)
                     var letter = sort.get_char(0)
                     if letter != current_letter
                         current_letter = letter
@@ -691,7 +691,7 @@ namespace Khovsgol.Client.GTK
                 var title_sort = album.title_sort
 
                 // Separate by first letter
-                if (title_sort is not null) && (title_sort.length > 0)
+                if (title_sort is not null) and (title_sort.length > 0)
                     var letter = title_sort.get_char(0)
                     if letter != current_letter
                         current_letter = letter
@@ -726,7 +726,7 @@ namespace Khovsgol.Client.GTK
         var title = track.title
         if title is not null
             var file_type = track.file_type
-            var position = track.position
+            var position = track.position_in_album
             var duration = track.duration
             var artist = is_compilation ? track.artist : null
             
@@ -737,7 +737,7 @@ namespace Khovsgol.Client.GTK
             if !is_lossless(file_type)
                 title = format_washed_out(title)
             markup1: string
-            if (position != int.MIN) && (artist is not null)
+            if (position != int.MIN) and (artist is not null)
                 markup1 = "%d\t%s - <i>%s</i>".printf(position, title, artist)
             else if position != int.MIN
                 markup1 = "%d\t%s".printf(position, title)
@@ -758,7 +758,7 @@ namespace Khovsgol.Client.GTK
                 var title_sort = track.title_sort
 
                 // Separate by first letter
-                if (title_sort is not null) && (title_sort.length > 0)
+                if (title_sort is not null) and (title_sort.length > 0)
                     var letter = title_sort.get_char(0)
                     if letter != current_letter
                         current_letter = letter

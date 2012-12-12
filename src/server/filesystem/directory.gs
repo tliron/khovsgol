@@ -74,7 +74,7 @@ namespace Khovsgol.Server.Filesystem
                     // Have we finished enumerating files in this directory?
                     if info is null
                         // Make sure the album has tracks
-                        if (album is not null) && !tracks.is_empty
+                        if (album is not null) and !tracks.is_empty
                             // Save album
                             libraries.save_album(album)
                             batch(libraries, ref count)
@@ -103,7 +103,7 @@ namespace Khovsgol.Server.Filesystem
                             break
                         
                     // Ignore hidden and unreadable files
-                    if info.get_is_hidden() || !info.get_attribute_boolean(FileAttribute.ACCESS_CAN_READ)
+                    if info.get_is_hidden() or !info.get_attribute_boolean(FileAttribute.ACCESS_CAN_READ)
                         continue
 
                     var file = enumerator.get_container().resolve_relative_path(info.get_name())
@@ -132,7 +132,7 @@ namespace Khovsgol.Server.Filesystem
                             continue
                         
                         var taglib_file = new TagLib.File(file_path)
-                        if (taglib_file is not null) && taglib_file.is_valid()
+                        if (taglib_file is not null) and taglib_file.is_valid()
                             tag: unowned TagLib.Tag = taglib_file.tag
                             
                             var track = new Track()
@@ -144,7 +144,7 @@ namespace Khovsgol.Server.Filesystem
                             track.artist_sort = sortables.@get(track.artist)
                             track.album = tag.album
                             track.album_sort = sortables.@get(track.album)
-                            track.position = (int) tag.track
+                            track.position_in_album = (int) tag.track
                             track.duration = (double) taglib_file.audioproperties.length
                             track.date = (int) tag.year
                             var last_dot = file_path.last_index_of_char('.')
@@ -163,7 +163,7 @@ namespace Khovsgol.Server.Filesystem
                                 
                                 // If an album has tracks by more than one artist, it is a compilation
                                 if album.artist != track.artist
-                                    if (album.album_type == AlbumType.ARTIST) && (album.artist is null)
+                                    if (album.album_type == AlbumType.ARTIST) and (album.artist is null)
                                         album.artist = track.artist
                                         album.artist_sort = track.artist_sort
                                     else

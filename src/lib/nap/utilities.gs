@@ -44,6 +44,6 @@ namespace Nap
                 return "%s %s %s [%s] \"%s %s %s\" %u %u".printf(dash(_address), dash(_user_identifier), dash(_user_id), formatted_timestamp, _method, _path, _protocol, _status_code, _size)
                 
         def private static dash(str: string?): string
-            if (str is null) || (str.length == 0)
+            if (str is null) or (str.length == 0)
                 return "-"
             return str

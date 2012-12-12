@@ -29,14 +29,14 @@ namespace Daemonize
 
         // Make sure dir exists
         var file = File.new_for_path("%s/.%s".printf(Environment.get_home_dir(), dir))
-        if !file.query_exists() || (file.query_info(FileAttribute.STANDARD_TYPE, FileQueryInfoFlags.NONE).get_file_type() != FileType.DIRECTORY)
+        if !file.query_exists() or (file.query_info(FileAttribute.STANDARD_TYPE, FileQueryInfoFlags.NONE).get_file_type() != FileType.DIRECTORY)
             file.make_directory()
 
         _dir = dir
         Daemon.pid_file_ident = Daemon.log_ident = _name = name
         set_daemon_pid_file_proc((Func) get_pid_file) // Ideally: Daemon.pid_file_proc = get_pid_file
         
-        if !start && !stop
+        if !start and !stop
             // Show status
             var pid = Daemon.pid_file_is_running()
             if pid >= 0

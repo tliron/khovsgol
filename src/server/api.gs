@@ -110,7 +110,7 @@ namespace Khovsgol.Server
                 json = iterator.to_json()
                 foreach_object_in_json_array(json, get_album_path_dynamic)
             // Note: custom compilation tracks are always put *after* regular tracks, whatever the sort order
-            if (album_type == AlbumType.ANY) || (album_type == AlbumType.CUSTOM_COMPILATION)
+            if (album_type == AlbumType.ANY) or (album_type == AlbumType.CUSTOM_COMPILATION)
                 var json2 = _crucible.libraries.iterate_track_pointers(args).to_json()
                 if json is null
                     json = json2
@@ -329,7 +329,7 @@ namespace Khovsgol.Server
             // Create a new custom compilation
             var title = get_string_member_or_null(entity, "title")
             var library = get_string_member_or_null(entity, "library")
-            if (title is not null) && (library is not null)
+            if (title is not null) and (library is not null)
                 var album = new Album()
                 album.path = album_path
                 album.title = title

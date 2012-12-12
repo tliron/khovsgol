@@ -247,7 +247,7 @@ namespace Khovsgol.Client.CLI
                         position_in_play_list = get_int_member_or_min(cursor, "positionInPlayList")
                         var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
                         track_duration = get_double_member_or_min(cursor, "trackDuration")
-                        if (position_in_track != double.MIN) && (track_duration != double.MIN)
+                        if (position_in_track != double.MIN) and (track_duration != double.MIN)
                             ratio = position_in_track / track_duration
 
                     var play_mode = get_string_member_or_null(player, "playMode")
@@ -260,7 +260,7 @@ namespace Khovsgol.Client.CLI
                             
                     if play_list is not null
                         for var track in new JsonTracks(get_array_member_or_null(play_list, "tracks"))
-                            var position = track.position
+                            var position = track.position_in_play_list
                             var path = track.path
                             if path is not null
                                 indent(2)

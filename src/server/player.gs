@@ -204,7 +204,7 @@ namespace Khovsgol.Server
             else if mode == CursorMode.REPEAT_PLAY_LIST
                 // Play first track if we are not pointing anywhere
                 // Or if we're at the end
-                if (_position_in_play_list == int.MIN) || (_position_in_play_list == size)
+                if (_position_in_play_list == int.MIN) or (_position_in_play_list == size)
                     position_in_play_list = 1
                     return
 

@@ -52,7 +52,7 @@ namespace Khovsgol.Server._Sqlite
             track.album = row.get_text("album")
             track.album_sort = row.get_text("album_sort")
             track.album_type = (AlbumType) row.get_int("album_type")
-            track.position = row.get_int("position")
+            track.position_in_album = row.get_int("position")
             track.duration = row.get_double("duration")
             track.date = row.get_int("date")
             track.file_type = row.get_text("file_type")

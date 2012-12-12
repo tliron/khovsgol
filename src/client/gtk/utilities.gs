@@ -380,7 +380,7 @@ namespace Khovsgol.Client.GTK
                 return true
 
             // Regular click
-            else if (e.button == 1) && ((e.state & (Gdk.ModifierType.CONTROL_MASK|Gdk.ModifierType.SHIFT_MASK)) == 0)
+            else if (e.button == 1) and ((e.state & (Gdk.ModifierType.CONTROL_MASK|Gdk.ModifierType.SHIFT_MASK)) == 0)
                 if in_selection
                     // Looks like user *might* be starting a drag
                     _selectable = false

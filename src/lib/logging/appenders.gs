@@ -21,7 +21,7 @@ namespace Logging
             // Note: GLib does not allow us to call log functions from within handlers,
             // so we must call the parent handler directly
             var appender = _parent.appender
-            if (appender is not null) && ((appender.levels & levels) != 0)
+            if (appender is not null) and ((appender.levels & levels) != 0)
                 appender.handle(domain, levels, message)
         
         _parent: Logger
@@ -86,7 +86,7 @@ namespace Logging
         def override handle(domain: string?, levels: LogLevelFlags, message: string)
             // If the file has moved away, make sure to reopen the
             // stream
-            if (_file is not null) && !_file.query_exists()
+            if (_file is not null) and !_file.query_exists()
                 try
                     set_file(_file)
                 except e: Error
@@ -116,11 +116,11 @@ namespace Logging
                     while info is not null
                         var name = info.get_name()
                         // Does this file have our prefix?
-                        if (name.length != prefix.length) && name.has_prefix(prefix)
+                        if (name.length != prefix.length) and name.has_prefix(prefix)
                             var suffix = name.slice(prefix.length, name.length)
                             var older = int.parse(suffix)
                             // Make sure that this file follows the naming rules
-                            if (older > 0) && (name == prefix + older.to_string())
+                            if (older > 0) and (name == prefix + older.to_string())
                                 olders.add(older)
                         info = enumerator.next_file()
                     

@@ -158,13 +158,13 @@ namespace Khovsgol.Client.GTK
             if _position_in_track != double.MIN
                 var step = (_track_duration != double.MIN) ? _track_duration * 0.1 : 10.0
                 position: double
-                if (e.direction == Gdk.ScrollDirection.LEFT) || (e.direction == Gdk.ScrollDirection.DOWN)
+                if (e.direction == Gdk.ScrollDirection.LEFT) or (e.direction == Gdk.ScrollDirection.DOWN)
                     position = _position_in_track - step
-                else // if (e.direction == Gdk.ScrollDirection.RIGHT) || (e.direction == Gdk.ScrollDirection.UP)
+                else // if (e.direction == Gdk.ScrollDirection.RIGHT) or (e.direction == Gdk.ScrollDirection.UP)
                     position = _position_in_track + step
                 if position < 0
                     position = 0
-                else if (_track_duration != double.MIN) && (position > _track_duration)
+                else if (_track_duration != double.MIN) and (position > _track_duration)
                     position = _track_duration
                 _instance.api.set_position_in_track(_instance.player, position)
             return false
@@ -173,7 +173,7 @@ namespace Khovsgol.Client.GTK
             pass
             
         def private on_connection_changed(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
-            if (host is not null) && (player is not null)
+            if (host is not null) and (player is not null)
                 _info.label = "<b>%s@%s:%u</b>".printf(Markup.escape_text(player), Markup.escape_text(host), port)
             else
                 _info.label = "<b>Not connected</b>"
@@ -186,7 +186,7 @@ namespace Khovsgol.Client.GTK
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             _position_in_track = position_in_track
             _track_duration = track_duration
-            if (position_in_track != double.MIN) && (track_duration != double.MIN)
+            if (position_in_track != double.MIN) and (track_duration != double.MIN)
                 _progress.fraction = position_in_track / track_duration
                 _progress.text = "%s/%s".printf(format_duration(position_in_track), format_duration(track_duration))
             else

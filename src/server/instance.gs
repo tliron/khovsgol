@@ -23,7 +23,7 @@ namespace Khovsgol.Server
             // Note: Gst messages seem to only work with the default GLib.MainContext
             _main_loop = new MainLoop(null, false)
             
-            if _arguments.start_daemon || _arguments.stop_daemon || _arguments.status_daemon
+            if _arguments.start_daemon or _arguments.stop_daemon or _arguments.status_daemon
                 Daemonize.handle("khovsgol", "khovsgold", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
             
             initialize_logging(_arguments.console)

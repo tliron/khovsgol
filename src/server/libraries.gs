@@ -97,7 +97,7 @@ namespace Khovsgol.Server
             if transaction
                 commit()
 
-            if (stable_position != int.MIN) && (destination <= stable_position)
+            if (stable_position != int.MIN) and (destination <= stable_position)
                 stable_position += (int) length
             
             return destination
@@ -207,7 +207,7 @@ namespace Khovsgol.Server
                     save_track_pointer(track_pointer)
 
                     // Stable position might be affected
-                    if (stable_position != int.MIN) && (position < stable_position)
+                    if (stable_position != int.MIN) and (position < stable_position)
                         stable_position++
                     
                     position++

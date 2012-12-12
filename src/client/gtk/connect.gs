@@ -180,7 +180,7 @@ namespace Khovsgol.Client.GTK
                 host: string
                 port: uint
                 _instance.api.get_connection(out host, out port)
-                var is_current = (host == node.host) && (port == node.port)
+                var is_current = (host == node.host) and (port == node.port)
                 
                 if is_current
                     markup = "<b>%s</b>".printf(markup)

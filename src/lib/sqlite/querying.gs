@@ -121,7 +121,7 @@ namespace SqliteUtil
             owned get
                 var query = new StringBuilder()
                 query.append("SELECT ")
-                if (constraint is not null) && (constraint.length > 0)
+                if (constraint is not null) and (constraint.length > 0)
                     query.append(constraint)
                     query.append(" ")
                 query.append(join(",", fields))

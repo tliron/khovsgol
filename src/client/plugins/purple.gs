@@ -40,8 +40,8 @@ namespace Khovsgol.Client.Plugins
                 return
         
             message: string? = null
-            if (track is not null) && (track.title is not null)
-                if (track.artist is not null) && (track.album is not null)
+            if (track is not null) and (track.title is not null)
+                if (track.artist is not null) and (track.album is not null)
                     message = "♪ %s by %s on %s".printf(track.title, track.artist, track.album)
                 else if track.artist is not null
                     message = "♪ %s by %s".printf(track.title, track.artist)
@@ -99,7 +99,7 @@ namespace Khovsgol.Client.Plugins
                                     _purple.purple_status_set_attr_string(tune_status, "tune_time", track.duration != double.MIN ? "%.2f".printf(track.duration) : "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_genre", "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_comment", "")
-                                    _purple.purple_status_set_attr_string(tune_status, "tune_track", track.position != int.MIN ? track.position.to_string() : "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_track", track.position_in_album != int.MIN ? track.position_in_album.to_string() : "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_url", "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_full", "")
                                     _purple.purple_status_set_active(tune_status, 1)
@@ -125,7 +125,7 @@ namespace Khovsgol.Client.Plugins
             var status_type = _purple.purple_status_get_type(status)
             if status_type != 0
                 var status_type_primitive = _purple.purple_status_type_get_primitive(status_type)
-                return (status_type_primitive == StatusTypePrimitive.OFFLINE) || (status_type_primitive == StatusTypePrimitive.INVISIBLE)
+                return (status_type_primitive == StatusTypePrimitive.OFFLINE) or (status_type_primitive == StatusTypePrimitive.INVISIBLE)
             return true
             
         def private has_attribute(status: int, attribute: string): bool raises IOError

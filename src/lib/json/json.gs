@@ -16,22 +16,22 @@ namespace JsonUtil
     //
     
     def is_object(node: Json.Node?): bool
-        return (node is not null) && (node.get_node_type() == NodeType.OBJECT)
+        return (node is not null) and (node.get_node_type() == NodeType.OBJECT)
 
     def is_array(node: Json.Node?): bool
-        return (node is not null) && (node.get_node_type() == NodeType.ARRAY)
+        return (node is not null) and (node.get_node_type() == NodeType.ARRAY)
 
     def is_string(node: Json.Node?): bool
-        return (node is not null) && (node.get_node_type() == NodeType.VALUE) && node.get_value_type().is_a(typeof(string))
+        return (node is not null) and (node.get_node_type() == NodeType.VALUE) and node.get_value_type().is_a(typeof(string))
 
     def is_int64(node: Json.Node?): bool
-        return (node is not null) && (node.get_node_type() == NodeType.VALUE) && node.get_value_type().is_a(typeof(int64))
+        return (node is not null) and (node.get_node_type() == NodeType.VALUE) and node.get_value_type().is_a(typeof(int64))
 
     def is_double(node: Json.Node?): bool
-        return (node is not null) && (node.get_node_type() == NodeType.VALUE) && node.get_value_type().is_a(typeof(double))
+        return (node is not null) and (node.get_node_type() == NodeType.VALUE) and node.get_value_type().is_a(typeof(double))
 
     def is_bool(node: Json.Node?): bool
-        return (node is not null) && (node.get_node_type() == NodeType.VALUE) && node.get_value_type().is_a(typeof(bool))
+        return (node is not null) and (node.get_node_type() == NodeType.VALUE) and node.get_value_type().is_a(typeof(bool))
     
     //
     // Safe getters

@@ -142,7 +142,7 @@ namespace Khovsgol.Server
 
         def private get_stored_version(): uint64 raises GLib.Error
             var album = _crucible.libraries.get_album(_album_path)
-            if (album is not null) && (album.date != int64.MIN) && (album.date != 0)
+            if (album is not null) and (album.date != int64.MIN) and (album.date != 0)
                 return album.date
             else
                 _crucible.libraries.begin()
@@ -191,7 +191,7 @@ namespace Khovsgol.Server
                             continue
                     
                     // Fix track to fit in playlist
-                    track.position = track_pointer.position
+                    track.position_in_play_list = track_pointer.position
                     get_album_path_dynamic(track.to_json())
                     tracks.add(track)
                     

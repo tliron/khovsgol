@@ -107,6 +107,14 @@ namespace Khovsgol.Client.GTK
         
         prop readonly accel_group: AccelGroup
             
+        def refresh()
+            _tree_view.freeze_child_notify()
+            _tree_view.model = null
+            _store.clear()
+            fill_all()
+            _tree_view.model = _store
+            _tree_view.thaw_child_notify()
+        
         def private on_unrealized()
             var api = (API) _instance.api
             api.connection_change_gdk.disconnect(on_connection_changed)
@@ -166,20 +174,15 @@ namespace Khovsgol.Client.GTK
             pass
 
         def private on_filter()
-            _tree_view.freeze_child_notify()
-            _tree_view.model = null
-            _store.clear()
-            fill_all()
-            _tree_view.model = _store
-            _tree_view.thaw_child_notify()
-        
+            refresh()
+            
         def private on_clear_filter()
             _filter_box.entry.text = ""
             on_filter()
 
         def private on_style()
             var style = _style_box.active_style
-            if (style is not null) && (style.name != _instance.configuration.library_style)
+            if (style is not null) and (style.name != _instance.configuration.library_style)
                 _instance.configuration.library_style = style.name
                 _instance.configuration.save()
             on_filter()
@@ -196,16 +199,13 @@ namespace Khovsgol.Client.GTK
 
         def private on_delete()
             pass
+            
+        def private on_manage()
+            pass
 
         def private on_popup_extra()
-            var window = new Window()
-            window.title = "Khövsgöl Library Browser"
-            window.set_position(WindowPosition.CENTER)
-            window.set_default_size(500, 600)
-            window.border_width = 10
-            window.add(new Library(_instance))
-            window.show_all()
-
+            new Popup(_instance).show_all()
+            
         def private on_actions(e: Gdk.EventButton): bool
             var selections = _tree_view.get_selection().count_selected_rows()
             if selections == 0
@@ -257,19 +257,22 @@ namespace Khovsgol.Client.GTK
             var menu = new Gtk.Menu()
             item: Gtk.MenuItem
             if has_items
-                item = new Gtk.MenuItem.with_mnemonic("Add to end of playlist")
+                item = new Gtk.MenuItem.with_mnemonic("_Add to end of playlist")
                 item.activate.connect(on_add)
                 menu.append(item)
-                item = new Gtk.MenuItem.with_mnemonic("Add to after currently playing track")
+                item = new Gtk.MenuItem.with_mnemonic("Add to after _currently playing track")
                 item.activate.connect(on_add_at)
                 menu.append(item)
                 if is_compilation
                     menu.append(new SeparatorMenuItem())
-                    item = new Gtk.MenuItem.with_mnemonic("Delete these tracks from my compilations")
+                    item = new Gtk.MenuItem.with_mnemonic("_Delete these tracks from my compilations")
                     item.activate.connect(on_delete)
                     menu.append(item)
                 menu.append(new SeparatorMenuItem())
-            item = new Gtk.MenuItem.with_mnemonic("Popup an extra library browser")
+            item = new Gtk.MenuItem.with_mnemonic("_Manage libraries")
+            item.activate.connect(on_manage)
+            menu.append(item)
+            item = new Gtk.MenuItem.with_mnemonic("_Popup an extra library browser")
             item.activate.connect(on_popup_extra)
             menu.append(item)
             menu.show_all()
@@ -285,6 +288,26 @@ namespace Khovsgol.Client.GTK
         _popup_custom: Gtk.Menu
         
         const MINIMUM_FILTER_LENGTH: int = 1
+
+        class private Popup: Window
+            construct(instance: GTK.Instance)
+                title = "Khövsgöl Library Browser"
+                set_position(WindowPosition.CENTER)
+                set_default_size(500, 600)
+                border_width = 10
+                var library = new Library(instance)
+                library.refresh()
+                add(library)
+            
+                key_press_event.connect(on_key_pressed)
+
+            def private on_key_pressed(e: Gdk.EventKey): bool
+                var keyval = e.keyval
+                if keyval == Gdk.Key.Escape
+                    destroy()
+                    return true
+                else
+                    return false
 
         enum private Column
             NODE = 0     // Json.Node

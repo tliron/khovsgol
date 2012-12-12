@@ -76,11 +76,17 @@ namespace Khovsgol
             set
                 set_int_member_not_min(_json, "album_type", value)
 
-        prop position: int
+        prop position_in_album: int
             get
-                return get_int_member_or_min(_json, "position")
+                return get_int_member_or_min(_json, "position_in_album")
             set
-                set_int_member_not_min(_json, "position", value)
+                set_int_member_not_min(_json, "position_in_album", value)
+
+        prop position_in_play_list: int
+            get
+                return get_int_member_or_min(_json, "position_in_play_list")
+            set
+                set_int_member_not_min(_json, "position_in_play_list", value)
                 
         prop duration: double
             get
@@ -112,7 +118,8 @@ namespace Khovsgol
             track.album_sort = album_sort
             track.album_path = album_path
             track.album_type = album_type
-            track.position = position
+            track.position_in_album = position_in_album
+            track.position_in_play_list = position_in_play_list
             track.duration = duration
             track.date = date
             track.file_type = file_type

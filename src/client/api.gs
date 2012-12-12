@@ -1015,7 +1015,7 @@ namespace Khovsgol.Client
             
             _watching_lock.lock()
             try
-                if (_host != _last_host) || (_port != _last_port) || (_watching_player != _last_watching_player)
+                if (_host != _last_host) or (_port != _last_port) or (_watching_player != _last_watching_player)
                     connection_change(_host, _port, _watching_player, _last_host, _last_port, _last_watching_player)
                     _last_host = _host
                     _last_port = _port
@@ -1032,7 +1032,7 @@ namespace Khovsgol.Client
                 if play_list is not null
                     var id = get_string_member_or_null(play_list, "id")
                     var version = get_int64_member_or_min(play_list, "version")
-                    if (id != _last_play_list_id) || (version != _last_play_list_version)
+                    if (id != _last_play_list_id) or (version != _last_play_list_version)
                         var tracks = new JsonTracks(get_array_member_or_null(play_list, "tracks"))
                         play_list_change(id, version, _last_play_list_id, _last_play_list_version, tracks)
                         _last_play_list_id = id
@@ -1064,8 +1064,8 @@ namespace Khovsgol.Client
                                 _last_track = null
                         else if _last_tracks is not null
                             for var track in _last_tracks
-                                if track.position == _last_position_in_last_play_list
-                                    if (_last_track is null) || (_last_track.path != track.path)
+                                if track.position_in_play_list == _last_position_in_last_play_list
+                                    if (_last_track is null) or (_last_track.path != track.path)
                                         track_change(track, _last_track)
                                         _last_track = track
                                     break

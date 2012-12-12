@@ -58,7 +58,7 @@ namespace Khovsgol.Server.GStreamer
                     else
                         _pipeline.state = State.NULL
                 else
-                    if (value == PlayMode.PLAYING) || (value == PlayMode.TOGGLE_PAUSED)
+                    if (value == PlayMode.PLAYING) or (value == PlayMode.TOGGLE_PAUSED)
                         next()
             
         prop override cursor_mode: CursorMode
