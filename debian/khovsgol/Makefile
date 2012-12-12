@@ -1,7 +1,7 @@
 #
 # A few special targets:
 #
-# <component>.c:
+# <component>.ccode:
 #  Outputs the C code for a component into the "c/<component>" directory.
 #
 # dependencies.quantal:
@@ -30,7 +30,7 @@ DEBIAN=debian/khovsgol
 
 all: khovsgold khovsgolc khovsgol
 
-all.c: khovsgold.c khovsgolc.c khovsgol.c
+all.ccode: khovsgold.ccode khovsgolc.ccode khovsgol.ccode
 
 clean: deb.clean
 	$(RM) -rf $(BIN)/*

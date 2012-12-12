@@ -32,6 +32,8 @@ namespace Khovsgol.Client
                 _watching_lock.lock()
                 try
                     _watching_player = value
+                    reset_watch()
+                    watch()
                 finally
                     _watching_lock.unlock()
 
@@ -46,6 +48,14 @@ namespace Khovsgol.Client
         event position_in_track_change(position_in_last_track: double, old_position_in_last_track: double, track_duration: double)
         event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
         event track_change(track: Track?, old_last_track: Track?)
+        
+        def get_connection(out host: string, out port: uint)
+            _watching_lock.lock()
+            try
+                host = _host
+                port = _port
+            finally
+                _watching_lock.unlock()
 
         def new connect(host: string, port: uint)
             _watching_lock.lock()
@@ -53,6 +63,7 @@ namespace Khovsgol.Client
                 _host = host
                 _port = port
                 _client.base_url = "http://%s:%u".printf(_host, _port)
+                reset_watch()
                 watch()
             finally
                 _watching_lock.unlock()
@@ -1068,6 +1079,8 @@ namespace Khovsgol.Client
                 _watching_lock.unlock()
 
         def private poll(): bool
+            reset_watch()
+        
             while true
                 update()
 

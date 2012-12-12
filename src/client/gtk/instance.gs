@@ -66,6 +66,19 @@ namespace Khovsgol.Client.GTK
             
         def show()
             _window.present()
+
+        def start_server()
+            try
+                Process.spawn_sync(dir.get_path(), {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null)
+            except e: SpawnError
+                _logger.exception(e)
+
+        def stop_server()
+            pid: Pid
+            try
+                Process.spawn_async(dir.get_path(), {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
+            except e: SpawnError
+                _logger.exception(e)
         
         def get_resource(name: string): File?
             // TODO: try standard location first
@@ -90,19 +103,6 @@ namespace Khovsgol.Client.GTK
             if (info.flags & Avahi.LookupResultFlags.LOCAL) != 0
                 _api.connect(info.hostname, info.port)
                 _browser = null
-
-        def private start_server()
-            try
-                Process.spawn_sync(dir.get_path(), {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null)
-            except e: SpawnError
-                _logger.exception(e)
-
-        def private stop_server()
-            pid: Pid
-            try
-                Process.spawn_async(dir.get_path(), {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
-            except e: SpawnError
-                _logger.exception(e)
         
     _logger: Logging.Logger
         

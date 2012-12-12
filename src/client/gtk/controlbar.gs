@@ -18,23 +18,23 @@ namespace Khovsgol.Client.GTK
             var preferences = new ControlToolButton(Stock.PREFERENCES, Gdk.Key.P, "Preferences\n<Alt>P", _accel_group)
             preferences.clicked.connect(on_preferences)
             
-            var manage_servers = new ControlToolButton(Stock.NETWORK, Gdk.Key.M, "Manage servers\n<Alt>M", _accel_group)
-            manage_servers.clicked.connect(on_manage_servers)
-
-            var manage_players = new ControlToolButton(Stock.DISCONNECT, Gdk.Key.N, "Manage players\n<Alt>N", _accel_group)
-            manage_players.clicked.connect(on_manage_players)
-
             var manage_libraries = new ControlToolButton(Stock.CDROM, Gdk.Key.L, "Manage libraries\n<Alt>L", _accel_group)
             manage_libraries.clicked.connect(on_manage_libraries)
 
             var manage_receiver = new ControlToolButton(Stock.JUMP_TO, Gdk.Key.R, "Manage receiver\n<Alt>R", _accel_group)
             manage_receiver.clicked.connect(on_manage_receiver)
+
+            var connect = new ControlToolButton(Stock.NETWORK, Gdk.Key.C, "Connect\n<Alt>C", _accel_group)
+            connect.clicked.connect(on_connect)
             
             _info = new Label("<b>Not connected</b>")
             _info.use_markup = true
+            var info_box = new EventBox()
+            info_box.add(_info)
+            info_box.button_press_event.connect(on_info_clicked)
             var info_label_alignment = new Alignment(0, 0, 1, 1)
             info_label_alignment.set_padding(0, 0, 5, 5)
-            info_label_alignment.add(_info)
+            info_label_alignment.add(info_box)
             var info_label_item = new ToolItem()
             info_label_item.add(info_label_alignment)
         
@@ -85,10 +85,10 @@ namespace Khovsgol.Client.GTK
             show_arrow = false
             add(quit)
             add(preferences)
-            add(manage_servers)
-            add(manage_players)
             add(manage_libraries)
             add(manage_receiver)
+            add(new SeparatorToolItem())
+            add(connect)
             add(info_label_item)
             add(separator)
             add(previous)
@@ -119,17 +119,14 @@ namespace Khovsgol.Client.GTK
         def private on_preferences()
             pass
 
-        def private on_manage_servers()
-            new Servers(_instance).show_all()
-
-        def private on_manage_players()
-            pass
-
         def private on_manage_libraries()
             pass
 
         def private on_manage_receiver()
             pass
+
+        def private on_connect()
+            new Connect(_instance).show_all()
 
         def private on_previous()
             _instance.api.set_position_in_play_list_string(_instance.player, "prev")
@@ -146,6 +143,10 @@ namespace Khovsgol.Client.GTK
             
         def private on_next()
             _instance.api.set_position_in_play_list_string(_instance.player, "next")
+
+        def private on_info_clicked(e: Gdk.EventButton): bool
+            on_connect()
+            return false
         
         def private on_progress_clicked(e: Gdk.EventButton): bool
             var w = _progress.get_allocated_width()

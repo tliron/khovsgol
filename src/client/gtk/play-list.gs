@@ -402,27 +402,27 @@ namespace Khovsgol.Client.GTK
                         break
 
         def private get_selected_positions(): Json.Array
-            var selection = _tree_view.get_selection()
-            var tree_paths = selection.get_selected_rows(null)
-            iter: TreeIter
             var positions = new Json.Array()
-            for var tree_path in tree_paths
-                if _store.get_iter(out iter, tree_path)
-                    var style = (PlayListStyle) _style_box.active_style
-                    if style is not null
+            var style = (PlayListStyle) _style_box.active_style
+            if style is not null
+                var selection = _tree_view.get_selection()
+                var tree_paths = selection.get_selected_rows(null)
+                iter: TreeIter
+                for var tree_path in tree_paths
+                    if _store.get_iter(out iter, tree_path)
                         var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
                         style.gather_positions(node, ref positions)
             return positions
 
         def private get_selected_paths(): Json.Array
-            var selection = _tree_view.get_selection()
-            var tree_paths = selection.get_selected_rows(null)
-            iter: TreeIter
             var paths = new Json.Array()
-            for var tree_path in tree_paths
-                if _store.get_iter(out iter, tree_path)
-                    var style = (PlayListStyle) _style_box.active_style
-                    if style is not null
+            var style = (PlayListStyle) _style_box.active_style
+            if style is not null
+                var selection = _tree_view.get_selection()
+                var tree_paths = selection.get_selected_rows(null)
+                iter: TreeIter
+                for var tree_path in tree_paths
+                    if _store.get_iter(out iter, tree_path)
                         var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
                         style.gather_paths(node, ref paths)
             return paths
