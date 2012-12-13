@@ -27,6 +27,7 @@ namespace Khovsgol.Client.GTK
             
             realize.connect(on_realized)
             delete_event.connect(on_delete)
+            show.connect(on_show)
             
             _control_bar = new ControlBar(_instance)
             _play_list = new PlayList(_instance)
@@ -53,7 +54,7 @@ namespace Khovsgol.Client.GTK
             title = "Khövsgöl"
             deletable = false
             border_width = 10
-            
+
             var x = _instance.configuration.x
             var y = _instance.configuration.y
             if (x != int.MIN) and (y != int.MIN)
@@ -91,6 +92,18 @@ namespace Khovsgol.Client.GTK
         def private on_delete(event: Gdk.EventAny): bool
             iconify()
             return true // bypass default delete handler
+        
+        def private on_show()
+            show.disconnect(on_show)
+            
+            // We are setting the position *after* we're shown, because the window manager
+            // will set the initial position as it pleases...
+            var x = _instance.configuration.x
+            var y = _instance.configuration.y
+            if (x != int.MIN) and (y != int.MIN)
+                move(x, y)
+            else
+                set_position(WindowPosition.CENTER)
         
         def private on_configured(event: Gdk.EventConfigure): bool
             x: int

@@ -46,7 +46,7 @@ namespace Khovsgol.Client
                     return int.MIN
             set
                 _key_file.set_integer("ui", "height", value)
-        
+
         prop split: int
             get
                 try
