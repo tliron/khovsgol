@@ -30,6 +30,7 @@ namespace Khovsgol.Client.GTK
         prop readonly api: Client.API = new API()
         prop readonly window: MainWindow
         prop readonly application: Application
+        prop readonly started: bool
 
         prop player: string
             get
@@ -43,6 +44,8 @@ namespace Khovsgol.Client.GTK
             _plugins.add(plugin)
     
         def start()
+            _started = true
+        
             if _configuration.server_autostart
                 start_server()
                 
@@ -65,6 +68,8 @@ namespace Khovsgol.Client.GTK
                 stop_server()
 
             Gtk.main_quit()
+
+            _started = false
             
         def show()
             _window.present()
@@ -72,14 +77,16 @@ namespace Khovsgol.Client.GTK
         def start_server()
             try
                 pid: Pid
-                Process.spawn_async(null, {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
+                Process.spawn_async(_dir.get_path(), {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
+                _logger.messagef("Starting khovsgold, daemonizer pid: %d", pid)
             except e: SpawnError
                 _logger.exception(e)
 
         def stop_server()
             try
                 pid: Pid
-                Process.spawn_async(null, {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
+                Process.spawn_async(_dir.get_path(), {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
+                _logger.messagef("Stopping khovsgold, daemonizer pid: %d", pid)
             except e: SpawnError
                 _logger.exception(e)
         

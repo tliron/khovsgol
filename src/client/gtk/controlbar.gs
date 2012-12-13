@@ -72,8 +72,8 @@ namespace Khovsgol.Client.GTK
             //progress_item.set_expand(true)
             progress_item.add(progress_alignment)
         
-            _visualization_toggle = new ControlToggleToolButton(Stock.SELECT_COLOR, Gdk.Key.V, "Open or close visualization\n<Alt>V", _accel_group)
-            _on_visualization_toggled_id = _visualization_toggle.clicked.connect(_on_visualization_toggled)
+            _toggle_visualization = new ControlToggleToolButton(Stock.SELECT_COLOR, Gdk.Key.@V, "Open or close visualization\n<Alt>V", _accel_group)
+            _on_toggle_visualization_id = _toggle_visualization.clicked.connect(_on_visualization_toggled)
     
             var separator = new ToolItem()
             separator.set_expand(true)
@@ -98,7 +98,7 @@ namespace Khovsgol.Client.GTK
             add(next)
             add(volume_item)
             add(progress_item)
-            add(_visualization_toggle)
+            add(_toggle_visualization)
             
             var api = (API) _instance.api
             api.connection_change_gdk.connect(on_connection_changed)
@@ -169,34 +169,40 @@ namespace Khovsgol.Client.GTK
                 _instance.api.set_position_in_track(_instance.player, position)
             return false
             
-        _on_visualization_toggled_id: ulong
+        _on_toggle_visualization_id: ulong
         def private _on_visualization_toggled()
-            if _visualization_toggle.active
+            if _visualization_pid == 0
                 try
-                    Process.spawn_async(null, {"projectM-pulseaudio"}, null, SpawnFlags.SEARCH_PATH|SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL|SpawnFlags.DO_NOT_REAP_CHILD, null, out _visualization_pid)
+                    Process.spawn_async(_instance.dir.get_path(), {"projectM-pulseaudio"}, null, SpawnFlags.SEARCH_PATH|SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL|SpawnFlags.DO_NOT_REAP_CHILD, null, out _visualization_pid)
                     ChildWatch.add(_visualization_pid, on_visualization_died)
                     _logger.messagef("Spawned visualization, pid: %d", _visualization_pid)
+
+                    SignalHandler.block(_toggle_visualization, _on_toggle_visualization_id)
+                    _toggle_visualization.active = true
+                    SignalHandler.unblock(_toggle_visualization, _on_toggle_visualization_id)
                 except e: SpawnError
                     _logger.exception(e)
                     _visualization_pid = 0
-                    SignalHandler.block(_visualization_toggle, _on_visualization_toggled_id)
-                    _visualization_toggle.active = false
-                    SignalHandler.unblock(_visualization_toggle, _on_visualization_toggled_id)
-                    
-            else if _visualization_pid != 0
-                SignalHandler.block(_visualization_toggle, _on_visualization_toggled_id)
-                _visualization_toggle.active = true
-                SignalHandler.unblock(_visualization_toggle, _on_visualization_toggled_id)
+
+                    SignalHandler.block(_toggle_visualization, _on_toggle_visualization_id)
+                    _toggle_visualization.active = false
+                    SignalHandler.unblock(_toggle_visualization, _on_toggle_visualization_id)
+            else
+                SignalHandler.block(_toggle_visualization, _on_toggle_visualization_id)
+                _toggle_visualization.active = true
+                SignalHandler.unblock(_toggle_visualization, _on_toggle_visualization_id)
+
                 _logger.messagef("Killing visualization, pid: %d", _visualization_pid)
                 Posix.kill(_visualization_pid, Posix.SIGKILL)
         
         def private on_visualization_died(pid: Pid, status: int)
             Process.close_pid(_visualization_pid) // Doesn't do anything on Unix
             _visualization_pid = 0
+
             // TODO: don't we have to be in the GDK thread?!
-            SignalHandler.block(_visualization_toggle, _on_visualization_toggled_id)
-            _visualization_toggle.active = false
-            SignalHandler.unblock(_visualization_toggle, _on_visualization_toggled_id)
+            SignalHandler.block(_toggle_visualization, _on_toggle_visualization_id)
+            _toggle_visualization.active = false
+            SignalHandler.unblock(_toggle_visualization, _on_toggle_visualization_id)
             
         def private on_connection_changed(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
             if (host is not null) and (player is not null)
@@ -223,7 +229,7 @@ namespace Khovsgol.Client.GTK
         _info: Label
         _progress: ProgressBar
         _toggle_pause: ControlToggleToolButton
-        _visualization_toggle: ControlToggleToolButton
+        _toggle_visualization: ControlToggleToolButton
         _position_in_track: double = double.MIN
         _track_duration: double = double.MIN
         _visualization_pid: Pid = 0
