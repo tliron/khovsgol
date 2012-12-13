@@ -29,6 +29,8 @@ namespace Khovsgol.Client.GTK
             
             _info = new Label("<b>Not connected</b>")
             _info.use_markup = true
+            _info.ellipsize = Pango.EllipsizeMode.END
+            _info.set_alignment(0, 0.5f)
             var info_box = new EventBox()
             info_box.add(_info)
             info_box.button_press_event.connect(on_info_clicked)
@@ -36,6 +38,7 @@ namespace Khovsgol.Client.GTK
             info_label_alignment.set_padding(0, 0, 5, 5)
             info_label_alignment.add(info_box)
             var info_label_item = new ToolItem()
+            info_label_item.set_expand(true)
             info_label_item.add(info_label_alignment)
         
             var previous = new ControlToolButton(Stock.MEDIA_PREVIOUS, Gdk.Key.@1, "Go to previous track\n<Alt>1", _accel_group)
@@ -69,15 +72,11 @@ namespace Khovsgol.Client.GTK
             progress_alignment.set_padding(0, 0, 5, 5)
             progress_alignment.add(progress_box)
             var progress_item = new ToolItem()
-            //progress_item.set_expand(true)
             progress_item.add(progress_alignment)
         
             _toggle_visualization = new ControlToggleToolButton(Stock.SELECT_COLOR, Gdk.Key.@V, "Open or close visualization\n<Alt>V", _accel_group)
             _on_toggle_visualization_id = _toggle_visualization.clicked.connect(_on_visualization_toggled)
     
-            var separator = new ToolItem()
-            separator.set_expand(true)
-        
             // Assemble
             hexpand = true
             vexpand = false
@@ -90,7 +89,6 @@ namespace Khovsgol.Client.GTK
             add(new SeparatorToolItem())
             add(connect)
             add(info_label_item)
-            add(separator)
             add(previous)
             add(play)
             add(_toggle_pause)
