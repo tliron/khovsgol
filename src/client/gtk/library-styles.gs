@@ -71,14 +71,14 @@ namespace Khovsgol.Client.GTK
                             var artist = new Artist()
                             artist.name = artist_name
                             artist.sort = sort
-                            var json = fill_artist(artist, node)
-                            if json is not null
+                            var artist_node = fill_artist(artist, node)
+                            if artist_node is not null
                                 current_albums = new Json.Array()
-                                json.set_array_member("_albums", current_albums)
+                                artist_node.set_array_member("_albums", current_albums)
+                                
+                                first = false
                             else
                                 current_albums = null
-                            
-                            first = false
 
                         if (album_path is not null) and (current_album_path != album_path)
                             // New album
@@ -198,7 +198,7 @@ namespace Khovsgol.Client.GTK
                                 
                         albums_list.sort((CompareFunc) compare_albums_by_date)
                         for var album in albums_list
-                            var tracks = get_array_member_or_null(album.to_json(), "tracks")
+                            var tracks = get_array_member_or_null(album.to_json(), "_tracks")
                             gather_from_tracks(new JsonTracks(tracks), node, ref paths)
                     else
                         // All paths for artist, one album at a time
