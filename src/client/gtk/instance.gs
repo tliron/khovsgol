@@ -20,9 +20,10 @@ namespace Khovsgol.Client.GTK
             add_plugin(new Plugins.NotificationsPlugin())
             add_plugin(new Plugins.MediaPlayerKeysPlugin())
             add_plugin(new Plugins.Mpris2Plugin())
-            //add_plugin(new Plugins.MusicIndicatorPlugin())
             add_plugin(new Plugins.UnityPlugin())
             add_plugin(new Plugins.PurplePlugin())
+            add_plugin(new Plugins.LastFmPlugin())
+            //add_plugin(new Plugins.MusicIndicatorPlugin())
             
         prop readonly configuration: Configuration
         prop readonly dir: File
@@ -70,14 +71,15 @@ namespace Khovsgol.Client.GTK
 
         def start_server()
             try
-                Process.spawn_sync(dir.get_path(), {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null)
+                pid: Pid
+                Process.spawn_async(null, {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
             except e: SpawnError
                 _logger.exception(e)
 
         def stop_server()
-            pid: Pid
             try
-                Process.spawn_async(dir.get_path(), {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
+                pid: Pid
+                Process.spawn_async(null, {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
             except e: SpawnError
                 _logger.exception(e)
         
