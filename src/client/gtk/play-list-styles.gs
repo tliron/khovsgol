@@ -37,7 +37,7 @@ namespace Khovsgol.Client.GTK
                     current_album_paths = null
                     var album = albums[current_album_path]
                     if album is null
-                        album = node.instance.api.get_album(current_album_path)
+                        album = node.get_album(current_album_path)
                     if album is not null
                         albums[current_album_path] = album
                         var compilation = album.album_type

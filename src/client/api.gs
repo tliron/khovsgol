@@ -46,7 +46,7 @@ namespace Khovsgol.Client
         event cursor_mode_change(cursor_mode: string?, old_last_cursor_mode: string?)
         event position_in_play_list_change(position_in_last_play_list: int, old_position_in_last_play_list: int)
         event position_in_track_change(position_in_last_track: double, old_position_in_last_track: double, track_duration: double)
-        event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
+        event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
         event track_change(track: Track?, old_last_track: Track?)
         
         def get_connection(out host: string, out port: uint)
@@ -1036,7 +1036,8 @@ namespace Khovsgol.Client
                     var version = get_int64_member_or_min(play_list, "version")
                     if (id != _last_play_list_id) or (version != _last_play_list_version)
                         var tracks = new JsonTracks(get_array_member_or_null(play_list, "tracks"))
-                        play_list_change(id, version, _last_play_list_id, _last_play_list_version, tracks)
+                        var albums = new JsonAlbums(get_array_member_or_null(play_list, "albums"))
+                        play_list_change(id, version, _last_play_list_id, _last_play_list_version, tracks, albums)
                         _last_play_list_id = id
                         _last_play_list_version = version
                         _last_tracks = tracks

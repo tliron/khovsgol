@@ -83,6 +83,12 @@ namespace Khovsgol.Server._Sqlite
                 _db.execute("ROLLBACK")
             finally
                 _write_lock.unlock()
+
+        def override write_lock()
+            _write_lock.lock()
+
+        def override write_unlock()
+            _write_lock.unlock()
             
         //
         // Tracks
@@ -596,7 +602,7 @@ namespace Khovsgol.Server._Sqlite
 
         _db: SqliteUtil.Database
         
-        _write_lock: GLib.Mutex = GLib.Mutex()
+        _write_lock: GLib.RecMutex = GLib.RecMutex()
         
         _get_track: Statement
         _get_track_lock: GLib.Mutex = GLib.Mutex()

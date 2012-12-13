@@ -361,8 +361,9 @@ namespace Khovsgol.Client.GTK
             _play_mode = play_mode
             refresh_row(_position_in_play_list)
                     
-        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
+        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
             _tracks = tracks
+            _albums = albums
             update()
         
         def private on_position_in_play_list_changed(position_in_play_list: int, old_position_in_play_list: int)
@@ -382,7 +383,7 @@ namespace Khovsgol.Client.GTK
             if _tracks is not null
                 var style = (PlayListStyle) _style_box.active_style
                 if style is not null
-                    var node = new PlayListNode(_instance, _tree_view, _store, _tracks)
+                    var node = new PlayListNode(_instance, _tree_view, _store, _tracks, _albums)
                     style.fill(node)
             _tree_view.model = _store
             _tree_view.thaw_child_notify()
@@ -410,7 +411,7 @@ namespace Khovsgol.Client.GTK
                 iter: TreeIter
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
-                        var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
+                        var node = new PlayListNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                         style.gather_positions(node, ref positions)
             return positions
 
@@ -423,7 +424,7 @@ namespace Khovsgol.Client.GTK
                 iter: TreeIter
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
-                        var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
+                        var node = new PlayListNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                         style.gather_paths(node, ref paths)
             return paths
 
@@ -439,7 +440,7 @@ namespace Khovsgol.Client.GTK
         def private get_first_position(iter: TreeIter): int
             var style = (PlayListStyle) _style_box.active_style
             if style is not null
-                var node = new PlayListNode(_instance, _tree_view, _store, _tracks, iter)
+                var node = new PlayListNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                 var position = style.get_first_position(node)
                 if position != int.MIN
                     return position
@@ -489,6 +490,7 @@ namespace Khovsgol.Client.GTK
         _position_in_track: double = double.MIN
         _track_duration: double = double.MIN
         _tracks: IterableOfTrack?
+        _albums: IterableOfAlbum?
         
         _logger: static Logging.Logger
         

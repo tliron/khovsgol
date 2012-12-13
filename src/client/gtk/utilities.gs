@@ -29,11 +29,12 @@ namespace Khovsgol.Client.GTK
      * accessing and modifying the node data.
      */
     class PlayListNode
-        construct(instance: Instance, tree_view: TreeView, store: ListStore, tracks: IterableOfTrack, iter: TreeIter? = null)
+        construct(instance: Instance, tree_view: TreeView, store: ListStore, tracks: IterableOfTrack, albums: IterableOfAlbum, iter: TreeIter? = null)
             _instance = instance
             _tree_view = tree_view
             _store = store
             _tracks = tracks
+            _albums = albums
             _iter = iter
 
         prop readonly instance: Instance
@@ -57,6 +58,13 @@ namespace Khovsgol.Client.GTK
                 value: Value
                 _store.get_value(_iter, PlayList.Column.NODE, out value)
                 return ((Json.Node) value).get_array()
+                
+        def get_album(path: string): Album?
+            if _albums_dict is null
+                _albums_dict = new dict of string, Album
+                for var album in _albums
+                    _albums_dict[album.path] = album
+            return _albums_dict[path]
 
         def append(node: Json.Node?, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
             if !_is_frozen
@@ -82,6 +90,8 @@ namespace Khovsgol.Client.GTK
         _tree_view: TreeView
         _store: ListStore
         _iter: TreeIter?
+        _albums: IterableOfAlbum
+        _albums_dict: dict of string, Album
 
     /*
      * Represents a node in the Library pane, with a simplified API for

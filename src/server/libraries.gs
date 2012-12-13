@@ -14,6 +14,8 @@ namespace Khovsgol.Server
         def abstract begin() raises GLib.Error
         def abstract commit() raises GLib.Error
         def abstract rollback() raises GLib.Error
+        def abstract write_lock()
+        def abstract write_unlock()
         
         // Tracks
         def abstract get_track(path: string): Track? raises GLib.Error

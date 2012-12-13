@@ -25,7 +25,7 @@ namespace Khovsgol.Client.GTK
         event cursor_mode_change_gdk(cursor_mode: string?, old_cursor_mode: string?)
         event position_in_play_list_change_gdk(position_in_play_list: int, old_position_in_play_list: int)
         event position_in_track_change_gdk(position_in_track: double, old_position_in_track: double, track_duration: double)
-        event play_list_change_gdk(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
+        event play_list_change_gdk(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
         event track_change_gdk(track: Track?, old_track: Track?)
         
         prop static in_gdk: bool
@@ -66,11 +66,11 @@ namespace Khovsgol.Client.GTK
             else
                 new PositionInTrackChangeGdk(self, position_in_track, old_position_in_track, track_duration)
             
-        def private on_play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
+        def private on_play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
             if in_gdk
-                play_list_change_gdk(id, version, old_id, old_version, tracks)
+                play_list_change_gdk(id, version, old_id, old_version, tracks, albums)
             else
-                new PlayListChangeGdk(self, id, version, old_id, old_version, tracks)
+                new PlayListChangeGdk(self, id, version, old_id, old_version, tracks, albums)
 
         def private on_track_change(track: Track?, old_track: Track?)
             if in_gdk
@@ -174,13 +174,14 @@ namespace Khovsgol.Client.GTK
                 return false
 
         class private PlayListChangeGdk: Object
-            construct(api: API, id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack)
+            construct(api: API, id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
                 _api = api
                 _id = id
                 _version = version
                 _old_id = old_id
                 _old_version = old_version
                 _tracks = tracks
+                _albums = albums
                 ref()
                 Gdk.threads_add_idle(idle)
 
@@ -190,9 +191,10 @@ namespace Khovsgol.Client.GTK
             _old_id: string?
             _old_version: int64
             _tracks: IterableOfTrack
+            _albums: IterableOfAlbum
 
             def private idle(): bool
-                _api.play_list_change_gdk(_id, _version, _old_id, _old_version, _tracks)
+                _api.play_list_change_gdk(_id, _version, _old_id, _old_version, _tracks, _albums)
                 unref()
                 return false
 
