@@ -42,8 +42,58 @@ namespace Khovsgol.Server.Filesystem
             count: uint = 0
             var timer = new Timer()
 
-            // Phase 1: Add tracks and albums
-            _logger.infof("Phase 1: Add tracks and albums: %s", path)
+            
+            try
+                libraries.begin()
+
+                _logger.messagef("Phase 1: Pruning deleted albums: %s", path)
+
+                for var album_path in libraries.iterate_album_paths(path)
+                    // Should we stop scanning?
+                    if AtomicInt.get(ref _is_scan_stopping) == 1
+                        _logger.messagef("Scanning aborted: %s", path)
+                        break
+
+                    if !File.new_for_path(album_path).query_exists()
+                        // Note: this will also delete all associated tracks and track pointers
+                        libraries.delete_album(album_path)
+                        batch(libraries, ref count)
+                        _logger.infof("Pruned album: %s", album_path)
+
+                _logger.messagef("Phase 2: Pruning deleted tracks: %s", path)
+
+                for var track_path in libraries.iterate_track_paths(path)
+                    // Should we stop scanning?
+                    if AtomicInt.get(ref _is_scan_stopping) == 1
+                        _logger.messagef("Scanning aborted: %s", path)
+                        break
+
+                    var file = File.new_for_path(track_path)
+                    if !file.query_exists()
+                        // Note: this will also delete associated track pointers
+                        libraries.delete_track(track_path)
+                        batch(libraries, ref count)
+                        _logger.infof("Pruned track: %s", track_path)
+                        
+                        // Renaming a file will *not* change the timestamp of the containing directory,
+                        // but we want to make sure that we rescan it in phase 3, so we need to reset
+                        // all stored timestamps for the directory hierarchy
+                        var parent = file.get_parent()
+                        while parent is not null
+                            libraries.delete_timestamp(parent.get_path())
+                            batch(libraries, ref count)
+                            parent = parent.get_parent()
+
+                pass
+            except e: GLib.Error
+                _logger.exception(e)
+            finally
+                try
+                    libraries.commit()
+                except e: GLib.Error
+                    _logger.exception(e)
+
+            _logger.messagef("Phase 3: Adding tracks and albums: %s", path)
 
             enumerator: FileEnumerator? = null
             info: FileInfo? = null
@@ -190,46 +240,6 @@ namespace Khovsgol.Server.Filesystem
                         node.enumerator.close()
                     except e: GLib.Error
                         _logger.exception(e)
-            
-            try
-                libraries.begin()
-
-                // Phase 2: Delete missing albums
-                _logger.infof("Phase 2: Prune missing albums: %s", path)
-
-                for var album_path in libraries.iterate_album_paths(path)
-                    // Should we stop scanning?
-                    if AtomicInt.get(ref _is_scan_stopping) == 1
-                        _logger.messagef("Scanning aborted: %s", path)
-                        break
-
-                    if !File.new_for_path(album_path).query_exists()
-                        libraries.delete_album(album_path)
-                        batch(libraries, ref count)
-                        _logger.infof("Pruned album: %s", album_path)
-
-                // Phase 3: Delete missing tracks
-                _logger.infof("Phase 3: Prune missing tracks: %s", path)
-
-                for var track_path in libraries.iterate_track_paths(path)
-                    // Should we stop scanning?
-                    if AtomicInt.get(ref _is_scan_stopping) == 1
-                        _logger.messagef("Scanning aborted: %s", path)
-                        break
-
-                    if !File.new_for_path(track_path).query_exists()
-                        libraries.delete_track(track_path)
-                        batch(libraries, ref count)
-                        _logger.infof("Pruned track: %s", track_path)
-                
-                pass
-            except e: GLib.Error
-                _logger.exception(e)
-            finally
-                try
-                    libraries.commit()
-                except e: GLib.Error
-                    _logger.exception(e)
 
             timer.stop()
             var seconds = timer.elapsed()

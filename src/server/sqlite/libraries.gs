@@ -167,6 +167,8 @@ namespace Khovsgol.Server._Sqlite
             finally
                 _delete_track_lock.unlock()
             
+            delete_timestamp(path)
+            
         //
         // Track pointers
         //
@@ -328,8 +330,18 @@ namespace Khovsgol.Server._Sqlite
                     _delete_album3.reset()
                 _delete_album3.bind_text(1, path)
                 _db.assert_done(_delete_album3.step())
+
+                // Delete timestamps for tracks
+                if _delete_album4 is null
+                    _db.prepare(out _delete_album4, "DELETE FROM scanned WHERE path LIKE ? ESCAPE \"\\\"")
+                else
+                    _delete_album4.reset()
+                _delete_album4.bind_text(1, escape_like(path + SEPARATOR) + "%")
+                _db.assert_done(_delete_album4.step())
             finally
                 _delete_album_lock.unlock()
+
+            delete_timestamp(path)
         
         //
         // Iterate tracks
@@ -600,6 +612,18 @@ namespace Khovsgol.Server._Sqlite
             finally
                 _set_timestamp_lock.unlock()
 
+        def override delete_timestamp(path: string) raises GLib.Error
+            _delete_timestamp_lock.lock()
+            try
+                if _delete_timestamp is null
+                    _db.prepare(out _delete_timestamp, "DELETE FROM scanned WHERE path=?")
+                else
+                    _delete_timestamp.reset()
+                _delete_timestamp.bind_text(1, path)
+                _db.assert_done(_delete_timestamp.step())
+            finally
+                _delete_timestamp_lock.unlock()
+
         _db: SqliteUtil.Database
         
         _write_lock: GLib.RecMutex = GLib.RecMutex()
@@ -629,8 +653,11 @@ namespace Khovsgol.Server._Sqlite
         _delete_album1: Statement
         _delete_album2: Statement
         _delete_album3: Statement
+        _delete_album4: Statement
         _delete_album_lock: GLib.Mutex = GLib.Mutex()
         _get_timestamp: Statement
         _get_timestamp_lock: GLib.Mutex = GLib.Mutex()
         _set_timestamp: Statement
         _set_timestamp_lock: GLib.Mutex = GLib.Mutex()
+        _delete_timestamp: Statement
+        _delete_timestamp_lock: GLib.Mutex = GLib.Mutex()

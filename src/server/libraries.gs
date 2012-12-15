@@ -61,6 +61,7 @@ namespace Khovsgol.Server
         // Timestamps
         def abstract get_timestamp(path: string): int64 raises GLib.Error
         def abstract set_timestamp(path: string, timestamp: int64) raises GLib.Error
+        def abstract delete_timestamp(path: string) raises GLib.Error
         
         def add_transaction(album_path: string, destination: int, paths: Json.Array, ref stable_position: int, transaction: bool = true): int raises GLib.Error
             var length = paths.get_length()
