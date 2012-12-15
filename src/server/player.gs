@@ -139,6 +139,7 @@ namespace Khovsgol.Server
                         path = track.path
 
         prop abstract path: string?
+        prop abstract volume: double
         prop abstract play_mode: PlayMode
         prop abstract cursor_mode: CursorMode
         prop abstract position_in_track: double
@@ -227,6 +228,7 @@ namespace Khovsgol.Server
         def to_json(): Json.Object
             var json = new Json.Object()
             set_string_member_not_null(json, "name", _name)
+            set_double_member_not_min(json, "volume", volume)
             set_string_member_not_null(json, "playMode", get_name_from_play_mode(play_mode))
             set_string_member_not_null(json, "cursorMode", get_name_from_cursor_mode(cursor_mode))
             var plugs = new Json.Object()

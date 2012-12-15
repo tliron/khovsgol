@@ -551,6 +551,7 @@ namespace Khovsgol.Server
 
         /* receive {
          *  name: string,
+         *  volume: double,
          *  playMode: string,
          *  cursorMode: string,
          *  plugs: {},
@@ -567,6 +568,7 @@ namespace Khovsgol.Server
             set_response_json_object_or_not_found(player, conversation)
 
         /*
+         * send {volume: string}
          * send {playMode: string}
          * send {cursorMode: string}
          * send {cursor: {positionInPlayList: string/int}}
@@ -590,6 +592,13 @@ namespace Khovsgol.Server
 
             var processed = false
             
+            // Set volume
+            var volume = get_double_member_or_min(entity, "volume")
+            if volume != double.MIN
+                player.volume = volume
+            
+                processed = true
+
             // Set play mode
             var play_mode = get_string_member_or_null(entity, "playMode")
             if play_mode is not null

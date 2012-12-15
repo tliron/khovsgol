@@ -42,6 +42,7 @@ namespace Khovsgol.Client
                 return AtomicInt.get(ref _is_watching) == 1
 
         event connection_change(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
+        event volume_change(volume: double, old_volume: double)
         event play_mode_change(play_mode: string?, old_last_play_mode: string?)
         event cursor_mode_change(cursor_mode: string?, old_last_cursor_mode: string?)
         event position_in_play_list_change(position_in_last_play_list: int, old_position_in_last_play_list: int)
@@ -77,6 +78,7 @@ namespace Khovsgol.Client
                 _last_watching_player = null
                 _last_host = null
                 _last_port = uint.MIN
+                _last_volume = double.MIN
                 _last_play_mode = null
                 _last_cursor_mode = null
                 _last_position_in_last_play_list = int.MIN
@@ -590,6 +592,7 @@ namespace Khovsgol.Client
 
         /* receive {
          *  name: string,
+         *  volume: double,
          *  playMode: string,
          *  cursorMode: string,
          *  plugs: {},
@@ -618,6 +621,32 @@ namespace Khovsgol.Client
                 on_error(e)
                 return null
         
+        /*
+         * send {volume: double}
+         * 
+         * receive =get_player
+         */
+        def set_volume(player: string, volume: double): Json.Object?
+            try
+                var payload = new Json.Object()
+                payload.set_double_member("volume", volume)
+
+                var conversation = _client.create_conversation()
+                conversation.method = Method.POST
+                conversation.path = "/player/{player}/"
+                conversation.variables["player"] = player
+                conversation.request_json_object = payload
+                conversation.commit()
+                var player_object = conversation.response_json_object
+                if player_object is not null
+                    watch(player_object)
+                    return player_object
+                else
+                    return null
+            except e: GLib.Error
+                on_error(e)
+                return null
+
         /*
          * send {playMode: string}
          * 
@@ -993,6 +1022,7 @@ namespace Khovsgol.Client
         _port: uint
         _last_host: string?
         _last_port: uint
+        _last_volume: double
         _last_play_mode: string?
         _last_cursor_mode: string?
         _last_position_in_last_play_list: int
@@ -1041,6 +1071,12 @@ namespace Khovsgol.Client
                         _last_play_list_id = id
                         _last_play_list_version = version
                         _last_tracks = tracks
+
+                var volume = get_double_member_or_min(player, "volume")
+                if volume != double.MIN
+                    if volume != _last_volume
+                        volume_change(volume, _last_volume)
+                        _last_volume = volume
 
                 var play_mode = get_string_member_or_null(player, "playMode")
                 if play_mode is not null

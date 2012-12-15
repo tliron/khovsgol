@@ -57,10 +57,11 @@ namespace Khovsgol.Client.GTK
             next.clicked.connect(on_next)
 
             //var volume = new Label("100%")
-            var volume_button = new VolumeButton()
-            volume_button.value = 100
+            _volume_button = new VolumeButton()
+            _volume_button.value = 100
+            _on_volume_id = _volume_button.value_changed.connect(on_volume)
             var volume_item = new ToolItem()
-            volume_item.add(volume_button)
+            volume_item.add(_volume_button)
 
             _progress = new ProgressBar()
             _progress.show_text = true
@@ -100,6 +101,7 @@ namespace Khovsgol.Client.GTK
             
             var api = (API) _instance.api
             api.connection_change_gdk.connect(on_connection_changed)
+            api.volume_change_gdk.connect(on_volume_changed)
             api.play_mode_change_gdk.connect(on_play_mode_changed)
             api.position_in_track_change_gdk.connect(on_position_in_track_changed)
             
@@ -108,6 +110,7 @@ namespace Khovsgol.Client.GTK
         def private on_unrealized()
             var api = (API) _instance.api
             api.connection_change_gdk.disconnect(on_connection_changed)
+            api.volume_change_gdk.disconnect(on_volume_changed)
             api.play_mode_change_gdk.disconnect(on_play_mode_changed)
             api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
             
@@ -166,6 +169,10 @@ namespace Khovsgol.Client.GTK
                     position = _track_duration
                 _instance.api.set_position_in_track(_instance.player, position)
             return false
+        
+        _on_volume_id: ulong
+        def private on_volume(value: double)
+            _instance.api.set_volume(_instance.player, value)
             
         _on_toggle_visualization_id: ulong
         def private _on_visualization_toggled()
@@ -208,6 +215,11 @@ namespace Khovsgol.Client.GTK
             else
                 _info.label = "<b>Not connected</b>"
 
+        def private on_volume_changed(volume: double, old_volume: double)
+            SignalHandler.block(_volume_button, _on_volume_id)
+            _volume_button.value = volume
+            SignalHandler.unblock(_volume_button, _on_volume_id)
+            
         def private on_play_mode_changed(play_mode: string?, old_play_mode: string?)
             SignalHandler.block(_toggle_pause, _on_pause_toggled_id)
             _toggle_pause.active = (play_mode == "paused")
@@ -228,6 +240,7 @@ namespace Khovsgol.Client.GTK
         _progress: ProgressBar
         _toggle_pause: ControlToggleToolButton
         _toggle_visualization: ControlToggleToolButton
+        _volume_button: VolumeButton
         _position_in_track: double = double.MIN
         _track_duration: double = double.MIN
         _visualization_pid: Pid = 0

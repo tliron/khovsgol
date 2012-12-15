@@ -17,11 +17,24 @@ namespace Khovsgol.Server.GStreamer
                         _pipeline.state = State.NULL
                     if _path != null
                         build()
-                        src: dynamic Element =_pipeline.get_by_name("FileSource")
-                        if src is not null
-                            src.location = _path
+                        source: dynamic Element =_pipeline.get_by_name("FileSource")
+                        if source is not null
+                            source.location = _path
                             _pipeline.state = State.PLAYING
         
+        prop override volume: double
+            get
+                if _pipeline is not null
+                    volume: dynamic Element =_pipeline.get_by_name("Volume")
+                    if volume is not null
+                        return volume.volume
+                return double.MIN
+            set
+                if _pipeline is not null
+                    volume: dynamic Element =_pipeline.get_by_name("Volume")
+                    if volume is not null
+                        volume.volume = value
+
         prop override play_mode: PlayMode
             get
                 if _pipeline is not null
@@ -99,7 +112,7 @@ namespace Khovsgol.Server.GStreamer
                     if duration != int64.MIN
                         return duration / 1000000000.0 // convert to seconds
                 return double.MIN
-
+        
         def private on_state_changed(new_state: State, old_state: State, pending_state: State)
             // TODO: state of which element?
             _state = new_state
@@ -132,18 +145,20 @@ namespace Khovsgol.Server.GStreamer
             _pipeline.tag.connect(on_tag)
             _pipeline.error.connect(on_error)
 
-            src: Element = ElementFactory.make("filesrc", "FileSource")
+            source: Element = ElementFactory.make("filesrc", "FileSource")
             decode: Element = ElementFactory.make("decodebin", "DecodeBin")
 
             var convert = ElementFactory.make("audioconvert", "AudioConvert")
             var resample = ElementFactory.make("audioresample", "AudioResample")
+            var volume = ElementFactory.make("volume", "Volume")
             var sink = ElementFactory.make("pulsesink", "PulseSink")
 
-            _pipeline.add_many(src, decode, convert, resample, sink)
+            _pipeline.add_many(source, decode, convert, resample, volume, sink)
 
-            src.link(decode)
+            // The link between the source and the decoder must happen dynamically
+            source.link(decode)
             _pipeline.ownerships.add(new LinkDecodeBinLater(decode, convert))
-            convert.link_many(resample, sink)
+            convert.link_many(resample, volume, sink)
     
         _pipeline: GstUtil.Pipeline?
         _path: string?
