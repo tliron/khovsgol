@@ -6,12 +6,12 @@ uses
 
 namespace Khovsgol.Server._Sqlite
 
-    def private static parse_libraries(q: Query, prefix: string, libraries: list of string)
+    def private static parse_libraries(builder: QueryBuilder, prefix: string, libraries: list of string)
         if !libraries.is_empty
-            q.requirements.add("%slibrary IN (%s)".printf(prefix, join_same(",", "?", libraries.size)))
-            q.bindings.add_all(libraries)
+            builder.requirements.add("%slibrary IN (%s)".printf(prefix, join_same(",", "?", libraries.size)))
+            builder.bindings.add_all(libraries)
         else
-            q.requirements.add("%slibrary IS NOT NULL".printf(prefix))
+            builder.requirements.add("%slibrary IS NOT NULL".printf(prefix))
 
     class SqlTracks: IterableOfTrack
         construct(iterator: RowIterator, album_path: bool = false)

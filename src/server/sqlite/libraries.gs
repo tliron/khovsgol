@@ -348,7 +348,7 @@ namespace Khovsgol.Server._Sqlite
         //
         
         def override iterate_tracks(args: IterateTracksArgs): IterableOfTrack raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "track"
             q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album", "album_sort", "album_type", "position", "duration", "date", "file_type")
             q.sort.add_all(args.sort)
@@ -368,20 +368,30 @@ namespace Khovsgol.Server._Sqlite
             if !likes.is_empty
                 q.requirements.add("(" + join(" OR ", likes) + ")")
 
-            return new SqlTracks(q.execute(_db))
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlTracks(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
 
         def override iterate_tracks_in_album(args: IterateForAlbumArgs): IterableOfTrack raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "track"
             q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album", "album_sort", "album_type", "position", "duration", "date", "file_type")
             q.sort.add_all(args.sort)
             q.requirements.add("path LIKE ? ESCAPE \"\\\"")
             q.bindings.add(escape_like(args.album + SEPARATOR) + "%")
 
-            return new SqlTracks(q.execute(_db))
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlTracks(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
         
         def override iterate_tracks_by_artist(args: IterateForArtistArgs): IterableOfTrack raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "track"
             q.sort.add_all(args.sort)
             parse_libraries(q, "", args.libraries)
@@ -396,32 +406,49 @@ namespace Khovsgol.Server._Sqlite
                 q.constants["artist"] = args.artist
             q.bindings.add(args.artist)
 
-            return new SqlTracks(q.execute(_db))
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlTracks(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
         
         def override iterate_track_paths(path: string): IterableOfString raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "track"
             q.fields.add("path")
             q.requirements.add("path LIKE ? ESCAPE \"\\\"")
             q.bindings.add(escape_like(path + SEPARATOR) + "%")
-            return new SqlStrings(q.execute(_db), "path")
+
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlStrings(q.execute(_db, _statement_cache), "path")
+            finally
+                statement_lock->unlock()
         
         //
         // Iterate track pointers
         //
         
         def override iterate_raw_track_pointers_in_album(args: IterateForAlbumArgs): IterableOfTrackPointer raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "track_pointer"
             q.add_fields("path", "position")
             q.sort.add_all(args.sort)
             q.requirements.add("album=?")
             q.bindings.add(args.album)
             q.constants["album"] = args.album
-            return new SqlTrackPointers(q.execute(_db))
+
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlTrackPointers(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
 
         def override iterate_track_pointers_in_album(args: IterateForAlbumArgs): IterableOfTrack raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "track_pointer LEFT JOIN track ON track_pointer.path=track.path INNER JOIN album ON track_pointer.album=album.path"
             q.add_fields("track.path", "track.library", "track.title", "track.title_sort", "track.artist", "track.artist_sort", "album.title AS album", "album.title_sort AS album_sort", "track.album_type", "track_pointer.position", "track.duration", "track.date", "track.file_type")
             q.requirements.add("track_pointer.album=?")
@@ -438,11 +465,16 @@ namespace Khovsgol.Server._Sqlite
                     s = "track." + s
                 fixed_sort.add(s)
             q.sort.add_all(fixed_sort)
-            
-            return new SqlTracks(q.execute(_db))
+
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlTracks(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
 
         def override iterate_track_pointers(args: IterateTracksArgs): IterableOfTrack raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "track_pointer LEFT JOIN track ON track_pointer.path=track.path INNER JOIN album ON track_pointer.album=album.path"
             q.add_fields("track.path", "track.library", "track.title", "track.title_sort", "track.artist", "track.artist_sort", "album.title AS album", "album.title_sort AS album_sort", "track.album_type", "track_pointer.position", "track.duration", "track.date", "track.file_type", "track_pointer.album AS album_path")
             parse_libraries(q, "track.", args.libraries)
@@ -471,14 +503,19 @@ namespace Khovsgol.Server._Sqlite
                 fixed_sort.add(s)
             q.sort.add_all(fixed_sort)
 
-            return new SqlTracks(q.execute(_db), true)
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlTracks(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
         
         //
         // Iterate albums
         //
         
         def override iterate_albums(args: IterateAlbumsArgs): IterableOfAlbum raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "album"
             q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "album_type", "file_type")
             q.sort.add_all(args.sort)
@@ -488,19 +525,30 @@ namespace Khovsgol.Server._Sqlite
             if args.album_type != AlbumType.ANY
                 q.requirements.add("album_type=?")
                 q.bindings.add((int) args.album_type)
-                
-            return new SqlAlbums(q.execute(_db))
+
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlAlbums(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
 
         def override iterate_album_paths(path: string): IterableOfString raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "album"
             q.fields.add("path")
             q.requirements.add("path LIKE ? ESCAPE \"\\\"")
             q.bindings.add(escape_like(path + SEPARATOR) + "%")
-            return new SqlStrings(q.execute(_db), "path")
+
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlStrings(q.execute(_db, _statement_cache), "path")
+            finally
+                statement_lock->unlock()
         
         def override iterate_albums_with_artist(args: IterateForArtistArgs): IterableOfAlbum raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "album INNER JOIN track ON album.title=track.album"
             q.add_fields("album.path", "album.library", "album.title", "album.title_sort", "album.artist", "album.artist_sort", "album.date", "album.album_type", "album.file_type")
             q.sort.add_all(args.sort)
@@ -513,10 +561,15 @@ namespace Khovsgol.Server._Sqlite
                 q.requirements.add("track.artist=?")
             q.bindings.add(args.artist)
 
-            return new SqlAlbums(q.execute(_db))
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlAlbums(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
 
         def override iterate_albums_by_artist(args: IterateForArtistArgs): IterableOfAlbum raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "album"
             q.sort.add_all(args.sort)
             parse_libraries(q, "", args.libraries)
@@ -531,10 +584,15 @@ namespace Khovsgol.Server._Sqlite
                 q.constants["artist"] = args.artist
             q.bindings.add(args.artist)
             
-            return new SqlAlbums(q.execute(_db))
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlAlbums(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
         
         def override iterate_albums_at(args: IterateForDateArgs): IterableOfAlbum raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = "album"
             q.sort.add_all(args.sort)
             parse_libraries(q, "", args.libraries)
@@ -549,14 +607,19 @@ namespace Khovsgol.Server._Sqlite
                 q.constants["date"] = args.date.to_string()
             q.bindings.add(args.date.to_string())
 
-            return new SqlAlbums(q.execute(_db))
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlAlbums(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
         
         //
         // Iterate artists
         //
         
         def override iterate_artists(args: IterateByAlbumsOrTracksArgs): IterableOfArtist raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = args.album_artist ? "album" : "track"
             q.add_fields("artist", "artist_sort")
             q.sort.add_all(args.sort)
@@ -564,14 +627,19 @@ namespace Khovsgol.Server._Sqlite
             q.constraint = "DISTINCT"
             parse_libraries(q, "", args.libraries)
 
-            return new SqlArtists(q.execute(_db))
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlArtists(q.execute(_db, _statement_cache))
+            finally
+                statement_lock->unlock()
             
         //
         // Iterate dates
         //
         
         def override iterate_dates(args: IterateByAlbumsOrTracksArgs): IterableOfInt raises GLib.Error
-            var q = new Query()
+            var q = new QueryBuilder()
             q.table = args.album_artist ? "album" : "track"
             q.add_fields("date")
             q.sort.add_all(args.sort)
@@ -579,7 +647,12 @@ namespace Khovsgol.Server._Sqlite
             q.constraint = "DISTINCT"
             parse_libraries(q, "", args.libraries)
 
-            return new SqlInts(q.execute(_db), "date")
+            var statement_lock = _statement_cache.get_lock(q.as_sql)
+            statement_lock->lock()
+            try
+                return new SqlInts(q.execute(_db, _statement_cache), "date")
+            finally
+                statement_lock->unlock()
             
         //
         // Timestamps
@@ -661,3 +734,4 @@ namespace Khovsgol.Server._Sqlite
         _set_timestamp_lock: GLib.Mutex = GLib.Mutex()
         _delete_timestamp: Statement
         _delete_timestamp_lock: GLib.Mutex = GLib.Mutex()
+        _statement_cache: StatementCache = new StatementCache()
