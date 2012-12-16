@@ -120,5 +120,5 @@ EX_00_LB=_Execute
 EX_00_CM=bin/khovsgol
 EX_00_WD=%p
 GenieFT_01_LB=_Build
-GenieFT_01_CM=make khovsgold
+GenieFT_01_CM=make khovsgol
 GenieFT_01_WD=%p

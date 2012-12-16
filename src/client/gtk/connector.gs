@@ -7,7 +7,7 @@ uses
 
 namespace Khovsgol.Client.GTK
 
-    class Connect: Window
+    class Connector: Window
         construct(instance: Instance)
             _instance = instance
             
@@ -85,12 +85,17 @@ namespace Khovsgol.Client.GTK
             var bottom_box = new Box(Orientation.HORIZONTAL, 10)
             bottom_box.pack_start(tree_frame)
             bottom_box.pack_start(button_box, false)
+
+            var label = new Label("This is a map of the Khövsgöl servers in your local network.\n\nYou can start and stop your own server here, though note that you do not have to run o: you can use Khövsgöl purely as a client for other servers in the network. Indeed, a single Khövsgöl server can provide music for many listeners.\n\nThe server and player you\'re currently connected to is marked in bold. Double-click or click \"Connect\" on any other server to use it instead. Use \"Connect other\" for hidden servers, or for servers outside your local network.")
+            label.wrap = true
+            label.set_alignment(0, 0)
             
             var main_box = new Box(Orientation.VERTICAL, 15)
+            main_box.pack_start(label, false)
             main_box.pack_start(bottom_box)
             add(main_box)
 
-            title = "Connect"
+            title = "Your Khövsgöl Network"
             border_width = 10
             set_position(WindowPosition.CENTER)
             set_default_size(500, 400)
@@ -265,10 +270,10 @@ namespace Khovsgol.Client.GTK
             is_local: bool
         
         class private PlayerNode: Object
-            construct(name: string, server_node: ServerNode, connect: Connect, iter: TreeIter, is_current: bool)
+            construct(name: string, server_node: ServerNode, connector: Connector, iter: TreeIter, is_current: bool)
                 self.name = name
                 self.server_node = server_node
-                _connect = connect
+                _connector = connector
                 _iter = iter
                 _is_current = is_current
                 
@@ -290,18 +295,18 @@ namespace Khovsgol.Client.GTK
                 if _is_current
                     markup = "<b>%s</b>".printf(markup)
                 
-                icon: Gdk.Pixbuf = _connect._stopped_icon
+                icon: Gdk.Pixbuf = _connector._stopped_icon
                 if play_mode is not null
-                    markup += " (%s)".printf(Markup.escape_text(play_mode))
+                    markup += " [%s]".printf(Markup.escape_text(play_mode))
                     if play_mode == "playing"
-                        icon = _connect._playing_icon
+                        icon = _connector._playing_icon
                     else if play_mode == "paused"
-                        icon = _connect._paused_icon
+                        icon = _connector._paused_icon
                         
-                _connect._store.@set(_iter, Column.ICON, icon, Column.MARKUP, markup, -1)
+                _connector._store.@set(_iter, Column.ICON, icon, Column.MARKUP, markup, -1)
             
             _api: API = new API()
-            _connect: Connect
+            _connector: Connector
             _iter: TreeIter
             _is_current: bool
             
@@ -319,4 +324,4 @@ namespace Khovsgol.Client.GTK
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.servers")
+            _logger = Logging.get_logger("khovsgol.client.connector")

@@ -24,8 +24,8 @@ namespace Khovsgol.Client.GTK
             var manage_receiver = new ControlToolButton(Stock.JUMP_TO, Gdk.Key.R, "Manage receiver\n<Alt>R", _accel_group)
             manage_receiver.clicked.connect(on_manage_receiver)
 
-            var connect = new ControlToolButton(Stock.NETWORK, Gdk.Key.C, "Connect\n<Alt>C", _accel_group)
-            connect.clicked.connect(on_connect)
+            var connect = new ControlToolButton(Stock.NETWORK, Gdk.Key.C, "Connector\n<Alt>C", _accel_group)
+            connect.clicked.connect(on_connector)
             
             _info = new Label("<b>Not connected</b>")
             _info.use_markup = true
@@ -121,13 +121,13 @@ namespace Khovsgol.Client.GTK
             pass
 
         def private on_manage_libraries()
-            pass
+            new LibraryManager(_instance).show_all()
 
         def private on_manage_receiver()
             pass
 
-        def private on_connect()
-            new Connect(_instance).show_all()
+        def private on_connector()
+            new Connector(_instance).show_all()
 
         def private on_previous()
             _instance.api.set_position_in_play_list_string(_instance.player, "prev")
@@ -146,7 +146,7 @@ namespace Khovsgol.Client.GTK
             _instance.api.set_position_in_play_list_string(_instance.player, "next")
 
         def private on_info_clicked(e: Gdk.EventButton): bool
-            on_connect()
+            on_connector()
             return false
         
         def private on_progress_clicked(e: Gdk.EventButton): bool
