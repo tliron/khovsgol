@@ -2,7 +2,7 @@
 
 namespace Khovsgol.Client
 
-    class Configuration: Object
+    class Configuration: Object implements Khovsgol.Configuration
         construct() raises KeyFileError
             _file = "%s/.khovsgol/client.conf".printf(Environment.get_home_dir())
             _key_file = new KeyFile()
@@ -73,6 +73,42 @@ namespace Khovsgol.Client
                     return "artists_albums"
             set
                 _key_file.set_string("ui", "library-style", value)
+
+        prop show_duration: bool
+            get
+                try
+                    return _key_file.get_boolean("ui", "show-duration")
+                except e: KeyFileError
+                    return true
+            set
+                _key_file.set_boolean("ui", "show-duration", value)
+
+        prop subdue_lossy: bool
+            get
+                try
+                    return _key_file.get_boolean("ui", "subdue-lossy")
+                except e: KeyFileError
+                    return false
+            set
+                _key_file.set_boolean("ui", "subdue-lossy", value)
+        
+        prop expand_on_click: bool
+            get
+                try
+                    return _key_file.get_boolean("ui", "expand-on-click")
+                except e: KeyFileError
+                    return false
+            set
+                _key_file.set_boolean("ui", "expand-on-click", value)
+        
+        prop focus_on_library: bool
+            get
+                try
+                    return _key_file.get_boolean("ui", "focus-on-library")
+                except e: KeyFileError
+                    return false
+            set
+                _key_file.set_boolean("ui", "focus-on-library", value)
         
         prop server_autostart: bool
             get

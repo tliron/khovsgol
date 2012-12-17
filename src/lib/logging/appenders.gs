@@ -86,7 +86,7 @@ namespace Logging
         def override handle(domain: string?, levels: LogLevelFlags, message: string)
             // If the file has moved away, make sure to reopen the
             // stream
-            if (_file is not null) and !_file.query_exists()
+            if (_file is not null) and not _file.query_exists()
                 try
                     set_file(_file)
                 except e: Error
@@ -126,7 +126,7 @@ namespace Logging
                     
                     new_older: int = 1
                     
-                    if !olders.is_empty
+                    if not olders.is_empty
                         olders.sort()
                         start: int = 0
                         

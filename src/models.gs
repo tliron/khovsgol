@@ -5,6 +5,9 @@ uses
 
 namespace Khovsgol
 
+    interface Configuration: Object
+        def abstract save(): bool
+
     //
     // Track
     //

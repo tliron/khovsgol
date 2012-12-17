@@ -7,7 +7,7 @@ uses
 namespace Khovsgol.Server._Sqlite
 
     def private static parse_libraries(builder: QueryBuilder, prefix: string, libraries: list of string)
-        if !libraries.is_empty
+        if not libraries.is_empty
             builder.requirements.add("%slibrary IN (%s)".printf(prefix, join_same(",", "?", libraries.size)))
             builder.bindings.add_all(libraries)
         else

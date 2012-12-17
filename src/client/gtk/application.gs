@@ -8,7 +8,7 @@ namespace Khovsgol.Client.GTK
             _instance = new Instance(self, args)
 
         def override activate()
-            if !_instance.started
+            if not _instance.started
                 _instance.start()
             else
                 _instance.show()

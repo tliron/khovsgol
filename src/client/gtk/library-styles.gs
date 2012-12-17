@@ -65,7 +65,7 @@ namespace Khovsgol.Client.GTK
                                 var letter = sort.get_char(0)
                                 if letter != current_letter
                                     current_letter = letter
-                                    if !first
+                                    if not first
                                         node.append_separator()
 
                             var artist = new Artist()
@@ -280,7 +280,7 @@ namespace Khovsgol.Client.GTK
                                 var letter = sort.get_char(0)
                                 if letter != current_letter
                                     current_letter = letter
-                                    if !first
+                                    if not first
                                         node.append_separator()
 
                             var artist = new Artist()
@@ -360,7 +360,7 @@ namespace Khovsgol.Client.GTK
                         var decade = date / 10
                         if decade != current_decade
                             current_decade = decade
-                            if !first
+                            if not first
                                 node.append_separator()
                     
                         var date_string = date.to_string()
@@ -396,7 +396,7 @@ namespace Khovsgol.Client.GTK
                             var decade = date / 10
                             if decade != current_decade
                                 current_decade = decade
-                                if !first
+                                if not first
                                     node.append_separator()
 
                             var date_string = date.to_string()
@@ -557,7 +557,7 @@ namespace Khovsgol.Client.GTK
                                     var letter = sort.get_char(0)
                                     if letter != current_letter
                                         current_letter = letter
-                                        if !first
+                                        if not first
                                             node.append_separator()
 
                                 album.to_json().set_array_member("_tracks", current_tracks)
@@ -646,13 +646,13 @@ namespace Khovsgol.Client.GTK
                     var letter = sort.get_char(0)
                     if letter != current_letter
                         current_letter = letter
-                        if !first
+                        if not first
                             node.append_separator()
                             
                 fill_artist(artist, node)
                 
                 first = false
-        return !first
+        return not first
     
     def private fill_artist(artist: Artist, node: LibraryNode): Json.Object?
         var name = artist.name
@@ -676,7 +676,7 @@ namespace Khovsgol.Client.GTK
             
             title = Markup.escape_text(title)
             title = format_annotation(title)
-            if !is_lossless(file_type)
+            if not is_lossless(file_type)
                 title = format_washed_out(title)
             var markup = date != int64.MIN ? "%d: %s".printf((int) date, title) : title
             
@@ -695,7 +695,7 @@ namespace Khovsgol.Client.GTK
                     var letter = title_sort.get_char(0)
                     if letter != current_letter
                         current_letter = letter
-                        if !first
+                        if not first
                             node.append_separator()
                 
                 fill_album(album, node)
@@ -712,7 +712,7 @@ namespace Khovsgol.Client.GTK
             title = format_annotation(title)
             if artist is not null
                 artist = Markup.escape_text(artist)
-            if !is_lossless(file_type)
+            if not is_lossless(file_type)
                 title = format_washed_out(title)
             var markup = artist is not null ? "%s - <i>%s</i>".printf(title, artist) : title
             
@@ -734,7 +734,7 @@ namespace Khovsgol.Client.GTK
             title = format_annotation(title)
             if artist is not null
                 artist = Markup.escape_text(artist)
-            if !is_lossless(file_type)
+            if not is_lossless(file_type)
                 title = format_washed_out(title)
             markup1: string
             if (position != int.MIN) and (artist is not null)
@@ -762,7 +762,7 @@ namespace Khovsgol.Client.GTK
                     var letter = title_sort.get_char(0)
                     if letter != current_letter
                         current_letter = letter
-                        if !first
+                        if not first
                             node.append_separator()
                             
                 fill_track(track, node)
@@ -778,7 +778,7 @@ namespace Khovsgol.Client.GTK
 
             title = Markup.escape_text(title)
             title = format_annotation(title)
-            if !is_lossless(file_type)
+            if not is_lossless(file_type)
                 title = format_washed_out(title)
             
             markup1: string

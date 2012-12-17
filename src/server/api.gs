@@ -240,7 +240,7 @@ namespace Khovsgol.Server
          */
         def post_album(conversation: Conversation) raises GLib.Error
             var album_path = conversation.variables["path"]
-            if !album_path.has_prefix("*")
+            if not album_path.has_prefix("*")
                 // Must have custom compilation magic prefix
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
@@ -317,7 +317,7 @@ namespace Khovsgol.Server
          */
         def put_album(conversation: Conversation) raises GLib.Error
             var album_path = conversation.variables["path"]
-            if !album_path.has_prefix("*")
+            if not album_path.has_prefix("*")
                 // Must have custom compilation magic prefix
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
@@ -362,7 +362,7 @@ namespace Khovsgol.Server
 
         def delete_album(conversation: Conversation) raises GLib.Error
             var path = conversation.variables["path"]
-            if !path.has_prefix("*")
+            if not path.has_prefix("*")
                 // Must have custom compilation magic prefix
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
@@ -472,7 +472,7 @@ namespace Khovsgol.Server
 
         def delete_library(conversation: Conversation) raises GLib.Error
             var library = conversation.variables["library"]
-            if !_crucible.libraries.libraries.has_key(library)
+            if not _crucible.libraries.libraries.has_key(library)
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
             // TODO: more!
@@ -681,7 +681,7 @@ namespace Khovsgol.Server
 
         def delete_player(conversation: Conversation) raises GLib.Error
             var name = conversation.variables["player"]
-            if !_crucible.players.players.has_key(name)
+            if not _crucible.players.players.has_key(name)
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
             _crucible.players.players.unset(name)

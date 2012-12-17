@@ -7,7 +7,7 @@ uses
 namespace GtkUtil
 
     def initialize()
-        if !_initialized
+        if not _initialized
             var arguments = new array of string[0]
             weak_arguments: weak array of string = arguments
             Gtk.init(ref weak_arguments)

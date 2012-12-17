@@ -54,7 +54,7 @@ namespace Khovsgol.Server.Filesystem
                         _logger.messagef("Scanning aborted: %s", path)
                         break
 
-                    if !File.new_for_path(album_path).query_exists()
+                    if not File.new_for_path(album_path).query_exists()
                         // Note: this will also delete all associated tracks and track pointers
                         libraries.delete_album(album_path)
                         _logger.infof("Pruned album: %s", album_path)
@@ -70,7 +70,7 @@ namespace Khovsgol.Server.Filesystem
                         break
 
                     var file = File.new_for_path(track_path)
-                    if !file.query_exists()
+                    if not file.query_exists()
                         // Note: this will also delete associated track pointers
                         libraries.delete_track(track_path)
                         _logger.infof("Pruned track: %s", track_path)
@@ -125,7 +125,7 @@ namespace Khovsgol.Server.Filesystem
                     // Have we finished enumerating files in this directory?
                     if info is null
                         // Make sure the album has tracks
-                        if (album is not null) and !tracks.is_empty
+                        if (album is not null) and not tracks.is_empty
                             // Ensure that artist albums have an artist
                             if album.album_type == AlbumType.ARTIST
                                 var artist = album.artist
@@ -158,7 +158,7 @@ namespace Khovsgol.Server.Filesystem
                             break
                         
                     // Ignore hidden and unreadable files
-                    if info.get_is_hidden() or !info.get_attribute_boolean(FileAttribute.ACCESS_CAN_READ)
+                    if info.get_is_hidden() or not info.get_attribute_boolean(FileAttribute.ACCESS_CAN_READ)
                         continue
 
                     var file = enumerator.get_container().resolve_relative_path(info.get_name())

@@ -9,6 +9,7 @@ namespace Khovsgol.Client.GTK
     class Instance: Object implements Client.Instance
         construct(application: Application, args: array of string) raises GLib.Error
             _configuration = new Configuration()
+            _server_configuration = new Server.Configuration()
 
             initialize_logging()
             
@@ -26,6 +27,7 @@ namespace Khovsgol.Client.GTK
             //add_plugin(new Plugins.MusicIndicatorPlugin())
             
         prop readonly configuration: Configuration
+        prop readonly server_configuration: Server.Configuration
         prop readonly dir: File
         prop readonly api: Client.API = new API()
         prop readonly window: MainWindow

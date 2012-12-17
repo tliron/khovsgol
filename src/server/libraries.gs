@@ -233,12 +233,12 @@ namespace Khovsgol.Server
         
         def scan_all()
             for directory in _directories.values
-                if !directory.is_scanning
+                if not directory.is_scanning
                     directory.scan()
 
         def abort_all()
             for directory in _directories.values
-                if !directory.is_scanning
+                if directory.is_scanning
                     directory.abort()
     
         def to_json(): Json.Object

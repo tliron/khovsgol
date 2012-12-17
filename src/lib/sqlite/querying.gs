@@ -132,10 +132,10 @@ namespace SqliteUtil
                     query.append(join(",", fields))
                     query.append(" FROM ")
                     query.append(table)
-                    if !requirements.is_empty
+                    if not requirements.is_empty
                         query.append(" WHERE ")
                         query.append(join(" AND ", requirements))
-                    if !sort.is_empty
+                    if not sort.is_empty
                         query.append(" ORDER BY ")
                         query.append(join(",", sort))
 

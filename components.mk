@@ -77,7 +77,7 @@ KHOVSGOLD_PACKAGES=\
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
 	--pkg=sqlite3 \
 	--pkg=libdaemon \
-	--pkg=gstreamer-1.0 \
+	--pkg=gstreamer-audio-1.0 \
 	--pkg=taglib_c \
 	--pkg=avahi-gobject --pkg=lib/avahi/avahi-direct
 
@@ -121,7 +121,7 @@ khovsgolc.ccode:
 KHOVSGOL_SOURCES=\
 	$(call find-sources,client/gtk) \
 	$(call find-sources,client/plugins) \
-	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs \
+	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs $(SRC)/server/configuration.gs \
 	$(SRC)/models.gs $(SRC)/iterators.gs \
 	$(call find-sources,lib/logging) \
 	$(call find-sources,lib/console) \

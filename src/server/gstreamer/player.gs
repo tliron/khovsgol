@@ -2,6 +2,7 @@
 
 uses
     Gst
+    Gst.Audio
     GstUtil
 
 namespace Khovsgol.Server.GStreamer
@@ -27,13 +28,16 @@ namespace Khovsgol.Server.GStreamer
                 if _pipeline is not null
                     volume: dynamic Element =_pipeline.get_by_name("Volume")
                     if volume is not null
-                        return volume.volume
+                        value: double = volume.volume
+                        var converted = StreamVolume.convert_volume(StreamVolumeFormat.LINEAR, StreamVolumeFormat.CUBIC, value)
+                        return converted
                 return double.MIN
             set
                 if _pipeline is not null
                     volume: dynamic Element =_pipeline.get_by_name("Volume")
                     if volume is not null
-                        volume.volume = value
+                        var converted = StreamVolume.convert_volume(StreamVolumeFormat.CUBIC, StreamVolumeFormat.LINEAR, value)
+                        volume.volume = converted
 
         prop override play_mode: PlayMode
             get

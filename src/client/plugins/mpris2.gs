@@ -34,11 +34,11 @@ namespace Khovsgol.Client.Plugins
             
             // Our bus name must start with "org.mpris.MediaPlayer2." for clients to auto-discover us.
             // The suffix does not matter (DesktopEntry is used for the name).
-            if !_connector.start("org.mpris.MediaPlayer2.khovsgol")
+            if not _connector.start("org.mpris.MediaPlayer2.khovsgol")
                 _logger.warning("Could not own name on DBus")
         
         def stop()
-            if !_connector.stop()
+            if not !_connector.stop()
                 _connector.connect.disconnect(on_connected)
                 _connector.disconnecting.disconnect(on_disconnecting)
                 _object = null

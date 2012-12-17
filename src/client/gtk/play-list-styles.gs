@@ -24,6 +24,7 @@ namespace Khovsgol.Client.GTK
         prop readonly label: string = "Group by albums"
         
         def fill(node: PlayListNode)
+            var show_duration = node.instance.configuration.show_duration
             current_album_path: string? = null
             current_album_positions: Json.Array? = null
             current_album_paths: Json.Array? = null
@@ -57,7 +58,7 @@ namespace Khovsgol.Client.GTK
                                 markup1 = title
                             markup1 = "<span size=\"smaller\" weight=\"bold\">%s</span>".printf(markup1)
                             
-                            if !first
+                            if not first
                                 node.append_separator()
                                 
                             node.append_object(album.to_json(), ALBUM_POSITION, album.title, markup1)
@@ -87,7 +88,7 @@ namespace Khovsgol.Client.GTK
                             markup1 = "%d\t%s".printf(position, title)
                     else
                         markup1 = "%d\t%s".printf(position, title)
-                    var markup2 = format_duration(duration)
+                    var markup2 = show_duration ? format_duration(duration) : ""
                     
                     node.append_object(track.to_json(), position, track.title, markup1, markup2)
                     
@@ -182,6 +183,7 @@ namespace Khovsgol.Client.GTK
         prop override readonly label: string = "Compact"
         
         def override fill(node: PlayListNode)
+            var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
                 if title is not null
@@ -197,7 +199,7 @@ namespace Khovsgol.Client.GTK
                         markup1 = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                     else
                         markup1 = "%d\t%s".printf(position, title)
-                    var markup2 = Markup.escape_text(format_duration(duration))
+                    var markup2 = show_duration ? Markup.escape_text(format_duration(duration)) : ""
                     
                     node.append_object(track.to_json(), position, track.title, markup1, markup2)
     
@@ -209,6 +211,7 @@ namespace Khovsgol.Client.GTK
         prop override readonly label: string = "Extended"
         
         def override fill(node: PlayListNode)
+            var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
                 if title is not null
@@ -236,6 +239,6 @@ namespace Khovsgol.Client.GTK
                         markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position_in_play_list, title, album)
                     else
                         markup1 = "%d\t%s".printf(position_in_play_list, title)
-                    var markup2 = Markup.escape_text(format_duration(duration))
+                    var markup2 = show_duration ? Markup.escape_text(format_duration(duration)) : ""
                     
                     node.append_object(track.to_json(), position_in_play_list, track.title, markup1, markup2)

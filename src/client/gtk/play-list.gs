@@ -399,7 +399,7 @@ namespace Khovsgol.Client.GTK
                     if position == (int) value
                         _store.row_changed(_store.get_path(iter), iter)
                         break
-                    if !_store.iter_next(ref iter)
+                    if not _store.iter_next(ref iter)
                         break
 
         def private get_selected_positions(): Json.Array

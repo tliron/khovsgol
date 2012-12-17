@@ -225,14 +225,14 @@ namespace Nap._Soup
         
             // If we have variables, render as template
             var p = _path
-            if !_variables.is_empty
+            if not _variables.is_empty
                 p = Template.renderd(_path, _variables)
             
             var uri = new StringBuilder(_base_url)
             uri.append(p)
 
             // Add query to URI
-            if !_query.is_empty
+            if not _query.is_empty
                 uri.append("?")
                 var i = _query.keys.iterator()
                 while i.next()

@@ -20,7 +20,7 @@ namespace Khovsgol.Client.Plugins
         prop instance: Instance
         
         def start()
-            _server = Server.ref_default()
+            _server = Indicate.Server.ref_default()
             if _server is not null
                 // The type "music.<name>" specifies that we are a sub-indicator
                 // under the music indicator.
@@ -46,7 +46,7 @@ namespace Khovsgol.Client.Plugins
                 _server = null
                 _logger.message("Stopped")
             
-        _server: Server?
+        _server: Indicate.Server?
         
         def private on_display(timestamp: uint)
             _instance.show()

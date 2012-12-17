@@ -116,7 +116,7 @@ namespace Khovsgol.Client.GTK
 
             title = "Manage Libraries for %s:%u".printf(host, port)
             border_width = 10
-            set_position(WindowPosition.CENTER)
+            set_position(WindowPosition.CENTER_ON_PARENT)
             set_default_size(600, 300)
             transient_for = _instance.window
             destroy_with_parent = true
@@ -199,7 +199,7 @@ namespace Khovsgol.Client.GTK
                 var name = get_string_member_or_null(library, "name")
                 if name is not null
                     library_iter: TreeIter? = null
-                    if !get_library(name, out library_iter)
+                    if not get_library(name, out library_iter)
                         _store.append(out library_iter, null)
                         _store.@set(library_iter, Column.NODE, new Node(name), Column.ICON, _library_icon, Column.MARKUP1, Markup.escape_text(name), Column.ACTIVE, true, -1)
                     
@@ -210,7 +210,7 @@ namespace Khovsgol.Client.GTK
                             var scanning = get_bool_member_or_false(directory, "scanning")
                             var status = scanning ? "<i>Scanning...</i>" : ""
                             
-                            if !get_directory(path, library_iter, out directory_iter)
+                            if not get_directory(path, library_iter, out directory_iter)
                                 _store.append(out directory_iter, library_iter)
                                 _store.@set(directory_iter, Column.NODE, new Node(name, path), Column.ICON, _directory_icon, Column.MARKUP1, Markup.escape_text(path), Column.MARKUP2, status, -1)
                             else
@@ -233,7 +233,7 @@ namespace Khovsgol.Client.GTK
                     if name == node.library
                         library_iter = iter
                         return true
-                    if !_store.iter_next(ref iter)
+                    if not _store.iter_next(ref iter)
                         break
             library_iter = null
             return false
@@ -248,7 +248,7 @@ namespace Khovsgol.Client.GTK
                     if path == node.directory
                         directory_iter = iter
                         return true
-                    if !_store.iter_next(ref iter)
+                    if not _store.iter_next(ref iter)
                         break
             directory_iter = null
             return false

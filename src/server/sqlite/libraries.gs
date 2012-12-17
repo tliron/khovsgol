@@ -365,7 +365,7 @@ namespace Khovsgol.Server._Sqlite
             if args.album_like is not null
                 likes.add("album LIKE ? ESCAPE \"\\\"")
                 q.bindings.add(args.album_like)
-            if !likes.is_empty
+            if not likes.is_empty
                 q.requirements.add("(" + join(" OR ", likes) + ")")
 
             var statement_lock = _statement_cache.get_lock(q.as_sql)
@@ -490,7 +490,7 @@ namespace Khovsgol.Server._Sqlite
             if args.album_like is not null
                 likes.add("track_pointer.album LIKE ? ESCAPE \"\\\"") // TODO: really? from track_pointer?
                 q.bindings.add(args.album_like)
-            if !likes.is_empty
+            if not likes.is_empty
                 q.requirements.add("(" + join(" OR ", likes) + ")")
 
             // Fix sort

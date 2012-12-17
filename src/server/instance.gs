@@ -56,7 +56,7 @@ namespace Khovsgol.Server
                 except e: ThreadError
                     raise new Error.NETWORK(e.message)
 
-            if !SqliteUtil.enable_multithreaded()
+            if not SqliteUtil.enable_multithreaded()
                 raise new Error.DATABASE("Could not enable multithreaded Sqlite")
 
         prop readonly configuration: Configuration
@@ -121,7 +121,7 @@ namespace Khovsgol.Server
     def private static initialize_logging(console: bool) raises GLib.Error
         _logger = Logging.get_logger("khovsgol.server")
         
-        if !console
+        if not console
             var appender = new Logging.FileAppender()
             appender.deepest_level = LogLevelFlags.LEVEL_DEBUG // LogLevelFlags.LEVEL_MESSAGE
             appender.set_path("%s/.khovsgol/log/server.log".printf(Environment.get_home_dir()))

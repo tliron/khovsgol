@@ -18,7 +18,7 @@ namespace Nap
          * True is the template does not require a regex.
          */
         def static is_trivial(pattern: string): bool
-            return !pattern.has_suffix("*") and (pattern.index_of_char('{') < 0)
+            return not pattern.has_suffix("*") and (pattern.index_of_char('{') < 0)
         
         /*
          * Renders a pattern, filling the variables in order from the
@@ -35,7 +35,7 @@ namespace Nap
                 var last = 0
                 while start >= 0
                     var after_start = start
-                    if !pattern.get_next_char(ref after_start, null)
+                    if not pattern.get_next_char(ref after_start, null)
                         break
                     var end = pattern.index_of_char('}', after_start)
                     if end >= 0
@@ -43,7 +43,7 @@ namespace Nap
                         value: string = args.arg()
                         s.append(value)
                         last = end
-                        if !pattern.get_next_char(ref last, null)
+                        if not pattern.get_next_char(ref last, null)
                             break
                         start = pattern.index_of_char('{', last)
                     else
@@ -67,7 +67,7 @@ namespace Nap
                 var last = 0
                 while start >= 0
                     var after_start = start
-                    if !pattern.get_next_char(ref after_start, null)
+                    if not pattern.get_next_char(ref after_start, null)
                         break
                     var end = pattern.index_of_char('}', after_start)
                     if end >= 0
@@ -76,7 +76,7 @@ namespace Nap
                         var value = variables[variable]
                         s.append(Soup.URI.encode(Soup.URI.encode(value, null), null))
                         last = end
-                        if !pattern.get_next_char(ref last, null)
+                        if not pattern.get_next_char(ref last, null)
                             break
                         start = pattern.index_of_char('{', last)
                     else
@@ -102,7 +102,7 @@ namespace Nap
                 var last = 0
                 while start >= 0
                     var after_start = start
-                    if !pattern.get_next_char(ref after_start, null)
+                    if not pattern.get_next_char(ref after_start, null)
                         break
                     var end = p.index_of_char('}', after_start)
                     if end >= 0
@@ -113,7 +113,7 @@ namespace Nap
                         regex.append(variable)
                         regex.append(">[^/]*)")
                         last = end
-                        if !pattern.get_next_char(ref last, null)
+                        if not pattern.get_next_char(ref last, null)
                             break
                         start = p.index_of_char('{', last)
                     else
@@ -121,7 +121,7 @@ namespace Nap
                 if last < p.length
                     regex.append(Regex.escape_string(p.substring(last)))
             
-            if !wildcard
+            if not wildcard
                 regex.append("$")
                 
             _regex = new Regex(regex.str)

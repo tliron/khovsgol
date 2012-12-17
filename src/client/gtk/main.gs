@@ -15,7 +15,7 @@ namespace Khovsgol.Client.GTK
             var icon_file = _instance.get_resource("khovsgol.svg")
             if icon_file is not null
                 try
-                    if !set_icon_from_file(icon_file.get_path())
+                    if not set_icon_from_file(icon_file.get_path())
                         _logger.warningf("Could not set icon: %s", icon_file.get_path())
                         icon_name = "khovsgol"
                 except e: GLib.Error

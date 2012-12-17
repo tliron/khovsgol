@@ -67,7 +67,7 @@ namespace Khovsgol.Client.GTK
             return _albums_dict[path]
 
         def append(node: Json.Node?, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
-            if !_is_frozen
+            if not _is_frozen
                 _tree_view.freeze_child_notify()
                 _is_frozen = true
             iter: TreeIter
@@ -145,7 +145,7 @@ namespace Khovsgol.Client.GTK
                 return ((Json.Node) value).get_node_type()
 
         def append(node: Json.Node?, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
-            if !_is_frozen
+            if not _is_frozen
                 _tree_view.freeze_child_notify()
                 _is_frozen = true
             child_iter: TreeIter
@@ -273,7 +273,7 @@ namespace Khovsgol.Client.GTK
                             if value.compare((Variant) stored) == 0
                                 _combo_box.set_active_iter(iter)
                                 break
-                            if !_store.iter_next(ref iter)
+                            if not _store.iter_next(ref iter)
                                 break
                 else
                     _combo_box.active = -1
@@ -320,7 +320,7 @@ namespace Khovsgol.Client.GTK
                             if value == ((Style) stored).name
                                 set_active_iter(iter)
                                 break
-                            if !_store.iter_next(ref iter)
+                            if not _store.iter_next(ref iter)
                                 break
                 else
                     active = -1
@@ -381,7 +381,7 @@ namespace Khovsgol.Client.GTK
             // Right click
             else if e.button == 3
                 _selectable = true
-                if !in_selection
+                if not in_selection
                     selection.unselect_all()
                     if clicked_path is not null
                         // Select and act on only one item

@@ -2,7 +2,7 @@
 
 namespace Khovsgol.Server
 
-    class Configuration: Object
+    class Configuration: Object implements Khovsgol.Configuration
         construct() raises KeyFileError
             _file = "%s/.khovsgol/server.conf".printf(Environment.get_home_dir())
             _key_file = new KeyFile()

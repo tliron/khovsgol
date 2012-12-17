@@ -64,7 +64,7 @@ namespace DBusUtil
         
         def emit_changes()
             var connection = _connector.connection
-            if (connection is not null) and (!_changes.is_empty)
+            if (connection is not null) and not _changes.is_empty
                 // Copy changes to variant dict
                 var builder = new VariantBuilder(VariantType.ARRAY)
                 for var name in _changes.keys

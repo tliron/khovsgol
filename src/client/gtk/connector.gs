@@ -98,7 +98,7 @@ namespace Khovsgol.Client.GTK
 
             title = "Your Khövsgöl Network"
             border_width = 10
-            set_position(WindowPosition.CENTER)
+            set_position(WindowPosition.CENTER_ON_PARENT)
             set_default_size(500, 400)
             transient_for = _instance.window
             destroy_with_parent = true
@@ -239,7 +239,7 @@ namespace Khovsgol.Client.GTK
                             _stop_button.sensitive = false
                             _start_button.sensitive = true
                         break
-                    if !_store.iter_next(ref iter)
+                    if not _store.iter_next(ref iter)
                         break
 
         _instance: Instance

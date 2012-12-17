@@ -149,7 +149,7 @@ namespace Khovsgol.Client
                         conversation.query["albumlike"] = args.search_album
                     if args.album_type != int.MIN
                         conversation.query["type"] = args.album_type.to_string()
-                if !args.sort.is_empty
+                if not args.sort.is_empty
                     conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
                 return new JsonTracks(conversation.response_json_array)
@@ -181,7 +181,7 @@ namespace Khovsgol.Client
                         conversation.query["date"] = args.at_date.to_string()
                     if args.album_type != int.MIN
                         conversation.query["type"] = args.album_type.to_string()
-                    if !args.sort.is_empty
+                    if not args.sort.is_empty
                         conversation.query["sort"] = join(",", args.sort)
                 conversation.commit()
                 return new JsonAlbums(conversation.response_json_array)
@@ -1042,7 +1042,7 @@ namespace Khovsgol.Client
             _logger.exception(e)
         
         def private watch(player: Json.Object? = null)
-            if !is_watching
+            if not is_watching
                 return
             
             _watching_lock.lock()
