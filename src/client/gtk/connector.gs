@@ -18,6 +18,7 @@ namespace Khovsgol.Client.GTK
             var column = new TreeViewColumn()
             var icon_renderer = new CellRendererPixbuf()
             var markup_renderer = new CellRendererText()
+            markup_renderer.ellipsize = Pango.EllipsizeMode.END // This also mysteriously enables right alignment for RTL text
             column.pack_start(icon_renderer, false)
             column.pack_start(markup_renderer, true)
             column.add_attribute(icon_renderer, "pixbuf", Column.ICON)

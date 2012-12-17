@@ -32,6 +32,7 @@ namespace Khovsgol.Client.GTK
             _info.ellipsize = Pango.EllipsizeMode.END
             _info.set_alignment(0, 0.5f)
             var info_box = new EventBox()
+            info_box.override_background_color(StateFlags.NORMAL, Gdk.RGBA()) // Allows the item to have no background
             info_box.add(_info)
             info_box.button_press_event.connect(on_info_clicked)
             var info_label_alignment = new Alignment(0, 0, 1, 1)
@@ -56,7 +57,6 @@ namespace Khovsgol.Client.GTK
             var next = new ControlToolButton(Stock.MEDIA_NEXT, Gdk.Key.@5, "Go to next track\n<Alt>5", _accel_group)
             next.clicked.connect(on_next)
 
-            //var volume = new Label("100%")
             _volume_button = new VolumeButton()
             _volume_button.value = 100
             _on_volume_id = _volume_button.value_changed.connect(on_volume)
@@ -66,6 +66,7 @@ namespace Khovsgol.Client.GTK
             _progress = new ProgressBar()
             _progress.show_text = true
             var progress_box = new EventBox()
+            progress_box.override_background_color(StateFlags.NORMAL, Gdk.RGBA()) // Allows the item to have no background
             progress_box.add(_progress)
             progress_box.button_press_event.connect(on_progress_clicked)
             progress_box.scroll_event.connect(on_progress_scrolled)
@@ -77,10 +78,9 @@ namespace Khovsgol.Client.GTK
         
             _toggle_visualization = new ControlToggleToolButton(Stock.SELECT_COLOR, Gdk.Key.@V, "Open or close visualization\n<Alt>V", _accel_group)
             _on_toggle_visualization_id = _toggle_visualization.clicked.connect(_on_visualization_toggled)
-    
+
             // Assemble
             hexpand = true
-            vexpand = false
             icon_size = IconSize.MENU
             show_arrow = false
             add(quit)
@@ -147,13 +147,13 @@ namespace Khovsgol.Client.GTK
 
         def private on_info_clicked(e: Gdk.EventButton): bool
             on_connector()
-            return false
+            return true // returning false would cause window dragging
         
         def private on_progress_clicked(e: Gdk.EventButton): bool
             var w = _progress.get_allocated_width()
             var ratio = (double) e.x / w
             _instance.api.set_ratio_in_track(_instance.player, ratio)
-            return false
+            return true // returning false would cause window dragging
             
         def private on_progress_scrolled(e: Gdk.EventScroll): bool
             if _position_in_track != double.MIN

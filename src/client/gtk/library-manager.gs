@@ -19,6 +19,7 @@ namespace Khovsgol.Client.GTK
             var column = new TreeViewColumn()
             var icon_renderer = new CellRendererPixbuf()
             var markup1_renderer = new CellRendererText()
+            markup1_renderer.ellipsize = Pango.EllipsizeMode.END // This also mysteriously enables right alignment for RTL text
             markup1_renderer.mode = CellRendererMode.ACTIVATABLE // Allows the CellRendererToggle to work
             var markup2_renderer = new CellRendererText()
             var active_renderer = new CellRendererToggle()
@@ -115,7 +116,7 @@ namespace Khovsgol.Client.GTK
             title = "Manage Libraries for %s:%u".printf(host, port)
             border_width = 10
             set_position(WindowPosition.CENTER)
-            set_default_size(500, 400)
+            set_default_size(600, 300)
             
             key_press_event.connect(on_key_pressed)
             

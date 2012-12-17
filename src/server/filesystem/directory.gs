@@ -125,6 +125,12 @@ namespace Khovsgol.Server.Filesystem
                     if info is null
                         // Make sure the album has tracks
                         if (album is not null) and !tracks.is_empty
+                            // Ensure that artist albums have an artist
+                            if album.album_type == AlbumType.ARTIST
+                                var artist = album.artist
+                                if (artist is null) || (artist.length == 0)
+                                    album.album_type = AlbumType.COMPILATION
+
                             // Save album
                             libraries.save_album(album)
                             batch(libraries, ref count)
@@ -251,7 +257,7 @@ namespace Khovsgol.Server.Filesystem
             return true
 
         const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_IS_HIDDEN + "," + FileAttribute.ACCESS_CAN_READ + "," + FileAttribute.TIME_MODIFIED
-        const private BATCH_SIZE: uint = 100
+        const private BATCH_SIZE: uint = 50
 
         _logger: static Logging.Logger
 

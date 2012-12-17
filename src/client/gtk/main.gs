@@ -37,23 +37,32 @@ namespace Khovsgol.Client.GTK
             add_accel_group(_play_list.accel_group)
             add_accel_group(_library.accel_group)
             
+            // CSS
+
+            var css_provider = new CssProvider()
+            try
+                // Note: all other ways we tried for adding padding to the toolbar would not use the right background color
+                css_provider.load_from_data(".toolbar { padding: 10px 10px 10px 10px; }", -1)
+                StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css_provider, STYLE_PROVIDER_PRIORITY_APPLICATION)
+            except e: GLib.Error
+                _logger.exception(e)
+            
             // Assemble
 
             _panes = new Paned(Orientation.HORIZONTAL)
+            _panes.border_width = 10
             _panes.pack1(_play_list, true, true)
             _panes.pack2(_library, true, true)
             _panes.realize.connect(on_realize_panes)
-
-            var main_box = new Box(Orientation.VERTICAL, 10)
+            
+            var main_box = new Box(Orientation.VERTICAL, 0)
             main_box.pack_start(_control_bar, false)
             main_box.pack_start(_panes)
-
             add(main_box)
             
             startup_id = "khovsgol"
             title = "Khövsgöl"
             deletable = false
-            border_width = 10
 
             var x = _instance.configuration.x
             var y = _instance.configuration.y
