@@ -74,7 +74,7 @@ namespace Nap
                         s.append(pattern.slice(last, start))
                         var variable = pattern.slice(after_start, end)
                         var value = variables[variable]
-                        s.append(Soup.URI.encode(Soup.URI.encode(value, null), null))
+                        s.append(Soup.URI.encode(Soup.URI.encode(value, "+"), "+"))
                         last = end
                         if not pattern.get_next_char(ref last, null)
                             break

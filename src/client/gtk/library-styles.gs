@@ -686,7 +686,7 @@ namespace Khovsgol.Client.GTK
             title = format_annotation(title)
             if subdue_lossy and not is_lossless(file_type)
                 title = format_washed_out(title)
-            var markup = ((date != int64.MIN) && (date != 0)) ? "%dd: %s".printf((int) date, title) : title
+            var markup = ((date != int64.MIN) && (date != 0)) ? "%lld: %s".printf(date, title) : title
             
             node.append_object(album.to_json(), album.title, markup, null, true)
 

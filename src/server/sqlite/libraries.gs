@@ -46,6 +46,7 @@ namespace Khovsgol.Server._Sqlite
             _db.execute("CREATE INDEX IF NOT EXISTS track_artist_sort_idx ON track (artist_sort)")
             _db.execute("CREATE INDEX IF NOT EXISTS track_album_sort_idx ON track (album_sort)")
             _db.execute("CREATE INDEX IF NOT EXISTS track_album_type_idx ON track (album_type)")
+            _db.execute("CREATE INDEX IF NOT EXISTS track_position_idx ON track (position)")
             _db.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track (date)")
             _db.execute("CREATE INDEX IF NOT EXISTS track_file_type_idx ON track (file_type)")
 

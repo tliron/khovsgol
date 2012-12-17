@@ -239,7 +239,7 @@ namespace Nap._Soup
                     var key = i.get()
                     uri.append(key)
                     uri.append("=")
-                    uri.append(Soup.URI.encode(_query[key], null))
+                    uri.append(Soup.URI.encode(_query[key], "+"))
                     if i.has_next()
                         uri.append("&")
             
@@ -254,7 +254,6 @@ namespace Nap._Soup
                 timer.stop()
                 var seconds = timer.elapsed()
                 _logger.debugf("%s (%f)", uri_str, seconds)
-                //print "%s (%f)", uri_str, seconds
 
         def pause()
             pass

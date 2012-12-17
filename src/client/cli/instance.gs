@@ -41,28 +41,28 @@ namespace Khovsgol.Client.CLI
 
             else if command == "cursor"
                 if _arguments.args.length < 3
-                    stderr.printf("Your must provide the position (a number)\n")
+                    stderr.printf("You must provide the position (a number)\n")
                     Posix.exit(1)
                 var position = int.parse(_arguments.args[2])
                 print_player(_api.set_position_in_play_list(_arguments.player, position))
 
             else if command == "trackposition"
                 if _arguments.args.length < 3
-                    stderr.printf("Your must provide the position (a decimal)\n")
+                    stderr.printf("You must provide the position (a decimal)\n")
                     Posix.exit(1)
                 var position = double.parse(_arguments.args[2])
                 print_player(_api.set_position_in_track(_arguments.player, position))
 
             else if command == "trackratio"
                 if _arguments.args.length < 3
-                    stderr.printf("Your must provide the ratio (a decimal)\n")
+                    stderr.printf("You must provide the ratio (a decimal)\n")
                     Posix.exit(1)
                 var ratio = double.parse(_arguments.args[2])
                 print_player(_api.set_ratio_in_track(_arguments.player, ratio))
 
             else if command == "cursormode"
                 if _arguments.args.length < 3
-                    stderr.printf("Your must provide the cursor mode\n")
+                    stderr.printf("You must provide the cursor mode\n")
                     Posix.exit(1)
                 var cursor_mode = _arguments.args[2]
                 print_player(_api.set_cursor_mode(_arguments.player, cursor_mode))
@@ -83,10 +83,24 @@ namespace Khovsgol.Client.CLI
                 pass
 
             else if command == "tracksby"
-                pass
+                if _arguments.args.length < 3
+                    stderr.printf("You must provide the artist name\n")
+                    Posix.exit(1)
+                var args = new Client.API.GetTracksArgs()
+                args.by_artist = _arguments.args[2]
+                args.sort.add("path")
+                for track in _api.get_tracks(args)
+                    print track.path
 
             else if command == "tracksin"
-                pass
+                if _arguments.args.length < 3
+                    stderr.printf("You must provide the album name\n")
+                    Posix.exit(1)
+                var args = new Client.API.GetTracksArgs()
+                args.in_album = _arguments.args[2]
+                args.sort.add("position")
+                for track in _api.get_tracks(args)
+                    print track.path
 
             else if command == "track"
                 pass
@@ -99,7 +113,7 @@ namespace Khovsgol.Client.CLI
 
             else if command == "albumsby"
                 if _arguments.args.length < 3
-                    stderr.printf("Your must provide the artist name\n")
+                    stderr.printf("You must provide the artist name\n")
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.by_artist = _arguments.args[2]
@@ -110,7 +124,7 @@ namespace Khovsgol.Client.CLI
 
             else if command == "albumswith"
                 if _arguments.args.length < 3
-                    stderr.printf("Your must provide the artist name\n")
+                    stderr.printf("You must provide the artist name\n")
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.with_artist = _arguments.args[2]
@@ -121,7 +135,7 @@ namespace Khovsgol.Client.CLI
 
             else if command == "albumsat"
                 if _arguments.args.length < 3
-                    stderr.printf("Your must provide the date (a number)\n")
+                    stderr.printf("You must provide the date (a number)\n")
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.at_date = int.parse(_arguments.args[2])
