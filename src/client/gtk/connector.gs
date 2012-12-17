@@ -100,6 +100,8 @@ namespace Khovsgol.Client.GTK
             border_width = 10
             set_position(WindowPosition.CENTER)
             set_default_size(500, 400)
+            transient_for = _instance.window
+            destroy_with_parent = true
             
             _browser = new Browser("_khovsgol._tcp")
             _browser.found.connect(on_avahi_found)

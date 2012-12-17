@@ -118,6 +118,8 @@ namespace Khovsgol.Client.GTK
             border_width = 10
             set_position(WindowPosition.CENTER)
             set_default_size(600, 300)
+            transient_for = _instance.window
+            destroy_with_parent = true
             
             key_press_event.connect(on_key_pressed)
             

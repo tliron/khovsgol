@@ -118,7 +118,7 @@ namespace Khovsgol.Client.GTK
             _instance.stop()
         
         def private on_preferences()
-            pass
+            new Preferences(_instance).show_all()
 
         def private on_manage_libraries()
             new LibraryManager(_instance).show_all()
