@@ -37,6 +37,7 @@ namespace Khovsgol.Client.GTK
             _tree_view = new TreeView.with_model(_store)
             _tree_view.headers_visible = false
             _tree_view.append_column(column)
+            _tree_view.get_selection().changed.connect(on_selection_changed)
             var tree_scrolled = new ScrolledWindow(null, null)
             tree_scrolled.add(_tree_view)
             var tree_frame = new Frame(null)
@@ -149,6 +150,20 @@ namespace Khovsgol.Client.GTK
         def private on_remove_directory()
             pass
             
+        def private on_selection_changed()
+            var selection = _tree_view.get_selection()
+            var tree_paths = selection.get_selected_rows(null)
+            var has = tree_paths.length() > 0
+            on_directory: bool = false
+            if has
+                iter: TreeIter
+                if _store.get_iter(out iter, tree_paths.data)
+                    on_directory = _store.iter_depth(iter) == 1
+            _remove_library_button.sensitive = has
+            _scan_button.sensitive = has
+            _add_directory_button.sensitive = has
+            _remove_directory_button.sensitive = on_directory
+
         def private on_active_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
             renderer.visible = _store.iter_depth(iter) == 0
         

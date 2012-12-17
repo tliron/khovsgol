@@ -91,7 +91,7 @@ namespace Khovsgol.Client.GTK
                             
                             if album_type == AlbumType.COMPILATION
                                 compilations.add_object_element(album_node)
-                            if album_type == AlbumType.CUSTOM_COMPILATION
+                            else if album_type == AlbumType.CUSTOM_COMPILATION
                                 custom_compilations.add_object_element(album_node)
                             else if current_albums is not null
                                 current_albums.add_object_element(album_node)
