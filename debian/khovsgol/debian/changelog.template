@@ -1,0 +1,5 @@
+khovsgol (0.6-0ubuntu1) %DISTRIBUTION%; urgency=low
+
+  * First port to the Genie language.
+
+ -- Tal Liron <tal.liron@gmail.com>  Wed, 5 Oct 2012 20:16:38 -0600

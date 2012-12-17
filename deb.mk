@@ -1,15 +1,18 @@
 
-deb: .deb.prepare
-	cd $(DEBIAN); debuild -b -k$(DEBSIGN_KEYID)
+# Default to using the current distribution
+DISTRIBUTION=$(shell lsb_release --short --code)
 
 dsc: .deb.prepare
 	cd $(DEBIAN); debuild -S -k$(DEBSIGN_KEYID)
 
-deb.pbuilder: .deb.prepare
-	cd $(DEBIAN); pdebuild -b --debsign-k $(DEBSIGN_KEYID)
+deb: .deb.prepare
+	cd $(DEBIAN); debuild -b -k$(DEBSIGN_KEYID)
 
 dsc.pbuilder: .deb.prepare
 	cd $(DEBIAN); pdebuild -S --debsign-k $(DEBSIGN_KEYID)
+
+deb.pbuilder: .deb.prepare
+	cd $(DEBIAN); pdebuild -b --debsign-k $(DEBSIGN_KEYID)
 
 deb.clean:
 	$(RM) -f $(DEBIAN)/README
@@ -37,3 +40,4 @@ deb.clean:
 	cp *.mk $(DEBIAN)/
 	cp -r src $(DEBIAN)/
 	cp -r resources $(DEBIAN)/
+	sed "s|%DISTRIBUTION%|$(DISTRIBUTION)|g" $(DEBIAN)/debian/changelog.template > $(DEBIAN)/debian/changelog

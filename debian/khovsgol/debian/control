@@ -17,7 +17,7 @@
 #
 #  Use "apt-cache info" to find their local versions.
 #
-# Missing build dependencies for Ubuntu 12.04:
+# Missing build dependencies for Ubuntu 12.04 (precise):
 #
 #  valac-0.18:
 #   "add-apt-repository ppa:vala-team"

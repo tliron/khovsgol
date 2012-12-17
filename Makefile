@@ -15,12 +15,16 @@
 #  Installs a ".desktop" file for the current user to run Khovsgol directly from
 #  the build directory. DO NOT USE SUDO FOR THIS!
 #
-# deb:
-#  Creates Debian packages for Ubuntu.
-#  Make sure to set DEBSIGN_KEYID in the environment in order to sign the packages
+# dsc:
+#  Creates Debian source packages for Ubuntu.
+#  Make sure to set DEBSIGN_KEYID in order to sign the packages
 #
-# deb.pbuilder:
-#  Creates Debian packages for Ubuntu in a pbuilder environment.
+# deb:
+#  Creates Debian binary packages for Ubuntu.
+#  Make sure to set DEBSIGN_KEYID in order to sign the packages
+#
+# dsc.pbuilder, deb.pbuilder:
+#  Same as dsc and deb for the pbuilder environment.
 #
 
 SRC=src
