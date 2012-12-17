@@ -191,7 +191,7 @@ namespace Khovsgol.Client.CLI
                 _browser = new Browser("_khovsgol._tcp")
                 _browser.found.connect(on_avahi_found)
                 _browser.removed.connect(on_avahi_removed)
-                _browser.start()
+                _browser.client.start()
 
                 var main_loop = new MainLoop()
                 new ExitOnKeyPress(main_loop)

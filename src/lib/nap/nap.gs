@@ -156,5 +156,6 @@ namespace Nap
      */
     interface Client: Object
         prop abstract base_url: string
+        prop abstract timeout: uint
 
         def abstract create_conversation(): Conversation raises GLib.Error

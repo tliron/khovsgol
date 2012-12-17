@@ -21,6 +21,10 @@ namespace Khovsgol.Client
      * A polling thread can be started to regularly watch the player.
      */
     class API: GLib.Object
+        construct()
+            _client = new Nap._Soup.Client()
+            _client.timeout = 1
+
         prop watching_player: string?
             get
                 _watching_lock.lock()
@@ -49,6 +53,7 @@ namespace Khovsgol.Client
         event position_in_track_change(position_in_last_track: double, old_position_in_last_track: double, track_duration: double)
         event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
         event track_change(track: Track?, old_last_track: Track?)
+        event error(e: GLib.Error)
         
         def get_connection(out host: string, out port: uint)
             _watching_lock.lock()
@@ -1005,7 +1010,7 @@ namespace Khovsgol.Client
         def delete_plug(player: string, plug: string): Json.Object?
             return null
         
-        _client: Nap.Client = new Nap._Soup.Client()
+        _client: Nap.Client
 
         _poll_thread: Thread of bool
         _poll_interval: ulong = 1000000
@@ -1040,6 +1045,7 @@ namespace Khovsgol.Client
         def private on_error(e: GLib.Error)
             // TODO: special handling for network errors
             _logger.exception(e)
+            error(e)
         
         def private watch(player: Json.Object? = null)
             if not is_watching

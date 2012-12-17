@@ -108,7 +108,7 @@ namespace Khovsgol.Client.GTK
         def private connect_to_first_local_service()
             _browser = new Browser("_khovsgol._tcp")
             _browser.found.connect(on_avahi_found)
-            _browser.start()
+            _browser.client.start()
         
         def private on_avahi_found(info: ServiceFoundInfo)
             // Connect to first local service found

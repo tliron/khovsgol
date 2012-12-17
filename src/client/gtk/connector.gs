@@ -10,6 +10,8 @@ namespace Khovsgol.Client.GTK
     class Connector: Window
         construct(instance: Instance)
             _instance = instance
+
+            unrealize.connect(on_unrealized)
             
             // Tree view
             
@@ -87,7 +89,7 @@ namespace Khovsgol.Client.GTK
             bottom_box.pack_start(tree_frame)
             bottom_box.pack_start(button_box, false)
 
-            var label = new Label("This is a map of the Khövsgöl servers in your local network.\n\nYou can start and stop your own server here, though note that you do not have to run o: you can use Khövsgöl purely as a client for other servers in the network. Indeed, a single Khövsgöl server can provide music for many listeners.\n\nThe server and player you\'re currently connected to is marked in bold. Double-click or click \"Connect\" on any other server to use it instead. Use \"Connect other\" for hidden servers, or for servers outside your local network.")
+            var label = new Label("This is a map of the Khövsgöl servers in your local network.\n\nYou can start and stop your own server here, though note that you do not have to run one: you can use Khövsgöl purely as a client for other servers in the network. Indeed, a single Khövsgöl server can provide music for many listeners.\n\nThe server and player you\'re currently connected to is marked in bold. Double-click or click \"Connect\" on any other server to use it instead. Use \"Connect other\" for hidden servers, or for servers outside your local network.")
             label.wrap = true
             label.set_alignment(0, 0)
             
@@ -106,9 +108,20 @@ namespace Khovsgol.Client.GTK
             _browser = new Browser("_khovsgol._tcp")
             _browser.found.connect(on_avahi_found)
             _browser.removed.connect(on_avahi_removed)
-            _browser.start()
+            _browser.client.start()
             
             key_press_event.connect(on_key_pressed)
+            
+            var api = (API) _instance.api
+            api.connection_change_gdk.connect(on_connection_changed)
+        
+        def private on_unrealized()
+            var api = (API) _instance.api
+            api.connection_change_gdk.disconnect(on_connection_changed)
+            
+            // We need to manually clear the store, because the nodes have references to the window,
+            // so that neither would be automatically unreferenced
+            _store.clear()
         
         def private on_connect()
             var selection = _tree_view.get_selection()
@@ -176,6 +189,10 @@ namespace Khovsgol.Client.GTK
             var tree_paths = selection.get_selected_rows(null)
             _connect_button.sensitive = tree_paths.length() > 0
             
+        def private on_connection_changed(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
+            _store.clear()
+            _browser.reset()
+            
         // TODO: are we in the Gdk thread?!
         def private on_avahi_found(info: ServiceFoundInfo)
             // Only show IPv4
@@ -209,7 +226,6 @@ namespace Khovsgol.Client.GTK
             for var player in api.get_players()
                 var name = get_string_member_or_null(player, "name")
                 if name is not null
-                    //var play_list = get_object_member_or_null(player, "play_list")
                     var play_mode = get_string_member_or_null(player, "playMode")
                 
                     if is_current
@@ -218,8 +234,8 @@ namespace Khovsgol.Client.GTK
                     iter: TreeIter
                     _store.append(out iter, server_iter)
                     var node = new PlayerNode(name, server_node, self, iter, is_current)
-                    node.render(play_mode)
                     _store.@set(iter, Column.NODE, node)
+                    node.render(play_mode)
             
             var path = _store.get_path(server_iter)
             if path is not null

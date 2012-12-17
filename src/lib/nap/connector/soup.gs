@@ -340,7 +340,13 @@ namespace Nap._Soup
      */
     class Client: Object implements Nap.Client
         construct()
-            _soup_session = new Soup.SessionSync()
+            _soup_session = new Soup.SessionSync.with_options(Soup.SESSION_USER_AGENT, "Nap")
+            
+        prop timeout: uint
+            get
+                return _soup_session.timeout
+            set
+                _soup_session.timeout = value
             
         prop base_url: string
             get

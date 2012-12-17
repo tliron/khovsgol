@@ -25,6 +25,7 @@ namespace Khovsgol.Client.Plugins
                 try
                     _notifications = Bus.get_proxy_sync(BusType.SESSION, "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
                     _instance.api.track_change.connect(on_track_changed)
+                    _instance.api.error.connect(on_error)
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
@@ -32,6 +33,7 @@ namespace Khovsgol.Client.Plugins
         def stop()
             if _notifications is not null
                 _instance.api.track_change.disconnect(on_track_changed)
+                _instance.api.error.disconnect(on_error)
                 _notifications = null
                 _logger.message("Stopped")
         
@@ -76,6 +78,13 @@ namespace Khovsgol.Client.Plugins
                         _logger.info("Notified new track")
                     except e: IOError
                         _logger.exception(e)
+        
+        def private on_error(e: GLib.Error)
+            var markup = Markup.escape_text(e.message)
+            try
+                _notifications.notify("Khövsgöl", 0, _default_icon, "Khövsgöl", markup, _actions, _hints, 3000)
+            except e: IOError
+                _logger.exception(e)
 
         _actions: array of string = new array of string[0] // {"close", "OK"}
         _hints: HashTable of string, Variant = new HashTable of string, Variant(str_hash, str_equal) // {x: 0, y: 0}

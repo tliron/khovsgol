@@ -87,18 +87,16 @@ namespace AvahiUtil
             
             _client.running.connect(on_running)
         
+        final
+            _client.running.disconnect(on_running)
+            
+        prop readonly client: Client
+        
         // Note: if we use Avahi.Interface or Avahi.Protocol in the signal, we get compilation errors
         event found(info: ServiceFoundInfo)
         event removed(info: ServiceInfo)
         
-        def start()
-            _client.start()
-        
-        _type: string
-        _client: Client
-        _service_browser: ServiceBrowser
-        
-        def private on_running()
+        def reset()
             try
                 _service_browser = new ServiceBrowser(_type)
                 _service_browser.new_service.connect(on_new_service)
@@ -107,6 +105,12 @@ namespace AvahiUtil
                 _service_browser.attach(_client.client)
             except e: Avahi.Error
                 _logger.exception(e)
+        
+        _type: string
+        _service_browser: ServiceBrowser
+        
+        def private on_running()
+            reset()
 
         def private on_new_service(@interface: Interface, protocol: Protocol, name: string, type: string, domain: string, flags: LookupResultFlags)
             try
