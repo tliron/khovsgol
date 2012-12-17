@@ -57,8 +57,9 @@ namespace Khovsgol.Server.Filesystem
                     if !File.new_for_path(album_path).query_exists()
                         // Note: this will also delete all associated tracks and track pointers
                         libraries.delete_album(album_path)
-                        batch(libraries, ref count)
                         _logger.infof("Pruned album: %s", album_path)
+
+                    batch(libraries, ref count)
 
                 _logger.messagef("Phase 2: Pruning deleted tracks: %s", path)
 
@@ -72,7 +73,6 @@ namespace Khovsgol.Server.Filesystem
                     if !file.query_exists()
                         // Note: this will also delete associated track pointers
                         libraries.delete_track(track_path)
-                        batch(libraries, ref count)
                         _logger.infof("Pruned track: %s", track_path)
                         
                         // Renaming a file will *not* change the timestamp of the containing directory,
@@ -81,8 +81,9 @@ namespace Khovsgol.Server.Filesystem
                         var parent = file.get_parent()
                         while parent is not null
                             libraries.delete_timestamp(parent.get_path())
-                            batch(libraries, ref count)
                             parent = parent.get_parent()
+
+                    batch(libraries, ref count)
 
                 pass
             except e: GLib.Error
@@ -133,7 +134,6 @@ namespace Khovsgol.Server.Filesystem
 
                             // Save album
                             libraries.save_album(album)
-                            batch(libraries, ref count)
                             if _logger.can(LogLevelFlags.LEVEL_INFO)
                                 _logger.infof("Added album: %s", album.path)
 
@@ -142,7 +142,6 @@ namespace Khovsgol.Server.Filesystem
                             for track in tracks
                                 track.album_type = album_type
                                 libraries.save_track(track)
-                                batch(libraries, ref count)
                                 if _logger.can(LogLevelFlags.LEVEL_INFO)
                                     _logger.infof("Added track: %s", track.path)
                             
@@ -226,6 +225,9 @@ namespace Khovsgol.Server.Filesystem
                                         album.album_type = AlbumType.COMPILATION
                                         album.artist = null
                                         album.artist_sort = null
+
+                    batch(libraries, ref count)
+
             except e: GLib.Error
                 _logger.exception(e)
             finally
@@ -250,14 +252,14 @@ namespace Khovsgol.Server.Filesystem
             timer.stop()
             var seconds = timer.elapsed()
             _logger.messagef("Scanning ended: %s (%.2f seconds, %u operations)", path, seconds, count)
-            
+
             // We've stopped scanning
             AtomicInt.set(ref _is_scanning, 0)
             AtomicInt.set(ref _is_scan_stopping, 0)
             return true
 
         const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_IS_HIDDEN + "," + FileAttribute.ACCESS_CAN_READ + "," + FileAttribute.TIME_MODIFIED
-        const private BATCH_SIZE: uint = 50
+        const private BATCH_SIZE: uint = 200
 
         _logger: static Logging.Logger
 

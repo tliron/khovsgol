@@ -14,7 +14,7 @@ namespace Khovsgol.Client.GTK
 
             // Tree view
             
-            _store = new TreeStore(5, typeof(string), typeof(Gdk.Pixbuf), typeof(string), typeof(string), typeof(bool)) // node, icon, markup1, markup2, active
+            _store = new TreeStore(5, typeof(Node), typeof(Gdk.Pixbuf), typeof(string), typeof(string), typeof(bool)) // node, icon, markup1, markup2, active
 
             var column = new TreeViewColumn()
             var icon_renderer = new CellRendererPixbuf()
@@ -142,7 +142,12 @@ namespace Khovsgol.Client.GTK
             pass
 
         def private on_scan()
-            pass
+            var node = get_selected_node()
+            if node is not null
+                if node.directory is not null
+                    _instance.api.directory_action(node.library, node.directory, "scan")
+                else
+                    _instance.api.library_action(node.library, "scan")
 
         def private on_add_directory()
             pass
@@ -163,6 +168,17 @@ namespace Khovsgol.Client.GTK
             _scan_button.sensitive = has
             _add_directory_button.sensitive = has
             _remove_directory_button.sensitive = on_directory
+        
+        def private get_selected_node(): Node?
+            var selection = _tree_view.get_selection()
+            var tree_paths = selection.get_selected_rows(null)
+            if tree_paths.length() > 0
+                iter: TreeIter
+                if _store.get_iter(out iter, tree_paths.data)
+                    value: Value
+                    _store.get_value(iter, Column.NODE, out value)
+                    return (Node) value
+            return null
 
         def private on_active_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
             renderer.visible = _store.iter_depth(iter) == 0
@@ -183,7 +199,7 @@ namespace Khovsgol.Client.GTK
                     library_iter: TreeIter? = null
                     if !get_library(name, out library_iter)
                         _store.append(out library_iter, null)
-                        _store.@set(library_iter, Column.NODE, name, Column.ICON, _library_icon, Column.MARKUP1, Markup.escape_text(name), Column.ACTIVE, true, -1)
+                        _store.@set(library_iter, Column.NODE, new Node(name), Column.ICON, _library_icon, Column.MARKUP1, Markup.escape_text(name), Column.ACTIVE, true, -1)
                     
                     directory_iter: TreeIter? = null
                     for var directory in new JsonObjects(get_array_member_or_null(library, "directories"))
@@ -194,7 +210,7 @@ namespace Khovsgol.Client.GTK
                             
                             if !get_directory(path, library_iter, out directory_iter)
                                 _store.append(out directory_iter, library_iter)
-                                _store.@set(directory_iter, Column.NODE, path, Column.ICON, _directory_icon, Column.MARKUP1, Markup.escape_text(path), Column.MARKUP2, status, -1)
+                                _store.@set(directory_iter, Column.NODE, new Node(name, path), Column.ICON, _directory_icon, Column.MARKUP1, Markup.escape_text(path), Column.MARKUP2, status, -1)
                             else
                                 // Just update the status column
                                 _store.@set(directory_iter, Column.MARKUP2, status, -1)
@@ -211,7 +227,8 @@ namespace Khovsgol.Client.GTK
             if _store.get_iter_first(out iter)
                 while true
                     _store.get_value(iter, Column.NODE, out value)
-                    if name == (string) value
+                    var node = (Node) value
+                    if name == node.library
                         library_iter = iter
                         return true
                     if !_store.iter_next(ref iter)
@@ -225,7 +242,8 @@ namespace Khovsgol.Client.GTK
             if _store.iter_children(out iter, library_iter)
                 while true
                     _store.get_value(iter, Column.NODE, out value)
-                    if path == (string) value
+                    var node = (Node) value
+                    if path == node.directory
                         directory_iter = iter
                         return true
                     if !_store.iter_next(ref iter)
@@ -243,9 +261,17 @@ namespace Khovsgol.Client.GTK
         _remove_directory_button: Button
         _library_icon: Gdk.Pixbuf
         _directory_icon: Gdk.Pixbuf
+        
+        class Node: Object
+            construct(library: string, directory: string? = null)
+                self.library = library
+                self.directory = directory
+        
+            library: string
+            directory: string?
 
         enum private Column
-            NODE = 0     // string
+            NODE = 0     // Node
             ICON = 1     // Pixbuf
             MARKUP1 = 2  // string
             MARKUP2 = 3  // string
