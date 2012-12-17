@@ -1,9 +1,15 @@
 
 deb: .deb.prepare
-	cd $(DEBIAN); debuild -k$(DEBSIGN_KEYID)
+	cd $(DEBIAN); debuild -b -k$(DEBSIGN_KEYID)
+
+dsc: .deb.prepare
+	cd $(DEBIAN); debuild -S -k$(DEBSIGN_KEYID)
 
 deb.pbuilder: .deb.prepare
-	cd $(DEBIAN); pdebuild --debsign-k $(DEBSIGN_KEYID)
+	cd $(DEBIAN); pdebuild -b --debsign-k $(DEBSIGN_KEYID)
+
+dsc.pbuilder: .deb.prepare
+	cd $(DEBIAN); pdebuild -S --debsign-k $(DEBSIGN_KEYID)
 
 deb.clean:
 	$(RM) -f $(DEBIAN)/README
@@ -16,6 +22,7 @@ deb.clean:
 	$(RM) -f debian/*.tar.gz
 	$(RM) -f debian/*.changes
 	$(RM) -f debian/*.build
+	$(RM) -f debian/*.upload
 	$(RM) -f $(DEBIAN)/debian/files
 	$(RM) -f $(DEBIAN)/debian/*.substvars
 	$(RM) -f $(DEBIAN)/debian/*.log

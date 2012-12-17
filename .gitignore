@@ -5,6 +5,7 @@ debian/*.dsc
 debian/*.deb
 debian/*.changes
 debian/*.build
+debian/*.upload
 debian/*.tar.gz
 debian/khovsgol/*.mk
 debian/khovsgol/src/
