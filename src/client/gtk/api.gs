@@ -13,6 +13,7 @@ namespace Khovsgol.Client.GTK
     class API: Client.API
         construct()
             connection_change.connect(on_connection_change)
+            error.connect(on_error)
             volume_change.connect(on_volume_change)
             play_mode_change.connect(on_play_mode_change)
             cursor_mode_change.connect(on_cursor_mode_change)
@@ -22,6 +23,7 @@ namespace Khovsgol.Client.GTK
             track_change.connect(on_track_change)
 
         event connection_change_gdk(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
+        event error_gdk(e: GLib.Error)
         event volume_change_gdk(volume: double, old_volume: double)
         event play_mode_change_gdk(play_mode: string?, old_play_mode: string?)
         event cursor_mode_change_gdk(cursor_mode: string?, old_cursor_mode: string?)
@@ -43,6 +45,12 @@ namespace Khovsgol.Client.GTK
                 connection_change_gdk(host, port, player, old_host, old_port, old_player)
             else
                 new ConnectionChangeGdk(self, host, port, player, old_host, old_port, old_player)
+        
+        def private on_error(e: GLib.Error)
+            if in_gdk
+                error_gdk(e)
+            else
+                new ErrorGdk(self, e)
             
         def private on_volume_change(volume: double, old_volume: double)
             if in_gdk
@@ -108,6 +116,21 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.connection_change_gdk(_host, _port, _player, _old_host, _old_port, _old_player)
+                unref()
+                return false
+
+        class private ErrorGdk: Object
+            construct(api: API, e: GLib.Error)
+                _api = api
+                _e = e
+                ref()
+                Gdk.threads_add_idle(idle)
+
+            _api: API
+            _e: GLib.Error
+
+            def private idle(): bool
+                _api.error_gdk(_e)
                 unref()
                 return false
 

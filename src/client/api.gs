@@ -82,7 +82,7 @@ namespace Khovsgol.Client
             try
                 _last_watching_player = null
                 _last_host = null
-                _last_port = uint.MIN
+                _last_port = 0
                 _last_volume = double.MIN
                 _last_play_mode = null
                 _last_cursor_mode = null

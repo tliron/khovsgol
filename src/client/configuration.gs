@@ -82,6 +82,9 @@ namespace Khovsgol.Client
                     return true
             set
                 _key_file.set_boolean("ui", "show-duration", value)
+                show_duration_change(value)
+
+        event show_duration_change(value: bool)
 
         prop subdue_lossy: bool
             get
@@ -91,6 +94,9 @@ namespace Khovsgol.Client
                     return false
             set
                 _key_file.set_boolean("ui", "subdue-lossy", value)
+                subdue_lossy_change(value)
+        
+        event subdue_lossy_change(value: bool)
         
         prop expand_on_click: bool
             get
@@ -100,6 +106,9 @@ namespace Khovsgol.Client
                     return false
             set
                 _key_file.set_boolean("ui", "expand-on-click", value)
+                expand_on_click_change(value)
+
+        event expand_on_click_change(value: bool)
         
         prop focus_on_library: bool
             get

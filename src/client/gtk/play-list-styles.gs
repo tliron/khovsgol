@@ -24,6 +24,7 @@ namespace Khovsgol.Client.GTK
         prop readonly label: string = "Group by albums"
         
         def fill(node: PlayListNode)
+            var subdue_lossy = node.instance.configuration.subdue_lossy
             var show_duration = node.instance.configuration.show_duration
             current_album_path: string? = null
             current_album_positions: Json.Array? = null
@@ -47,9 +48,14 @@ namespace Khovsgol.Client.GTK
                         
                         var title = album.title
                         if title is not null
+                            var file_type = album.file_type
+
                             title = Markup.escape_text(title)
                             title = format_annotation(title)
+                            if subdue_lossy and not is_lossless(file_type)
+                                title = format_washed_out(title)
                             var artist = album.artist
+
                             markup1: string
                             if artist is not null
                                 artist = Markup.escape_text(artist)
@@ -75,9 +81,13 @@ namespace Khovsgol.Client.GTK
                     var path = track.path
                     var position = track.position_in_play_list
                     var duration = track.duration
+                    var file_type = track.file_type
                     
                     title = Markup.escape_text(title)
                     title = format_annotation(title)
+                    if subdue_lossy and not is_lossless(file_type)
+                        title = format_washed_out(title)
+
                     markup1: string
                     if show_artist
                         var artist = track.artist
@@ -88,7 +98,7 @@ namespace Khovsgol.Client.GTK
                             markup1 = "%d\t%s".printf(position, title)
                     else
                         markup1 = "%d\t%s".printf(position, title)
-                    var markup2 = show_duration ? format_duration(duration) : ""
+                    var markup2 = (show_duration and duration != int.MIN) ? format_duration(duration) : ""
                     
                     node.append_object(track.to_json(), position, track.title, markup1, markup2)
                     
@@ -183,6 +193,7 @@ namespace Khovsgol.Client.GTK
         prop override readonly label: string = "Compact"
         
         def override fill(node: PlayListNode)
+            var subdue_lossy = node.instance.configuration.subdue_lossy
             var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
@@ -190,16 +201,20 @@ namespace Khovsgol.Client.GTK
                     var position = track.position_in_play_list
                     var duration = track.duration
                     var artist = track.artist
+                    var file_type = track.file_type
                     
                     title = Markup.escape_text(title)
                     title = format_annotation(title)
+                    if subdue_lossy and not is_lossless(file_type)
+                        title = format_washed_out(title)
+
                     markup1: string
                     if artist is not null
                         artist = Markup.escape_text(artist)
                         markup1 = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                     else
                         markup1 = "%d\t%s".printf(position, title)
-                    var markup2 = show_duration ? Markup.escape_text(format_duration(duration)) : ""
+                    var markup2 = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
                     
                     node.append_object(track.to_json(), position, track.title, markup1, markup2)
     
@@ -211,6 +226,7 @@ namespace Khovsgol.Client.GTK
         prop override readonly label: string = "Extended"
         
         def override fill(node: PlayListNode)
+            var subdue_lossy = node.instance.configuration.subdue_lossy
             var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
@@ -220,14 +236,18 @@ namespace Khovsgol.Client.GTK
                     var duration = track.duration
                     var artist = track.artist
                     var album = track.album
+                    var file_type = track.file_type
                     
                     title = Markup.escape_text(title)
                     title = format_annotation(title)
+                    if subdue_lossy and not is_lossless(file_type)
+                        title = format_washed_out(title)
                     if artist is not null
                         artist = Markup.escape_text(artist)
                     if album is not null
                         album = Markup.escape_text(album)
                         album = format_annotation(album)
+
                     markup1: string
                     if (artist is not null) and (album is not null) and (position_in_album != int.MIN)
                         markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">%s in %s</span>".printf(position_in_play_list, title, artist, format_ordinal(position_in_album), album)
@@ -239,6 +259,6 @@ namespace Khovsgol.Client.GTK
                         markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position_in_play_list, title, album)
                     else
                         markup1 = "%d\t%s".printf(position_in_play_list, title)
-                    var markup2 = show_duration ? Markup.escape_text(format_duration(duration)) : ""
+                    var markup2 = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
                     
                     node.append_object(track.to_json(), position_in_play_list, track.title, markup1, markup2)

@@ -97,12 +97,11 @@ namespace Khovsgol
             set
                 set_double_member_not_min(_json, "duration", value)
                 
-        prop date: uint
+        prop date: int
             get
-                var date = get_int_member_or_min(_json, "date")
-                return date != int.MIN ? date : 0
+                return get_int_member_or_min(_json, "date")
             set
-                set_int_member_not_min(_json, "date", value != 0 ? (int) value : int.MIN)
+                set_int_member_not_min(_json, "date", value)
                 
         prop file_type: string
             owned get
@@ -231,12 +230,11 @@ namespace Khovsgol
             set
                 set_string_member_not_null(_json, "artist_sort", value)
 
-        prop date: uint64
+        prop date: int64
             get
-                var date = get_int64_member_or_min(_json, "date")
-                return date != int64.MIN ? date : 0
+                return get_int64_member_or_min(_json, "date")
             set
-                set_int64_member_not_min(_json, "date", value != 0 ? (int64) value : int64.MIN)
+                set_int64_member_not_min(_json, "date", value)
 
         prop album_type: AlbumType
             get

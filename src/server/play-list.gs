@@ -9,7 +9,7 @@ namespace Khovsgol.Server
         prop crucible: Crucible
         prop player: Player
         prop id: string
-        prop version: uint64 = uint64.MIN
+        prop version: int64 = int64.MIN
 
         prop readonly tracks: list of Track
             get
@@ -140,7 +140,8 @@ namespace Khovsgol.Server
         _albums: list of Album = new list of Album
         _albums_json: Json.Array?
 
-        def private update_stored_version(): uint64 raises GLib.Error
+        def private update_stored_version(): int64 raises GLib.Error
+            // Our version is actually a timestamp stored in the album's date field as an int64
             var version = get_monotonic_time()
             var album = new Album()
             album.path = _album_path
@@ -149,7 +150,8 @@ namespace Khovsgol.Server
             _crucible.libraries.save_album(album)
             return version
 
-        def private get_stored_version(): uint64 raises GLib.Error
+        def private get_stored_version(): int64 raises GLib.Error
+            // Our version is actually a timestamp stored in the album's date field as an int64
             var album = _crucible.libraries.get_album(_album_path)
             if (album is not null) and (album.date != int64.MIN) and (album.date != 0)
                 return album.date
@@ -163,11 +165,11 @@ namespace Khovsgol.Server
             var libraries = _crucible.libraries
             
             // We are locking to make sure the play list does not change
-            // while we are reading it
+            // while we are reading it (we'd rather not start a transaction;
             libraries.write_lock()
             try
                 var stored_version = get_stored_version()
-                if stored_version > _version
+                if (_version == int64.MIN) or (stored_version > _version)
                     var tracks = new list of Track
                     var albums = new list of Album
 

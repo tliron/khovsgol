@@ -77,11 +77,11 @@ namespace Khovsgol.Client.GTK
                 set_default_size(width, height)
             else
                 set_default_size(900, 600)
-
-            /*if self.instance.configuration.is_boolean('ui', 'focus-on-library'):
-                self.library_pane.tree_view.grab_focus()
-            else:
-                self.play_list_pane.tree_view.grab_focus()*/
+                
+            if _instance.configuration.focus_on_library
+                _library.initial_focus()
+            else
+                _play_list.initial_focus()
 
             show_all()
             
@@ -98,7 +98,7 @@ namespace Khovsgol.Client.GTK
             _instance.api.update()
             API.in_gdk = false
                 
-        def private on_delete(event: Gdk.EventAny): bool
+        def private on_delete(e: Gdk.EventAny): bool
             iconify()
             return true // bypass default delete handler
         
@@ -114,7 +114,7 @@ namespace Khovsgol.Client.GTK
             else
                 set_position(WindowPosition.CENTER)
         
-        def private on_configured(event: Gdk.EventConfigure): bool
+        def private on_configured(e: Gdk.EventConfigure): bool
             x: int
             y: int
             width: int

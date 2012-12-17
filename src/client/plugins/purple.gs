@@ -95,7 +95,7 @@ namespace Khovsgol.Client.Plugins
                                     _purple.purple_status_set_attr_string(tune_status, "tune_artist", track.artist is not null ? track.artist : "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_title", track.title is not null ? track.title : "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_album", track.album is not null ? track.album : "")
-                                    _purple.purple_status_set_attr_string(tune_status, "tune_year", track.date != int64.MIN ? track.date.to_string() : "")
+                                    _purple.purple_status_set_attr_string(tune_status, "tune_year", ((track.date != int.MIN) and (track.date != 0)) ? track.date.to_string() : "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_time", track.duration != double.MIN ? "%.2f".printf(track.duration) : "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_genre", "")
                                     _purple.purple_status_set_attr_string(tune_status, "tune_comment", "")

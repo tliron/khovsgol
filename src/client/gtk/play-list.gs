@@ -157,6 +157,9 @@ namespace Khovsgol.Client.GTK
             add(box)
             set(0, 0, 1, 1)
             
+            _instance.configuration.show_duration_change.connect(on_show_duration_changed)
+            _instance.configuration.subdue_lossy_change.connect(on_subdue_lossy_changed)
+            
             var api = (API) _instance.api
             api.cursor_mode_change_gdk.connect(on_cursor_mode_changed)
             api.play_mode_change_gdk.connect(on_play_mode_changed)
@@ -166,14 +169,20 @@ namespace Khovsgol.Client.GTK
 
         prop readonly accel_group: AccelGroup
         
+        def initial_focus()
+            _tree_view.grab_focus()
+        
         def private on_unrealized()
+            _instance.configuration.show_duration_change.disconnect(on_show_duration_changed)
+            _instance.configuration.subdue_lossy_change.disconnect(on_subdue_lossy_changed)
+
             var api = (API) _instance.api
             api.cursor_mode_change_gdk.disconnect(on_cursor_mode_changed)
             api.play_mode_change_gdk.disconnect(on_play_mode_changed)
             api.play_list_change_gdk.disconnect(on_play_list_changed)
             api.position_in_play_list_change_gdk.disconnect(on_position_in_play_list_changed)
             api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
-       
+            
         def private on_progress_render(layout: CellLayout, renderer: dynamic CellRenderer, model: TreeModel, iter: TreeIter)
             position: Value
             _store.get_value(iter, Column.POSITION, out position)
@@ -376,6 +385,12 @@ namespace Khovsgol.Client.GTK
             _track_duration = track_duration
             refresh_row(_position_in_play_list)
                 
+        def private on_show_duration_changed(value: bool)
+            update()
+
+        def private on_subdue_lossy_changed(value: bool)
+            update()
+       
         def private update()
             _tree_view.freeze_child_notify()
             _tree_view.model = null

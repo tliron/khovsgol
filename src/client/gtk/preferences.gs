@@ -59,7 +59,7 @@ namespace Khovsgol.Client.GTK
             about_label.set_alignment(0, 0)
             about_label.wrap = true
 
-            var show_duration = new CheckButton.with_mnemonic("Show track _duration")
+            var show_duration = new CheckButton.with_mnemonic("Show track _durations")
             ((Label) show_duration.get_child()).wrap = true
             set_boolean_configuration(show_duration, _instance.configuration, "show_duration")
 

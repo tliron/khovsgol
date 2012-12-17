@@ -101,13 +101,22 @@ namespace Khovsgol.Client.GTK
         
             add(box)
             set(0, 0, 1, 1)
+            
+            _expand_on_click = _instance.configuration.expand_on_click
+
+            _instance.configuration.expand_on_click_change.connect(on_expand_on_click_changed)
+            _instance.configuration.show_duration_change.connect(on_show_duration_changed)
+            _instance.configuration.subdue_lossy_change.connect(on_subdue_lossy_changed)
 
             var api = (API) _instance.api
             api.connection_change_gdk.connect(on_connection_changed)
         
         prop readonly accel_group: AccelGroup
+
+        def initial_focus()
+            _tree_view.grab_focus()
             
-        def refresh()
+        def update()
             _tree_view.freeze_child_notify()
             _tree_view.model = null
             _store.clear()
@@ -116,6 +125,10 @@ namespace Khovsgol.Client.GTK
             _tree_view.thaw_child_notify()
         
         def private on_unrealized()
+            _instance.configuration.expand_on_click_change.disconnect(on_expand_on_click_changed)
+            _instance.configuration.show_duration_change.disconnect(on_show_duration_changed)
+            _instance.configuration.subdue_lossy_change.disconnect(on_subdue_lossy_changed)
+
             var api = (API) _instance.api
             api.connection_change_gdk.disconnect(on_connection_changed)
 
@@ -130,8 +143,22 @@ namespace Khovsgol.Client.GTK
             _store.get_value(iter, Column.NODE, out value)
             return ((Json.Node) value).get_node_type() == Json.NodeType.NULL
         
-        def private on_clicked(event: Gdk.EventButton): bool
-            // TODO: do we need this?
+        def private on_clicked(e: Gdk.EventButton): bool
+            if _expand_on_click
+                path: TreePath
+                cell_x: int
+                cell_y: int
+                if _tree_view.get_path_at_pos((int) e.x, (int) e.y, out path, null, out cell_x, out cell_y)
+                    // Expand only if row is not already expanded and is in fact expandable
+                    if not _tree_view.is_row_expanded(path)
+                        iter: TreeIter
+                        if _store.get_iter(out iter, path)
+                            if _store.iter_children(out iter, iter)
+                                _tree_view.expand_row(path, false)
+                                
+                                // Avoid selecting this row if we are not in selecting mode
+                                if (e.state & (Gdk.ModifierType.CONTROL_MASK|Gdk.ModifierType.SHIFT_MASK)) == 0
+                                    return true
             return false
 
         def private on_double_clicked(e: Gdk.EventButton)
@@ -174,7 +201,7 @@ namespace Khovsgol.Client.GTK
             pass
 
         def private on_filter()
-            refresh()
+            update()
             
         def private on_clear_filter()
             _filter_box.entry.text = ""
@@ -216,6 +243,15 @@ namespace Khovsgol.Client.GTK
 
         def on_connection_changed(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
             on_filter()
+
+        def private on_expand_on_click_changed(value: bool)
+            _expand_on_click = value
+
+        def private on_show_duration_changed(value: bool)
+            update()
+
+        def private on_subdue_lossy_changed(value: bool)
+            update()
             
         def private fill_at(iter: TreeIter): bool
             return _fill(false, false, iter)
@@ -286,6 +322,7 @@ namespace Khovsgol.Client.GTK
         _popup_none: Gtk.Menu
         _popup: Gtk.Menu
         _popup_custom: Gtk.Menu
+        _expand_on_click: bool
         
         const MINIMUM_FILTER_LENGTH: int = 1
 
@@ -296,7 +333,7 @@ namespace Khovsgol.Client.GTK
                 set_default_size(500, 600)
                 border_width = 10
                 var library = new Library(instance)
-                library.refresh()
+                library.update()
                 add(library)
             
                 key_press_event.connect(on_key_pressed)

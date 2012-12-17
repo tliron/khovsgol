@@ -13,7 +13,7 @@ namespace Khovsgol.Server
         
         prop threads: uint
             get
-                if _threads_override != uint.MIN
+                if _threads_override != int.MIN
                     return _threads_override
             
                 try
@@ -23,11 +23,11 @@ namespace Khovsgol.Server
             set
                 _key_file.set_integer("server", "threads", (int) value)
         
-        prop threads_override: uint = uint.MIN
+        prop threads_override: int = int.MIN
 
         prop port: uint
             get
-                if _port_override != uint.MIN
+                if _port_override != int.MIN
                     return _port_override
             
                 try
@@ -37,11 +37,11 @@ namespace Khovsgol.Server
             set
                 _key_file.set_integer("server", "port", (int) value)
         
-        prop port_override: uint = uint.MIN
+        prop port_override: int = int.MIN
         
         prop delay: uint64
             get
-                if _delay_override != uint64.MIN
+                if _delay_override != int64.MIN
                     return _delay_override
             
                 try
@@ -51,7 +51,7 @@ namespace Khovsgol.Server
             set
                 _key_file.set_uint64("server", "delay", value)
         
-        prop delay_override: uint64 = uint64.MIN
+        prop delay_override: int64 = int64.MIN
         
         /*
          * Whether to advertise the server on Avahi.
