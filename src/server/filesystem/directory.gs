@@ -42,9 +42,16 @@ namespace Khovsgol.Server.Filesystem
             count: uint = 0
             var timer = new Timer()
 
+            info: FileInfo? = null
+            enumerator: FileEnumerator? = null
+            var stack = new Gee.LinkedList of Node
             
             try
                 libraries.begin()
+
+                // Note: renaming a file deletes the path, but will *not* change the timestamp of the
+                // containing directory; we want to make sure that we rescan it in phase 3, so we need
+                // to reset stored timestamps for the directory hierarchy
 
                 _logger.messagef("Phase 1: Pruning deleted albums: %s", path)
 
@@ -54,15 +61,18 @@ namespace Khovsgol.Server.Filesystem
                         _logger.messagef("Scanning aborted: %s", path)
                         break
 
-                    if not File.new_for_path(album_path).query_exists()
+                    var file = File.new_for_path(album_path)
+                    if not file.query_exists()
                         // Note: this will also delete all associated tracks and track pointers
                         libraries.delete_album(album_path)
+                        reset_parents(file, libraries)
                         _logger.infof("Pruned album: %s", album_path)
 
                     batch(libraries, ref count)
 
-                _logger.messagef("Phase 2: Pruning deleted tracks: %s", path)
+                _logger.messagef("Phase 2: Looking for changed and deleted tracks: %s", path)
 
+                current_album_path: string? = null
                 for var track_path in libraries.iterate_track_paths(path)
                     // Should we stop scanning?
                     if AtomicInt.get(ref _is_scan_stopping) == 1
@@ -73,45 +83,54 @@ namespace Khovsgol.Server.Filesystem
                     if not file.query_exists()
                         // Note: this will also delete associated track pointers
                         libraries.delete_track(track_path)
+                        reset_parents(file, libraries)
                         _logger.infof("Pruned track: %s", track_path)
-                        
-                        // Renaming a file will *not* change the timestamp of the containing directory,
-                        // but we want to make sure that we rescan it in phase 3, so we need to reset
-                        // all stored timestamps for the directory hierarchy
-                        var parent = file.get_parent()
-                        while parent is not null
-                            libraries.delete_timestamp(parent.get_path())
-                            parent = parent.get_parent()
+                    else
+                        // Check timestamp
+                        info = file.query_info(FileAttribute.TIME_MODIFIED, FileQueryInfoFlags.NONE)
+                        var timestamp = new DateTime.from_timeval_utc(info.get_modification_time()).to_unix()
+                        var stored_timestamp = libraries.get_timestamp(track_path)
+                        if timestamp > stored_timestamp
+                            // Update changed file
+                            libraries.set_timestamp(track_path, timestamp)
+                            var track = create_track(track_path, sortables)
+                            if track is not null
+                                libraries.save_track(track)
+                                _logger.infof("Updated track: %s", track_path)
+                                
+                                // Might need to update album, too
+                                var album_path = file.get_parent().get_path()
+                                if album_path != current_album_path
+                                    current_album_path = album_path
+                                    var album = libraries.get_album(current_album_path)
+                                    if album is not null
+                                        if (album.title != track.album) or (album.artist != track.artist) or (album.date != track.date) or (album.file_type != track.file_type)
+                                            if (album.album_type == AlbumType.ARTIST) and (album.artist != track.artist)
+                                                album.album_type = AlbumType.COMPILATION
+                                        
+                                            album.title = track.album
+                                            album.title_sort = track.album_sort
+                                            album.artist = track.artist
+                                            album.artist_sort = track.artist_sort
+                                            album.date = track.date
+                                            album.file_type = track.file_type
+                                            libraries.save_album(album)
+                                            _logger.infof("Updated album: %s", current_album_path)
+                                            
+                                            // TODO: a changed album might have become an artist album! we need to somehow verify this
 
                     batch(libraries, ref count)
 
-                pass
-            except e: GLib.Error
-                _logger.exception(e)
-            finally
-                try
-                    libraries.commit()
-                except e: GLib.Error
-                    _logger.exception(e)
+                _logger.messagef("Phase 3: Adding tracks and albums: %s", path)
 
-            _logger.messagef("Phase 3: Adding tracks and albums: %s", path)
-
-            enumerator: FileEnumerator? = null
-            info: FileInfo? = null
-
-            var album = new Album()
-            album.path = path
-            album.library = library_name
-            album.album_type = AlbumType.ARTIST
-
-            var tracks = new list of Track
-
-            var stack = new Gee.LinkedList of Node
-
-            try
-                libraries.begin()
-                
                 enumerator = File.new_for_path(path).enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
+
+                var album = new Album()
+                album.path = path
+                album.library = library_name
+                album.album_type = AlbumType.ARTIST
+                var tracks = new list of Track
+
                 _logger.debugf("Switched to: %s", enumerator.get_container().get_path())
 
                 while true
@@ -185,30 +204,10 @@ namespace Khovsgol.Server.Filesystem
                             if _logger.can(LogLevelFlags.LEVEL_DEBUG)
                                 _logger.debugf("Moved in: %s", enumerator.get_container().get_path())
                             continue
-                        
-                        var taglib_file = new TagLib.File(file_path)
-                        if (taglib_file is not null) and taglib_file.is_valid()
-                            tag: unowned TagLib.Tag = taglib_file.tag
                             
-                            var track = new Track()
-                            track.path = file_path
-                            track.library = library.name
-                            track.title = tag.title
-                            track.title_sort = sortables.@get(track.title)
-                            track.artist = tag.artist
-                            track.artist_sort = sortables.@get(track.artist)
-                            track.album = tag.album
-                            track.album_sort = sortables.@get(track.album)
-                            track.position_in_album = (int) tag.track
-                            track.duration = (double) taglib_file.audioproperties.length
-                            track.date = (int) tag.year
-                            var last_dot = file_path.last_index_of_char('.')
-                            if last_dot != -1
-                                file_path.get_next_char(ref last_dot, null)
-                                track.file_type = file_path.substring(last_dot)
-                                
+                        var track = create_track(file_path, sortables)
+                        if track is not null
                             tracks.add(track)
-
                             if album is not null
                                 if album.title is null
                                     album.title = track.album
@@ -258,10 +257,41 @@ namespace Khovsgol.Server.Filesystem
             AtomicInt.set(ref _is_scan_stopping, 0)
             return true
 
+        def create_track(file_path: string, sortables: Sortables): Track?
+            var taglib_file = new TagLib.File(file_path)
+            if (taglib_file is not null) and taglib_file.is_valid()
+                tag: unowned TagLib.Tag = taglib_file.tag
+                
+                var track = new Track()
+                track.path = file_path
+                track.library = library.name
+                track.title = tag.title
+                track.title_sort = sortables.@get(track.title)
+                track.artist = tag.artist
+                track.artist_sort = sortables.@get(track.artist)
+                track.album = tag.album
+                track.album_sort = sortables.@get(track.album)
+                track.position_in_album = (int) tag.track
+                track.duration = (double) taglib_file.audioproperties.length
+                track.date = (int) tag.year
+                var last_dot = file_path.last_index_of_char('.')
+                if last_dot != -1
+                    file_path.get_next_char(ref last_dot, null)
+                    track.file_type = file_path.substring(last_dot)
+                return track
+            else
+                return null
+
         const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_IS_HIDDEN + "," + FileAttribute.ACCESS_CAN_READ + "," + FileAttribute.TIME_MODIFIED
         const private BATCH_SIZE: uint = 200
 
         _logger: static Logging.Logger
+
+        def static reset_parents(file: File, libraries: Libraries) raises GLib.Error
+            var parent = file.get_parent()
+            while parent is not null
+                libraries.delete_timestamp(parent.get_path())
+                parent = parent.get_parent()
 
         def private static batch(libraries: Libraries, ref count: uint) raises GLib.Error
             if ++count % BATCH_SIZE == 0

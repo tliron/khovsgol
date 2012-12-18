@@ -5,15 +5,20 @@ uses
     
 namespace SqliteUtil
 
-    def enable_multithreaded(): bool
-        return config(Config.MULTITHREAD) != OK
+    def initialize(multithreaded: bool): bool
+        _logger = Logging.get_logger("sqlite")
+        _logger.messagef("Initialized Sqlite %s", Sqlite.libversion())
+        if multithreaded
+            return config(Config.MULTITHREAD) == OK
+        else
+            return true
     
     /*
      * A wrapper for Sqlite.Database with useful utilities.
      */
     class Database: Object
-        construct(path: string) raises SqliteUtil.Error
-            assert_ok(Sqlite.Database.open_v2(path, out _db, OPEN_READWRITE|OPEN_CREATE))
+        construct(path: string, read_write: bool = true) raises SqliteUtil.Error
+            assert_ok(Sqlite.Database.open_v2(path, out _db, read_write ? OPEN_READWRITE|OPEN_CREATE : OPEN_READONLY))
             _logger.messagef("Opened %s", path)
     
         prop readonly db: Sqlite.Database
@@ -47,9 +52,5 @@ namespace SqliteUtil
                     var txt = statement.column_text(c)
                     stdout.printf("%s = %s\n", statement.column_name(c), txt)
                 result = statement.step()
-
-        init
-            _logger = Logging.get_logger("sqlite")
-            _logger.messagef("Initialized Sqlite %s", Sqlite.libversion())
 
     _logger: Logging.Logger

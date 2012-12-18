@@ -21,9 +21,9 @@ namespace Khovsgol.Server._Sqlite
      * The overhead and complexity of such solutions is considerable,
      * at the cost of improving concurrency at the cost of performance.
      * 
-     * For this application, very high concurrency is not a priority.
-     * Performance is much more important. Thus, we've decided that a
-     * single shared connection makes the most sense. We enforce
+     * For this application, very high write concurrency is not a
+     * priority. Performance is more important. Thus, we've decided that
+     * a single shared write connection makes the most sense. We enforce
      * transaction atomicity via a mutex.
      * 
      * To improve performance, we re-use prepared statements, again
@@ -31,57 +31,58 @@ namespace Khovsgol.Server._Sqlite
      */
     class Libraries: Khovsgol.Server.Libraries
         def override initialize() raises GLib.Error
-            if _db is not null
+            if _write_db is not null
                 return
             
             var file = "%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir())
-            _db = new SqliteUtil.Database(file)
+            _write_db = new SqliteUtil.Database(file)
+            _read_db = new SqliteUtil.Database(file, false)
             
             // Track table
-            _db.execute("CREATE TABLE IF NOT EXISTS track (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, album TEXT COLLATE NOCASE, album_sort TEXT, album_type INTEGER(1), position INTEGER, duration REAL, date INTEGER, file_type TEXT)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_library_idx ON track (library)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_title_idx ON track (title)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_title_sort_idx ON track (title_sort)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_artist_idx ON track (artist)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_artist_sort_idx ON track (artist_sort)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_album_sort_idx ON track (album_sort)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_album_type_idx ON track (album_type)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_position_idx ON track (position)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track (date)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_file_type_idx ON track (file_type)")
+            _write_db.execute("CREATE TABLE IF NOT EXISTS track (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, album TEXT COLLATE NOCASE, album_sort TEXT, album_type INTEGER(1), position INTEGER, duration REAL, date INTEGER, file_type TEXT)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_library_idx ON track (library)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_title_idx ON track (title)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_title_sort_idx ON track (title_sort)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_artist_idx ON track (artist)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_artist_sort_idx ON track (artist_sort)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_album_sort_idx ON track (album_sort)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_album_type_idx ON track (album_type)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_position_idx ON track (position)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track (date)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_file_type_idx ON track (file_type)")
 
             // Track pointers table
-            _db.execute("CREATE TABLE IF NOT EXISTS track_pointer (path TEXT, position INTEGER, album TEXT)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_pointer_position_idx ON track_pointer (position)")
-            _db.execute("CREATE INDEX IF NOT EXISTS track_pointer_album_idx ON track_pointer (album)")
+            _write_db.execute("CREATE TABLE IF NOT EXISTS track_pointer (path TEXT, position INTEGER, album TEXT)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_pointer_position_idx ON track_pointer (position)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS track_pointer_album_idx ON track_pointer (album)")
 
             // Album table
-            _db.execute("CREATE TABLE IF NOT EXISTS album (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, date INTEGER(8), album_type INTEGER(1), file_type TEXT)")
-            _db.execute("CREATE INDEX IF NOT EXISTS album_library_idx ON album (library)")
-            _db.execute("CREATE INDEX IF NOT EXISTS album_title_idx ON album (title)")
-            _db.execute("CREATE INDEX IF NOT EXISTS album_title_sort_idx ON album (title_sort)")
-            _db.execute("CREATE INDEX IF NOT EXISTS album_artist_idx ON album (artist)")
-            _db.execute("CREATE INDEX IF NOT EXISTS album_artist_sort_idx ON album (artist_sort)")
-            _db.execute("CREATE INDEX IF NOT EXISTS album_date_idx ON album (date)")
-            _db.execute("CREATE INDEX IF NOT EXISTS album_album_type_idx ON album (album_type)")
-            _db.execute("CREATE INDEX IF NOT EXISTS album_file_type_idx ON album (file_type)")
+            _write_db.execute("CREATE TABLE IF NOT EXISTS album (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, date INTEGER(8), album_type INTEGER(1), file_type TEXT)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS album_library_idx ON album (library)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS album_title_idx ON album (title)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS album_title_sort_idx ON album (title_sort)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS album_artist_idx ON album (artist)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS album_artist_sort_idx ON album (artist_sort)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS album_date_idx ON album (date)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS album_album_type_idx ON album (album_type)")
+            _write_db.execute("CREATE INDEX IF NOT EXISTS album_file_type_idx ON album (file_type)")
 
             // Scanned table
-            _db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp INTEGER(8))")
+            _write_db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp INTEGER(8))")
             
         def override begin() raises GLib.Error
             _write_lock.lock()
-            _db.execute("BEGIN")
+            _write_db.execute("BEGIN")
 
         def override commit() raises GLib.Error
             try
-                _db.execute("COMMIT")
+                _write_db.execute("COMMIT")
             finally
                 _write_lock.unlock()
 
         def override rollback() raises GLib.Error
             try
-                _db.execute("ROLLBACK")
+                _write_db.execute("ROLLBACK")
             finally
                 _write_lock.unlock()
 
@@ -99,7 +100,7 @@ namespace Khovsgol.Server._Sqlite
             _get_track_lock.lock()
             try
                 if _get_track is null
-                    _db.prepare(out _get_track, "SELECT library, title, title_sort, artist, artist_sort, album, album_sort, album_type, position, duration, date, file_type FROM track WHERE path=?")
+                    _read_db.prepare(out _get_track, "SELECT library, title, title_sort, artist, artist_sort, album, album_sort, album_type, position, duration, date, file_type FROM track WHERE path=?")
                 else
                     _get_track.reset()
                 _get_track.bind_text(1, path)
@@ -127,7 +128,7 @@ namespace Khovsgol.Server._Sqlite
             _save_track_lock.lock()
             try
                 if _save_track is null
-                    _db.prepare(out _save_track, "INSERT OR REPLACE INTO track (path, library, title, title_sort, artist, artist_sort, album, album_sort, album_type, position, duration, date, file_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                    _write_db.prepare(out _save_track, "INSERT OR REPLACE INTO track (path, library, title, title_sort, artist, artist_sort, album, album_sort, album_type, position, duration, date, file_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
                 else
                     _save_track.reset()
                 _save_track.bind_text(1, track.path)
@@ -143,7 +144,7 @@ namespace Khovsgol.Server._Sqlite
                 _save_track.bind_double(11, track.duration)
                 _save_track.bind_int(12, (int) track.date)
                 _save_track.bind_text(13, track.file_type)
-                _db.assert_done(_save_track.step())
+                _write_db.assert_done(_save_track.step())
             finally
                 _save_track_lock.unlock()
 
@@ -151,20 +152,20 @@ namespace Khovsgol.Server._Sqlite
             _delete_track_lock.lock()
             try
                 if _delete_track1 is null
-                    _db.prepare(out _delete_track1, "DELETE FROM track WHERE path=?")
+                    _write_db.prepare(out _delete_track1, "DELETE FROM track WHERE path=?")
                 else
                     _delete_track1.reset()
                 _delete_track1.bind_text(1, path)
-                _db.assert_done(_delete_track1.step())
+                _write_db.assert_done(_delete_track1.step())
 
                 // Delete track pointers
                 // TODO: move positions in custom compilation?
                 if _delete_track2 is null
-                    _db.prepare(out _delete_track2, "DELETE FROM track_pointer WHERE path=?")
+                    _write_db.prepare(out _delete_track2, "DELETE FROM track_pointer WHERE path=?")
                 else
                     _delete_track2.reset()
                 _delete_track2.bind_text(1, path)
-                _db.assert_done(_delete_track2.step())
+                _write_db.assert_done(_delete_track2.step())
             finally
                 _delete_track_lock.unlock()
             
@@ -178,7 +179,7 @@ namespace Khovsgol.Server._Sqlite
             _get_track_pointer_lock.lock()
             try
                 if _get_track_pointer is null
-                    _db.prepare(out _get_track_pointer, "SELECT path FROM track_pointer WHERE album=? AND position=?")
+                    _read_db.prepare(out _get_track_pointer, "SELECT path FROM track_pointer WHERE album=? AND position=?")
                 else
                     _get_track_pointer.reset()
                 _get_track_pointer.bind_text(1, album)
@@ -197,13 +198,13 @@ namespace Khovsgol.Server._Sqlite
             _save_track_pointer_lock.lock()
             try
                 if _save_track_pointer is null
-                    _db.prepare(out _save_track_pointer, "INSERT OR REPLACE INTO track_pointer (path, position, album) VALUES (?, ?, ?)")
+                    _write_db.prepare(out _save_track_pointer, "INSERT OR REPLACE INTO track_pointer (path, position, album) VALUES (?, ?, ?)")
                 else
                     _save_track_pointer.reset()
                 _save_track_pointer.bind_text(1, track_pointer.path)
                 _save_track_pointer.bind_int(2, track_pointer.position)
                 _save_track_pointer.bind_text(3, track_pointer.album)
-                _db.assert_done(_save_track_pointer.step())
+                _write_db.assert_done(_save_track_pointer.step())
             finally
                 _save_track_pointer_lock.unlock()
 
@@ -212,12 +213,12 @@ namespace Khovsgol.Server._Sqlite
             _delete_track_pointer_lock.lock()
             try
                 if _delete_track_pointer is null
-                    _db.prepare(out _delete_track_pointer, "DELETE FROM track_pointer WHERE album=? AND position=?")
+                    _write_db.prepare(out _delete_track_pointer, "DELETE FROM track_pointer WHERE album=? AND position=?")
                 else
                     _delete_track_pointer.reset()
                 _delete_track_pointer.bind_text(1, album)
                 _delete_track_pointer.bind_int(2, position)
-                _db.assert_done(_delete_track_pointer.step())
+                _write_db.assert_done(_delete_track_pointer.step())
             finally
                 _delete_track_pointer_lock.unlock()
 
@@ -225,11 +226,11 @@ namespace Khovsgol.Server._Sqlite
             _delete_track_pointers_lock.lock()
             try
                 if _delete_track_pointers is null
-                    _db.prepare(out _delete_track_pointers, "DELETE FROM track_pointer WHERE album=?")
+                    _write_db.prepare(out _delete_track_pointers, "DELETE FROM track_pointer WHERE album=?")
                 else
                     _delete_track_pointers.reset()
                 _delete_track_pointers.bind_text(1, album)
-                _db.assert_done(_delete_track_pointers.step())
+                _write_db.assert_done(_delete_track_pointers.step())
             finally
                 _delete_track_pointers_lock.unlock()
 
@@ -238,21 +239,21 @@ namespace Khovsgol.Server._Sqlite
             try
                 if from_position == int.MIN
                     if _move_track_pointers1 is null
-                        _db.prepare(out _move_track_pointers1, "UPDATE track_pointer SET position=position+? WHERE album=?")
+                        _write_db.prepare(out _move_track_pointers1, "UPDATE track_pointer SET position=position+? WHERE album=?")
                     else
                         _move_track_pointers1.reset()
                     _move_track_pointers1.bind_int(1, delta)
                     _move_track_pointers1.bind_text(2, album)
-                    _db.assert_done(_move_track_pointers1.step())
+                    _write_db.assert_done(_move_track_pointers1.step())
                 else
                     if _move_track_pointers2 is null
-                        _db.prepare(out _move_track_pointers2, "UPDATE track_pointer SET position=position+? WHERE album=? AND position>=?")
+                        _write_db.prepare(out _move_track_pointers2, "UPDATE track_pointer SET position=position+? WHERE album=? AND position>=?")
                     else
                         _move_track_pointers2.reset()
                     _move_track_pointers2.bind_int(1, delta)
                     _move_track_pointers2.bind_text(2, album)
                     _move_track_pointers2.bind_int(3, from_position)
-                    _db.assert_done(_move_track_pointers2.step())
+                    _write_db.assert_done(_move_track_pointers2.step())
             finally
                 _move_track_pointers_lock.unlock()
 
@@ -264,7 +265,7 @@ namespace Khovsgol.Server._Sqlite
             _get_album_lock.lock()
             try
                 if _get_album is null
-                    _db.prepare(out _get_album, "SELECT library, title, title_sort, artist, artist_sort, date, album_type, file_type FROM album WHERE path=?")
+                    _read_db.prepare(out _get_album, "SELECT library, title, title_sort, artist, artist_sort, date, album_type, file_type FROM album WHERE path=?")
                 else
                     _get_album.reset()
                 _get_album.bind_text(1, path)
@@ -288,7 +289,7 @@ namespace Khovsgol.Server._Sqlite
             _save_album_lock.lock()
             try
                 if _save_album is null
-                    _db.prepare(out _save_album, "INSERT OR REPLACE INTO album (path, library, title, title_sort, artist, artist_sort, date, album_type, file_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                    _write_db.prepare(out _save_album, "INSERT OR REPLACE INTO album (path, library, title, title_sort, artist, artist_sort, date, album_type, file_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
                 else
                     _save_album.reset()
                 _save_album.bind_text(1, album.path)
@@ -300,7 +301,7 @@ namespace Khovsgol.Server._Sqlite
                 _save_album.bind_int64(7, (int64) album.date)
                 _save_album.bind_int(8, album.album_type)
                 _save_album.bind_text(9, album.file_type)
-                _db.assert_done(_save_album.step())
+                _write_db.assert_done(_save_album.step())
             finally
                 _save_album_lock.unlock()
 
@@ -309,36 +310,36 @@ namespace Khovsgol.Server._Sqlite
             try
                 // Delete track pointers
                 if _delete_album1 is null
-                    _db.prepare(out _delete_album1, "DELETE FROM track_pointer WHERE album=? OR path LIKE ? ESCAPE \"\\\"")
+                    _write_db.prepare(out _delete_album1, "DELETE FROM track_pointer WHERE album=? OR path LIKE ? ESCAPE \"\\\"")
                 else
                     _delete_album1.reset()
                 _delete_album1.bind_text(1, path)
                 _delete_album1.bind_text(2, escape_like(path + SEPARATOR) + "%")
-                _db.assert_done(_delete_album1.step())
+                _write_db.assert_done(_delete_album1.step())
 
                 // Delete tracks
                 if _delete_album2 is null
-                    _db.prepare(out _delete_album2, "DELETE FROM track WHERE path LIKE ? ESCAPE \"\\\"")
+                    _write_db.prepare(out _delete_album2, "DELETE FROM track WHERE path LIKE ? ESCAPE \"\\\"")
                 else
                     _delete_album2.reset()
                 _delete_album2.bind_text(1, escape_like(path + SEPARATOR) + "%")
-                _db.assert_done(_delete_album2.step())
+                _write_db.assert_done(_delete_album2.step())
 
                 // Delete album
                 if _delete_album3 is null
-                    _db.prepare(out _delete_album3, "DELETE FROM album WHERE path=?")
+                    _write_db.prepare(out _delete_album3, "DELETE FROM album WHERE path=?")
                 else
                     _delete_album3.reset()
                 _delete_album3.bind_text(1, path)
-                _db.assert_done(_delete_album3.step())
+                _write_db.assert_done(_delete_album3.step())
 
                 // Delete timestamps for tracks
                 if _delete_album4 is null
-                    _db.prepare(out _delete_album4, "DELETE FROM scanned WHERE path LIKE ? ESCAPE \"\\\"")
+                    _write_db.prepare(out _delete_album4, "DELETE FROM scanned WHERE path LIKE ? ESCAPE \"\\\"")
                 else
                     _delete_album4.reset()
                 _delete_album4.bind_text(1, escape_like(path + SEPARATOR) + "%")
-                _db.assert_done(_delete_album4.step())
+                _write_db.assert_done(_delete_album4.step())
             finally
                 _delete_album_lock.unlock()
 
@@ -372,7 +373,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlTracks(q.execute(_db, _statement_cache))
+                return new SqlTracks(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
 
@@ -387,7 +388,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlTracks(q.execute(_db, _statement_cache))
+                return new SqlTracks(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
         
@@ -410,21 +411,23 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlTracks(q.execute(_db, _statement_cache))
+                return new SqlTracks(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
         
+        // TODO: don't need query builder
         def override iterate_track_paths(path: string): IterableOfString raises GLib.Error
             var q = new QueryBuilder()
             q.table = "track"
             q.fields.add("path")
             q.requirements.add("path LIKE ? ESCAPE \"\\\"")
+            q.sort.add("path")
             q.bindings.add(escape_like(path + SEPARATOR) + "%")
 
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlStrings(q.execute(_db, _statement_cache), "path")
+                return new SqlStrings(q.execute(_read_db, _statement_cache), "path")
             finally
                 statement_lock->unlock()
         
@@ -444,7 +447,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlTrackPointers(q.execute(_db, _statement_cache))
+                return new SqlTrackPointers(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
 
@@ -470,7 +473,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlTracks(q.execute(_db, _statement_cache))
+                return new SqlTracks(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
 
@@ -507,7 +510,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlTracks(q.execute(_db, _statement_cache))
+                return new SqlTracks(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
         
@@ -530,7 +533,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlAlbums(q.execute(_db, _statement_cache))
+                return new SqlAlbums(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
 
@@ -544,7 +547,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlStrings(q.execute(_db, _statement_cache), "path")
+                return new SqlStrings(q.execute(_read_db, _statement_cache), "path")
             finally
                 statement_lock->unlock()
         
@@ -565,7 +568,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlAlbums(q.execute(_db, _statement_cache))
+                return new SqlAlbums(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
 
@@ -588,7 +591,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlAlbums(q.execute(_db, _statement_cache))
+                return new SqlAlbums(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
         
@@ -611,7 +614,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlAlbums(q.execute(_db, _statement_cache))
+                return new SqlAlbums(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
         
@@ -631,7 +634,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlArtists(q.execute(_db, _statement_cache))
+                return new SqlArtists(q.execute(_read_db, _statement_cache))
             finally
                 statement_lock->unlock()
             
@@ -651,7 +654,7 @@ namespace Khovsgol.Server._Sqlite
             var statement_lock = _statement_cache.get_lock(q.as_sql)
             statement_lock->lock()
             try
-                return new SqlInts(q.execute(_db, _statement_cache), "date")
+                return new SqlInts(q.execute(_read_db, _statement_cache), "date")
             finally
                 statement_lock->unlock()
             
@@ -663,7 +666,7 @@ namespace Khovsgol.Server._Sqlite
             _get_timestamp_lock.lock()
             try
                 if _get_timestamp is null
-                    _db.prepare(out _get_timestamp, "SELECT timestamp FROM scanned WHERE path=?")
+                    _read_db.prepare(out _get_timestamp, "SELECT timestamp FROM scanned WHERE path=?")
                 else
                     _get_timestamp.reset()
                 _get_timestamp.bind_text(1, path)
@@ -677,12 +680,12 @@ namespace Khovsgol.Server._Sqlite
             _set_timestamp_lock.lock()
             try
                 if _set_timestamp is null
-                    _db.prepare(out _set_timestamp, "INSERT OR REPLACE INTO scanned (path, timestamp) VALUES (?, ?)")
+                    _write_db.prepare(out _set_timestamp, "INSERT OR REPLACE INTO scanned (path, timestamp) VALUES (?, ?)")
                 else
                     _set_timestamp.reset()
                 _set_timestamp.bind_text(1, path)
                 _set_timestamp.bind_int64(2, timestamp)
-                _db.assert_done(_set_timestamp.step())
+                _write_db.assert_done(_set_timestamp.step())
             finally
                 _set_timestamp_lock.unlock()
 
@@ -690,15 +693,16 @@ namespace Khovsgol.Server._Sqlite
             _delete_timestamp_lock.lock()
             try
                 if _delete_timestamp is null
-                    _db.prepare(out _delete_timestamp, "DELETE FROM scanned WHERE path=?")
+                    _write_db.prepare(out _delete_timestamp, "DELETE FROM scanned WHERE path=?")
                 else
                     _delete_timestamp.reset()
                 _delete_timestamp.bind_text(1, path)
-                _db.assert_done(_delete_timestamp.step())
+                _write_db.assert_done(_delete_timestamp.step())
             finally
                 _delete_timestamp_lock.unlock()
 
-        _db: SqliteUtil.Database
+        _write_db: SqliteUtil.Database
+        _read_db: SqliteUtil.Database
         
         _write_lock: GLib.RecMutex = GLib.RecMutex()
         

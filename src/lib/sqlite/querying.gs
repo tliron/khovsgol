@@ -23,10 +23,11 @@ namespace SqliteUtil
     def join_same(sep: string, item: string, num: int): string
         var str = new StringBuilder()
         num--
-        for var i = 0 to num
-            str.append(item)
-            if i < num
-                str.append(sep)
+        if num > -0
+            for var i = 0 to num
+                str.append(item)
+                if i < num
+                    str.append(sep)
         return str.str
 
     /*

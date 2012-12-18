@@ -228,7 +228,7 @@ namespace Khovsgol.Client.GTK
             pass
             
         def private on_manage()
-            pass
+            new LibraryManager(_instance).show_all()
 
         def private on_popup_extra()
             new Popup(_instance).show_all()

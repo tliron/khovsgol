@@ -20,7 +20,7 @@ namespace Khovsgol.Server
             _arguments = new Arguments(args)
             _configuration = new Configuration()
 
-            // Note: Gst messages seem to only work with the default GLib.MainContext
+            // Note: the Gst bus seems to work only with the default GLib.MainContext
             _main_loop = new MainLoop(null, false)
             
             if _arguments.start_daemon or _arguments.stop_daemon or _arguments.status_daemon
@@ -28,10 +28,12 @@ namespace Khovsgol.Server
             
             initialize_logging(_arguments.console)
             
+            if not SqliteUtil.initialize(true)
+                raise new Error.DATABASE("Could not enable multithreaded Sqlite")
+
             _libraries = create_libraries()
             _libraries.initialize()
             _players = create_players()
-            //test_data()
 
             _api = new Api(self)
             _uri_space = new UriSpace(_api)
@@ -55,9 +57,6 @@ namespace Khovsgol.Server
                     _server.thread_pool = new Nap.ThreadPool(_configuration.threads)
                 except e: ThreadError
                     raise new Error.NETWORK(e.message)
-
-            if not SqliteUtil.enable_multithreaded()
-                raise new Error.DATABASE("Could not enable multithreaded Sqlite")
 
         prop readonly configuration: Configuration
         prop readonly libraries: Libraries

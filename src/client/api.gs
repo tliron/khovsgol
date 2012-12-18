@@ -23,7 +23,7 @@ namespace Khovsgol.Client
     class API: GLib.Object
         construct()
             _client = new Nap._Soup.Client()
-            _client.timeout = 1
+            _client.timeout = 5
 
         prop watching_player: string?
             get
