@@ -63,9 +63,10 @@ namespace SqliteUtil
      * Row iterator for Sqlite.Statement.
      */
     class RowIterator: Object implements Gee.Iterator of Row
-        construct(statement: Statement*, own_statement: bool, builder: QueryBuilder)
+        construct(statement: Statement*, delete_statement: bool, unlock_mutex: GLib.Mutex*, builder: QueryBuilder)
             _statement = statement
-            _own_statement = own_statement
+            _unlock_mutex = unlock_mutex
+            _delete_statement = delete_statement
             _builder = builder
 
             var index = 1
@@ -82,7 +83,9 @@ namespace SqliteUtil
                     _column_names[_statement->column_name(c)] = c
         
         final
-            if _own_statement
+            if _unlock_mutex is not null
+                _unlock_mutex->unlock()
+            if _delete_statement
                 delete _statement
             
         prop readonly statement: Statement*
@@ -106,8 +109,9 @@ namespace SqliteUtil
         def remove()
             pass
             
+        _unlock_mutex: GLib.Mutex*
+        _delete_statement: bool
         _first: bool = true
-        _own_statement: bool
         _result: int
     
     /*
@@ -125,8 +129,8 @@ namespace SqliteUtil
         prop readonly sort: list of string = new list of string
         prop constraint: string? = null
         
-        prop readonly as_sql: string
-            owned get
+        prop readonly sql: string
+            get
                 if _sql is null
                     var query = new StringBuilder()
                     query.append("SELECT ")
@@ -154,14 +158,16 @@ namespace SqliteUtil
                 _fields.add(arg)
                 arg = args.arg()
         
-        def execute(db: Database, cache: StatementCache? = null): RowIterator raises SqliteUtil.Error
-            statement: Statement*
-            if cache is not null
-                statement = cache.get_or_prepare_statement(as_sql, db)
-                return new RowIterator(statement, false, self)
-            else
-                db.prepare(out statement, as_sql)
-                return new RowIterator(statement, true, self)
+        def execute(db: Database, cache: StatementCache): RowIterator raises SqliteUtil.Error
+            var mutex = cache.get_mutex(sql)
+            mutex->lock()
+            try
+                statement: Statement*
+                statement = cache.get_or_prepare_statement(sql, db)
+                return new RowIterator(statement, false, mutex, self)
+            except e: SqliteUtil.Error
+                mutex->unlock()
+                raise e
         
         _sql: string
 
@@ -170,27 +176,27 @@ namespace SqliteUtil
      */
     class StatementCache
         final
-            for var key in _locks.keys
-                g_mutex_free(_locks[key])
+            for var key in _mutexes.keys
+                g_mutex_free(_mutexes[key])
 
             for var key in _statements.keys
                 var value = _statements[key]
                 if value is not null
                     delete value
     
-        def get_lock(sql: string): GLib.Mutex*
-            _lock.lock()
+        def get_mutex(sql: string): GLib.Mutex*
+            _mutex.lock()
             try
-                var @lock = _locks[sql]
-                if @lock is null
-                    @lock = g_mutex_new()
-                    _locks[sql] = @lock
-                return @lock
+                var mutex = _mutexes[sql]
+                if mutex is null
+                    mutex = g_mutex_new()
+                    _mutexes[sql] = mutex
+                return mutex
             finally
-                _lock.unlock()
+                _mutex.unlock()
         
         def get_or_prepare_statement(sql: string, db: Database): Statement* raises SqliteUtil.Error
-            _lock.lock()
+            _mutex.lock()
             try
                 var statement = _statements[sql]
                 if statement is null
@@ -200,10 +206,10 @@ namespace SqliteUtil
                     statement->reset()
                 return statement
             finally
-                _lock.unlock()
+                _mutex.unlock()
         
-        _lock: GLib.Mutex = GLib.Mutex()
-        _locks: dict of string, GLib.Mutex* = new dict of string, GLib.Mutex*
+        _mutex: GLib.Mutex = GLib.Mutex()
+        _mutexes: dict of string, GLib.Mutex* = new dict of string, GLib.Mutex*
         _statements: dict of string, Statement* = new dict of string, Statement*
 
 def extern g_mutex_new(): GLib.Mutex*

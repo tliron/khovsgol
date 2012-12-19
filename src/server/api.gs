@@ -272,7 +272,7 @@ namespace Khovsgol.Server
                 
                 if positions is not null
                     stable_position: int = int.MIN
-                    _crucible.libraries.move_transaction(album_path, destination, positions, ref stable_position)
+                    _crucible.libraries.move_in_album(album_path, destination, positions, ref stable_position)
 
                     processed = true
             
@@ -293,7 +293,7 @@ namespace Khovsgol.Server
 
                 if paths is not null
                     stable_position: int = int.MIN
-                    _crucible.libraries.add_transaction(album_path, destination, paths, ref stable_position)
+                    _crucible.libraries.add_to_album(album_path, destination, paths, ref stable_position)
 
                     processed = true
 
@@ -301,7 +301,7 @@ namespace Khovsgol.Server
             var remove = get_array_member_or_null(entity, "remove")
             if remove is not null
                 stable_position: int = int.MIN
-                _crucible.libraries.remove_transaction(album_path, remove, ref stable_position)
+                _crucible.libraries.remove_from_album(album_path, remove, ref stable_position)
 
                 processed = true
             

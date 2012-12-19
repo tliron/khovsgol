@@ -23,11 +23,8 @@ namespace Khovsgol.Server._Sqlite
      * 
      * For this application, very high write concurrency is not a
      * priority. Performance is more important. Thus, we've decided that
-     * a single shared write connection makes the most sense. We enforce
+     * a single shared connection makes the most sense. We enforce
      * transaction atomicity via a mutex.
-     * 
-     * Likewise, we are sharing a single shared read connection among
-     * multiple threads.
      * 
      * To improve performance, we re-use prepared statements, again
      * guarding them with mutexes.
@@ -38,13 +35,21 @@ namespace Khovsgol.Server._Sqlite
                 return
             
             var file = "%s/.khovsgol/khovsgol.db".printf(Environment.get_home_dir())
-            _write_db = new SqliteUtil.Database(file)
-            _read_db = new SqliteUtil.Database(file, false)
+            _write_db = new SqliteUtil.Database(file, true)
+            _read_db = _write_db
+            
+            // Memory use (100MB)
+            _write_db.execute("PRAGMA page_size = 4096")
+            _write_db.execute("PRAGMA cache_size = 25600")
+            
+            // Features
+            _write_db.execute("PRAGMA synchronous = OFF")
+            _write_db.execute("PRAGMA read_uncommitted = TRUE")
+            _write_db.execute("PRAGMA journal_mode = WAL")
             
             // Track table
             _write_db.execute("CREATE TABLE IF NOT EXISTS track (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, album TEXT COLLATE NOCASE, album_sort TEXT, album_type INTEGER(1), position INTEGER, duration REAL, date INTEGER, file_type TEXT)")
             _write_db.execute("CREATE INDEX IF NOT EXISTS track_library_idx ON track (library)")
-            _write_db.execute("CREATE INDEX IF NOT EXISTS track_title_idx ON track (title)")
             _write_db.execute("CREATE INDEX IF NOT EXISTS track_title_sort_idx ON track (title_sort)")
             _write_db.execute("CREATE INDEX IF NOT EXISTS track_artist_idx ON track (artist)")
             _write_db.execute("CREATE INDEX IF NOT EXISTS track_artist_sort_idx ON track (artist_sort)")
@@ -62,7 +67,6 @@ namespace Khovsgol.Server._Sqlite
             // Album table
             _write_db.execute("CREATE TABLE IF NOT EXISTS album (path TEXT PRIMARY KEY, library TEXT, title TEXT COLLATE NOCASE, title_sort TEXT, artist TEXT COLLATE NOCASE, artist_sort TEXT, date INTEGER(8), album_type INTEGER(1), file_type TEXT)")
             _write_db.execute("CREATE INDEX IF NOT EXISTS album_library_idx ON album (library)")
-            _write_db.execute("CREATE INDEX IF NOT EXISTS album_title_idx ON album (title)")
             _write_db.execute("CREATE INDEX IF NOT EXISTS album_title_sort_idx ON album (title_sort)")
             _write_db.execute("CREATE INDEX IF NOT EXISTS album_artist_idx ON album (artist)")
             _write_db.execute("CREATE INDEX IF NOT EXISTS album_artist_sort_idx ON album (artist_sort)")
@@ -74,33 +78,36 @@ namespace Khovsgol.Server._Sqlite
             _write_db.execute("CREATE TABLE IF NOT EXISTS scanned (path TEXT PRIMARY KEY, timestamp INTEGER(8))")
             
         def override begin() raises GLib.Error
-            _write_lock.lock()
+            _write_mutex.lock()
             _write_db.execute("BEGIN")
 
         def override commit() raises GLib.Error
             try
                 _write_db.execute("COMMIT")
+            except e: GLib.Error
+                _write_db.execute("ROLLBACK")
+                raise e
             finally
-                _write_lock.unlock()
+                _write_mutex.unlock()
 
         def override rollback() raises GLib.Error
             try
                 _write_db.execute("ROLLBACK")
             finally
-                _write_lock.unlock()
+                _write_mutex.unlock()
 
         def override write_lock()
-            _write_lock.lock()
+            _write_mutex.lock()
 
         def override write_unlock()
-            _write_lock.unlock()
+            _write_mutex.unlock()
             
         //
         // Tracks
         //
         
         def override get_track(path: string): Track? raises GLib.Error
-            _get_track_lock.lock()
+            _get_track_mutex.lock()
             try
                 if _get_track is null
                     _read_db.prepare(out _get_track, "SELECT library, title, title_sort, artist, artist_sort, album, album_sort, album_type, position, duration, date, file_type FROM track WHERE path=?")
@@ -125,10 +132,10 @@ namespace Khovsgol.Server._Sqlite
                     return track
                 return null
             finally
-                _get_track_lock.unlock()
+                _get_track_mutex.unlock()
         
         def override save_track(track: Track) raises GLib.Error
-            _save_track_lock.lock()
+            _save_track_mutex.lock()
             try
                 if _save_track is null
                     _write_db.prepare(out _save_track, "INSERT OR REPLACE INTO track (path, library, title, title_sort, artist, artist_sort, album, album_sort, album_type, position, duration, date, file_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
@@ -149,10 +156,10 @@ namespace Khovsgol.Server._Sqlite
                 _save_track.bind_text(13, track.file_type)
                 _write_db.assert_done(_save_track.step())
             finally
-                _save_track_lock.unlock()
+                _save_track_mutex.unlock()
 
         def override delete_track(path: string) raises GLib.Error
-            _delete_track_lock.lock()
+            _delete_track_mutex.lock()
             try
                 if _delete_track1 is null
                     _write_db.prepare(out _delete_track1, "DELETE FROM track WHERE path=?")
@@ -170,7 +177,7 @@ namespace Khovsgol.Server._Sqlite
                 _delete_track2.bind_text(1, path)
                 _write_db.assert_done(_delete_track2.step())
             finally
-                _delete_track_lock.unlock()
+                _delete_track_mutex.unlock()
             
             delete_timestamp(path)
             
@@ -179,7 +186,7 @@ namespace Khovsgol.Server._Sqlite
         //
         
         def override get_track_pointer(album: string, position: int): TrackPointer? raises GLib.Error
-            _get_track_pointer_lock.lock()
+            _get_track_pointer_mutex.lock()
             try
                 if _get_track_pointer is null
                     _read_db.prepare(out _get_track_pointer, "SELECT path FROM track_pointer WHERE album=? AND position=?")
@@ -195,10 +202,10 @@ namespace Khovsgol.Server._Sqlite
                     return track_pointer
                 return null
             finally
-                _get_track_pointer_lock.unlock()
+                _get_track_pointer_mutex.unlock()
 
         def override save_track_pointer(track_pointer: TrackPointer) raises GLib.Error
-            _save_track_pointer_lock.lock()
+            _save_track_pointer_mutex.lock()
             try
                 if _save_track_pointer is null
                     _write_db.prepare(out _save_track_pointer, "INSERT OR REPLACE INTO track_pointer (path, position, album) VALUES (?, ?, ?)")
@@ -209,11 +216,11 @@ namespace Khovsgol.Server._Sqlite
                 _save_track_pointer.bind_text(3, track_pointer.album)
                 _write_db.assert_done(_save_track_pointer.step())
             finally
-                _save_track_pointer_lock.unlock()
+                _save_track_pointer_mutex.unlock()
 
         def override delete_track_pointer(album: string, position: int) raises GLib.Error
             // TODO: renumber the rest of the pointers?
-            _delete_track_pointer_lock.lock()
+            _delete_track_pointer_mutex.lock()
             try
                 if _delete_track_pointer is null
                     _write_db.prepare(out _delete_track_pointer, "DELETE FROM track_pointer WHERE album=? AND position=?")
@@ -223,10 +230,10 @@ namespace Khovsgol.Server._Sqlite
                 _delete_track_pointer.bind_int(2, position)
                 _write_db.assert_done(_delete_track_pointer.step())
             finally
-                _delete_track_pointer_lock.unlock()
+                _delete_track_pointer_mutex.unlock()
 
         def override delete_track_pointers(album: string) raises GLib.Error
-            _delete_track_pointers_lock.lock()
+            _delete_track_pointers_mutex.lock()
             try
                 if _delete_track_pointers is null
                     _write_db.prepare(out _delete_track_pointers, "DELETE FROM track_pointer WHERE album=?")
@@ -235,10 +242,10 @@ namespace Khovsgol.Server._Sqlite
                 _delete_track_pointers.bind_text(1, album)
                 _write_db.assert_done(_delete_track_pointers.step())
             finally
-                _delete_track_pointers_lock.unlock()
+                _delete_track_pointers_mutex.unlock()
 
         def override move_track_pointers(album: string, delta: int, from_position: int = int.MIN) raises GLib.Error
-            _move_track_pointers_lock.lock()
+            _move_track_pointers_mutex.lock()
             try
                 if from_position == int.MIN
                     if _move_track_pointers1 is null
@@ -258,14 +265,14 @@ namespace Khovsgol.Server._Sqlite
                     _move_track_pointers2.bind_int(3, from_position)
                     _write_db.assert_done(_move_track_pointers2.step())
             finally
-                _move_track_pointers_lock.unlock()
+                _move_track_pointers_mutex.unlock()
 
         //
         // Albums
         //
         
         def override get_album(path: string): Album? raises GLib.Error
-            _get_album_lock.lock()
+            _get_album_mutex.lock()
             try
                 if _get_album is null
                     _read_db.prepare(out _get_album, "SELECT library, title, title_sort, artist, artist_sort, date, album_type, file_type FROM album WHERE path=?")
@@ -286,10 +293,10 @@ namespace Khovsgol.Server._Sqlite
                     return album
                 return null
             finally
-                _get_album_lock.unlock()
+                _get_album_mutex.unlock()
         
         def override save_album(album: Album) raises GLib.Error
-            _save_album_lock.lock()
+            _save_album_mutex.lock()
             try
                 if _save_album is null
                     _write_db.prepare(out _save_album, "INSERT OR REPLACE INTO album (path, library, title, title_sort, artist, artist_sort, date, album_type, file_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
@@ -306,10 +313,10 @@ namespace Khovsgol.Server._Sqlite
                 _save_album.bind_text(9, album.file_type)
                 _write_db.assert_done(_save_album.step())
             finally
-                _save_album_lock.unlock()
+                _save_album_mutex.unlock()
 
         def override delete_album(path: string) raises GLib.Error
-            _delete_album_lock.lock()
+            _delete_album_mutex.lock()
             try
                 // Delete track pointers
                 if _delete_album1 is null
@@ -344,7 +351,7 @@ namespace Khovsgol.Server._Sqlite
                 _delete_album4.bind_text(1, escape_like(path + SEPARATOR) + "%")
                 _write_db.assert_done(_delete_album4.step())
             finally
-                _delete_album_lock.unlock()
+                _delete_album_mutex.unlock()
 
             delete_timestamp(path)
         
@@ -373,12 +380,7 @@ namespace Khovsgol.Server._Sqlite
             if not likes.is_empty
                 q.requirements.add("(" + join(" OR ", likes) + ")")
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlTracks(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlTracks(q.execute(_read_db, _statement_cache))
 
         def override iterate_tracks_in_album(args: IterateForAlbumArgs): IterableOfTrack raises GLib.Error
             var q = new QueryBuilder()
@@ -388,12 +390,7 @@ namespace Khovsgol.Server._Sqlite
             q.requirements.add("path LIKE ? ESCAPE \"\\\"")
             q.bindings.add(escape_like(args.album + SEPARATOR) + "%")
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlTracks(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlTracks(q.execute(_read_db, _statement_cache))
         
         def override iterate_tracks_by_artist(args: IterateForArtistArgs): IterableOfTrack raises GLib.Error
             var q = new QueryBuilder()
@@ -411,23 +408,13 @@ namespace Khovsgol.Server._Sqlite
                 q.constants["artist"] = args.artist
             q.bindings.add(args.artist)
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlTracks(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlTracks(q.execute(_read_db, _statement_cache))
         
         def override iterate_track_paths(path: string): IterableOfString raises GLib.Error
             var q = new QueryBuilder.with_sql("SELECT path FROM track WHERE path LIKE ? ESCAPE \"\\\" ORDER BY path")
             q.bindings.add(escape_like(path + SEPARATOR) + "%")
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlStrings(q.execute(_read_db, _statement_cache), "path")
-            finally
-                statement_lock->unlock()
+            return new SqlStrings(q.execute(_read_db, _statement_cache), "path")
         
         //
         // Iterate track pointers
@@ -442,12 +429,7 @@ namespace Khovsgol.Server._Sqlite
             q.bindings.add(args.album)
             q.constants["album"] = args.album
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlTrackPointers(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlTrackPointers(q.execute(_read_db, _statement_cache))
 
         def override iterate_track_pointers_in_album(args: IterateForAlbumArgs): IterableOfTrack raises GLib.Error
             var q = new QueryBuilder()
@@ -468,12 +450,7 @@ namespace Khovsgol.Server._Sqlite
                 fixed_sort.add(s)
             q.sort.add_all(fixed_sort)
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlTracks(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlTracks(q.execute(_read_db, _statement_cache))
 
         def override iterate_track_pointers(args: IterateTracksArgs): IterableOfTrack raises GLib.Error
             var q = new QueryBuilder()
@@ -505,12 +482,7 @@ namespace Khovsgol.Server._Sqlite
                 fixed_sort.add(s)
             q.sort.add_all(fixed_sort)
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlTracks(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlTracks(q.execute(_read_db, _statement_cache))
         
         //
         // Iterate albums
@@ -528,12 +500,7 @@ namespace Khovsgol.Server._Sqlite
                 q.requirements.add("album_type=?")
                 q.bindings.add((int) args.album_type)
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlAlbums(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlAlbums(q.execute(_read_db, _statement_cache))
 
         def override iterate_album_paths(path: string): IterableOfString raises GLib.Error
             var q = new QueryBuilder()
@@ -542,12 +509,7 @@ namespace Khovsgol.Server._Sqlite
             q.requirements.add("path LIKE ? ESCAPE \"\\\"")
             q.bindings.add(escape_like(path + SEPARATOR) + "%")
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlStrings(q.execute(_read_db, _statement_cache), "path")
-            finally
-                statement_lock->unlock()
+            return new SqlStrings(q.execute(_read_db, _statement_cache), "path")
         
         def override iterate_albums_with_artist(args: IterateForArtistArgs): IterableOfAlbum raises GLib.Error
             var q = new QueryBuilder()
@@ -563,12 +525,7 @@ namespace Khovsgol.Server._Sqlite
                 q.requirements.add("track.artist=?")
             q.bindings.add(args.artist)
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlAlbums(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlAlbums(q.execute(_read_db, _statement_cache))
 
         def override iterate_albums_by_artist(args: IterateForArtistArgs): IterableOfAlbum raises GLib.Error
             var q = new QueryBuilder()
@@ -586,12 +543,7 @@ namespace Khovsgol.Server._Sqlite
                 q.constants["artist"] = args.artist
             q.bindings.add(args.artist)
             
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlAlbums(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlAlbums(q.execute(_read_db, _statement_cache))
         
         def override iterate_albums_at(args: IterateForDateArgs): IterableOfAlbum raises GLib.Error
             var q = new QueryBuilder()
@@ -609,12 +561,7 @@ namespace Khovsgol.Server._Sqlite
                 q.constants["date"] = args.date.to_string()
             q.bindings.add(args.date.to_string())
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlAlbums(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlAlbums(q.execute(_read_db, _statement_cache))
         
         //
         // Iterate artists
@@ -629,12 +576,7 @@ namespace Khovsgol.Server._Sqlite
             q.constraint = "DISTINCT"
             parse_libraries(q, "", args.libraries)
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlArtists(q.execute(_read_db, _statement_cache))
-            finally
-                statement_lock->unlock()
+            return new SqlArtists(q.execute(_read_db, _statement_cache))
             
         //
         // Iterate dates
@@ -649,19 +591,14 @@ namespace Khovsgol.Server._Sqlite
             q.constraint = "DISTINCT"
             parse_libraries(q, "", args.libraries)
 
-            var statement_lock = _statement_cache.get_lock(q.as_sql)
-            statement_lock->lock()
-            try
-                return new SqlInts(q.execute(_read_db, _statement_cache), "date")
-            finally
-                statement_lock->unlock()
+            return new SqlInts(q.execute(_read_db, _statement_cache), "date")
             
         //
         // Timestamps
         //
         
         def override get_timestamp(path: string): int64 raises GLib.Error
-            _get_timestamp_lock.lock()
+            _get_timestamp_mutex.lock()
             try
                 if _get_timestamp is null
                     _read_db.prepare(out _get_timestamp, "SELECT timestamp FROM scanned WHERE path=?")
@@ -672,10 +609,10 @@ namespace Khovsgol.Server._Sqlite
                     return _get_timestamp.column_int64(0)
                 return int64.MIN
             finally
-                _get_timestamp_lock.unlock()
+                _get_timestamp_mutex.unlock()
 
         def override set_timestamp(path: string, timestamp: int64) raises GLib.Error
-            _set_timestamp_lock.lock()
+            _set_timestamp_mutex.lock()
             try
                 if _set_timestamp is null
                     _write_db.prepare(out _set_timestamp, "INSERT OR REPLACE INTO scanned (path, timestamp) VALUES (?, ?)")
@@ -685,10 +622,10 @@ namespace Khovsgol.Server._Sqlite
                 _set_timestamp.bind_int64(2, timestamp)
                 _write_db.assert_done(_set_timestamp.step())
             finally
-                _set_timestamp_lock.unlock()
+                _set_timestamp_mutex.unlock()
 
         def override delete_timestamp(path: string) raises GLib.Error
-            _delete_timestamp_lock.lock()
+            _delete_timestamp_mutex.lock()
             try
                 if _delete_timestamp is null
                     _write_db.prepare(out _delete_timestamp, "DELETE FROM scanned WHERE path=?")
@@ -697,44 +634,44 @@ namespace Khovsgol.Server._Sqlite
                 _delete_timestamp.bind_text(1, path)
                 _write_db.assert_done(_delete_timestamp.step())
             finally
-                _delete_timestamp_lock.unlock()
+                _delete_timestamp_mutex.unlock()
 
         _write_db: SqliteUtil.Database
         _read_db: SqliteUtil.Database
         
-        _write_lock: GLib.RecMutex = GLib.RecMutex()
+        _write_mutex: GLib.RecMutex = GLib.RecMutex()
         
         _get_track: Statement
-        _get_track_lock: GLib.Mutex = GLib.Mutex()
+        _get_track_mutex: GLib.Mutex = GLib.Mutex()
         _save_track: Statement
-        _save_track_lock: GLib.Mutex = GLib.Mutex()
+        _save_track_mutex: GLib.Mutex = GLib.Mutex()
         _delete_track1: Statement
         _delete_track2: Statement
-        _delete_track_lock: GLib.Mutex = GLib.Mutex()
+        _delete_track_mutex: GLib.Mutex = GLib.Mutex()
         _get_track_pointer: Statement
-        _get_track_pointer_lock: GLib.Mutex = GLib.Mutex()
+        _get_track_pointer_mutex: GLib.Mutex = GLib.Mutex()
         _save_track_pointer: Statement
-        _save_track_pointer_lock: GLib.Mutex = GLib.Mutex()
+        _save_track_pointer_mutex: GLib.Mutex = GLib.Mutex()
         _delete_track_pointer: Statement
-        _delete_track_pointer_lock: GLib.Mutex = GLib.Mutex()
+        _delete_track_pointer_mutex: GLib.Mutex = GLib.Mutex()
         _delete_track_pointers: Statement
-        _delete_track_pointers_lock: GLib.Mutex = GLib.Mutex()
+        _delete_track_pointers_mutex: GLib.Mutex = GLib.Mutex()
         _move_track_pointers1: Statement
         _move_track_pointers2: Statement
-        _move_track_pointers_lock: GLib.Mutex = GLib.Mutex()
+        _move_track_pointers_mutex: GLib.Mutex = GLib.Mutex()
         _get_album: Statement
-        _get_album_lock: GLib.Mutex = GLib.Mutex()
+        _get_album_mutex: GLib.Mutex = GLib.Mutex()
         _save_album: Statement
-        _save_album_lock: GLib.Mutex = GLib.Mutex()
+        _save_album_mutex: GLib.Mutex = GLib.Mutex()
         _delete_album1: Statement
         _delete_album2: Statement
         _delete_album3: Statement
         _delete_album4: Statement
-        _delete_album_lock: GLib.Mutex = GLib.Mutex()
+        _delete_album_mutex: GLib.Mutex = GLib.Mutex()
         _get_timestamp: Statement
-        _get_timestamp_lock: GLib.Mutex = GLib.Mutex()
+        _get_timestamp_mutex: GLib.Mutex = GLib.Mutex()
         _set_timestamp: Statement
-        _set_timestamp_lock: GLib.Mutex = GLib.Mutex()
+        _set_timestamp_mutex: GLib.Mutex = GLib.Mutex()
         _delete_timestamp: Statement
-        _delete_timestamp_lock: GLib.Mutex = GLib.Mutex()
+        _delete_timestamp_mutex: GLib.Mutex = GLib.Mutex()
         _statement_cache: StatementCache = new StatementCache()

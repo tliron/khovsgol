@@ -63,7 +63,7 @@ namespace Khovsgol.Server
         def abstract set_timestamp(path: string, timestamp: int64) raises GLib.Error
         def abstract delete_timestamp(path: string) raises GLib.Error
         
-        def add_transaction(album_path: string, destination: int, paths: Json.Array, ref stable_position: int, transaction: bool = true): int raises GLib.Error
+        def add_to_album(album_path: string, destination: int, paths: Json.Array, ref stable_position: int, transaction: bool = true): int raises GLib.Error
             var length = paths.get_length()
             if length == 0
                 return destination
@@ -108,7 +108,7 @@ namespace Khovsgol.Server
         /*
          * Note: we will change the positions array!
          */
-        def remove_transaction(album_path: string, positions: Json.Array, ref stable_position: int, transaction: bool = true) raises GLib.Error
+        def remove_from_album(album_path: string, positions: Json.Array, ref stable_position: int, transaction: bool = true) raises GLib.Error
             var length = positions.get_length()
             if length == 0
                 return
@@ -148,7 +148,7 @@ namespace Khovsgol.Server
         /*
          * Note: we will change the positions array!
          */
-        def move_transaction(album_path: string, destination: int, positions: Json.Array, ref stable_position: int, transaction: bool = true): int raises GLib.Error
+        def move_in_album(album_path: string, destination: int, positions: Json.Array, ref stable_position: int, transaction: bool = true): int raises GLib.Error
             var length = positions.get_length()
             if length == 0
                 return destination

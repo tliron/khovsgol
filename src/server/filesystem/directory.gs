@@ -231,24 +231,24 @@ namespace Khovsgol.Server.Filesystem
 
             except e: GLib.Error
                 _logger.exception(e)
-            finally
-                if libraries is not null
-                    try
-                        libraries.commit()
-                    except e: GLib.Error
-                        _logger.exception(e)
-                
-                // Close remaining enumerators
-                if enumerator is not null
-                    try
-                        enumerator.close()
-                    except e: GLib.Error
-                        _logger.exception(e)
-                for var node in stack
-                    try
-                        node.enumerator.close()
-                    except e: GLib.Error
-                        _logger.exception(e)
+
+            // Close remaining enumerators
+            if enumerator is not null
+                try
+                    enumerator.close()
+                except e: GLib.Error
+                    _logger.exception(e)
+            for var node in stack
+                try
+                    node.enumerator.close()
+                except e: GLib.Error
+                    _logger.exception(e)
+            
+            // Commit
+            try
+                libraries.commit()
+            except e: GLib.Error
+                _logger.exception(e)
 
             timer.stop()
             var seconds = timer.elapsed()
@@ -285,7 +285,7 @@ namespace Khovsgol.Server.Filesystem
                 return null
 
         const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_IS_HIDDEN + "," + FileAttribute.ACCESS_CAN_READ + "," + FileAttribute.TIME_MODIFIED
-        const private BATCH_SIZE: uint = 200
+        const private BATCH_SIZE: uint = 100
 
         _logger: static Logging.Logger
 
@@ -300,7 +300,7 @@ namespace Khovsgol.Server.Filesystem
                 libraries.commit()
                 _logger.debugf("Batch commit: %u", count)
                 
-                // This gives an opportunity for other threads to access the database
+                // This gives an opportunity for other threads to write to the database
                 Thread.usleep(1)
                 
                 libraries.begin()
