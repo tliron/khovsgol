@@ -31,6 +31,8 @@ namespace Khovsgol.Server._Sqlite
      */
     class Libraries: Khovsgol.Server.Libraries
         def override initialize() raises GLib.Error
+            super.initialize()
+        
             if _write_db is not null
                 return
             

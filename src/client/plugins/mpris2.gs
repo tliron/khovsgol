@@ -38,7 +38,7 @@ namespace Khovsgol.Client.Plugins
                 _logger.warning("Could not own name on DBus")
         
         def stop()
-            if not !_connector.stop()
+            if not _connector.stop()
                 _connector.connect.disconnect(on_connected)
                 _connector.disconnecting.disconnect(on_disconnecting)
                 _object = null
@@ -58,12 +58,15 @@ namespace Khovsgol.Client.Plugins
             var interested_media_players = settings.get_strv("interested-media-players")
             for var interested_media_player in interested_media_players
                 if interested_media_player == "khovsgol"
-                    var arr = new array of string[interested_media_player.length - 1]
+                    var new_interested_media_players = new array of string[interested_media_player.length - 1]
                     var i = 0
+                    found: bool = false
                     for var e in interested_media_players
-                        if e != "khovsgol"
-                            arr[i++] = e
-                    settings.set_strv("interested-media-players", arr)
+                        if not found and (e == "khovsgol")
+                            found = true
+                            continue
+                        new_interested_media_players[i++] = e
+                    settings.set_strv("interested-media-players", new_interested_media_players)
                     settings.apply()
                     _logger.message("Removed from sound indicator")
                     return

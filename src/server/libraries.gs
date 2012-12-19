@@ -8,9 +8,33 @@ namespace Khovsgol.Server
     const SEPARATOR: string = "/"
 
     class abstract Libraries: Object implements HasJsonArray
-        prop libraries: dict of string, Library = new dict of string, Library
+        prop crucible: Crucible
+        prop configuration: Configuration
+    
+        def virtual initialize() raises GLib.Error
+            for var name in _configuration.libraries
+                var library = _crucible.create_library()
+                library.name = name
+                for var path in _configuration.get_directories(name)
+                    var directory = _crucible.create_directory()
+                    directory.path = path
+                    directory.library = library
+                    library.add_directory(directory, false)
+                _libraries[name] = library
+    
+        def get_library(name: string): Library?
+            return _libraries[name]
 
-        def abstract initialize() raises GLib.Error
+        def add_library(library: Library)
+            _libraries[library.name] = library
+            _configuration.add_library(library.name)
+            _configuration.save()
+
+        def remove_library(name: string)
+            _libraries.unset(name)
+            _configuration.delete_library(name)
+            _configuration.save()
+
         def abstract begin() raises GLib.Error
         def abstract commit() raises GLib.Error
         def abstract rollback() raises GLib.Error
@@ -225,12 +249,29 @@ namespace Khovsgol.Server
 
         def to_json(): Json.Array
             return to_object_array(_libraries.values)
+            
+        _libraries: dict of string, Library = new dict of string, Library
     
     class Library: Object implements HasJsonObject
         prop crucible: Crucible
+        prop configuration: Configuration
         prop name: string
-        prop directories: dict of string, Directory = new dict of string, Directory
         
+        def get_directory(name: string): Directory?
+            return _directories[name]
+
+        def add_directory(directory: Directory, save: bool = true)
+            var path = directory.path
+            _directories[path] = directory
+            if save
+                _configuration.add_directory(_name, path)
+                _configuration.save()
+
+        def remove_directory(path: string)
+            _directories.unset(path)
+            _configuration.delete_directory(_name, path)
+            _configuration.save()
+
         def scan_all()
             for directory in _directories.values
                 if not directory.is_scanning
@@ -246,6 +287,8 @@ namespace Khovsgol.Server
             set_string_member_not_null(json, "name", _name)
             json.set_array_member("directories", to_object_array(_directories.values))
             return json
+
+        _directories: dict of string, Directory = new dict of string, Directory
 
     class IterateForDateArgs
         prop date: int = int.MIN

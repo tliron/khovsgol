@@ -77,6 +77,15 @@ namespace Khovsgol.Server
                             _libraries.add(library)
                 return _libraries
         
+        def add_library(library: string)
+            _key_file.set_string_list("library." + library, "directories", new array of string[0])
+        
+        def delete_library(library: string)
+            try
+                _key_file.remove_group("library." + library)
+            except e: KeyFileError
+                pass
+        
         /*
          * Directory paths for a library.
          */
@@ -88,6 +97,36 @@ namespace Khovsgol.Server
             except e: KeyFileError
                 pass
             return directories
+
+        def add_directory(library: string, directory: string)
+            var group = "library." + library
+            directories: array of string
+            try
+                directories = _key_file.get_string_list(group, "directories")
+            except e: KeyFileError
+                directories = new array of string[0]
+            var new_directories = new array of string[directories.length + 1]
+            var i = 0
+            for var e in directories
+                new_directories[i++] = e
+            new_directories[i] = directory
+            _key_file.set_string_list(group, "directories", new_directories)
+
+        def delete_directory(library: string, directory: string)
+            try
+                var group = "library." + library
+                var directories = _key_file.get_string_list(group, "directories")
+                var new_directories = new array of string[directories.length - 1]
+                var i = 0
+                found: bool = false
+                for var e in directories
+                    if not found and (e == directory)
+                        found = true
+                        continue
+                    new_directories[i++] = e
+                _key_file.set_string_list(group, "directories", new_directories)
+            except e: KeyFileError
+                pass
         
         /*
          * Saves the configuration.

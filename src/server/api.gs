@@ -386,7 +386,7 @@ namespace Khovsgol.Server
          * }
          */
         def get_library(conversation: Conversation) raises GLib.Error
-            var library = _crucible.libraries.libraries[conversation.variables["library"]]
+            var library = _crucible.libraries.get_library(conversation.variables["library"])
             set_response_json_object_or_not_found(library, conversation)
 
         /*
@@ -398,7 +398,7 @@ namespace Khovsgol.Server
          * receive =get_library
          */
         def post_library(conversation: Conversation) raises GLib.Error
-            var library = _crucible.libraries.libraries[conversation.variables["library"]]
+            var library = _crucible.libraries.get_library(conversation.variables["library"])
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
@@ -415,13 +415,13 @@ namespace Khovsgol.Server
                 var directory = _crucible.create_directory()
                 directory.path = add
                 directory.library = library
-                library.directories[add] = directory
+                library.add_directory(directory)
                 processed = true
 
             // Remove a directory by path
             var remove = get_string_member_or_null(entity, "remove")
             if remove is not null
-                library.directories.unset(remove)
+                library.remove_directory(remove)
                 processed = true
 
             // Actions
@@ -441,7 +441,7 @@ namespace Khovsgol.Server
                     if path is null
                         library.scan_all()
                     else
-                        var directory = library.directories[path]
+                        var directory = library.get_directory(path)
                         if directory is not null
                             directory.scan()
                         
@@ -451,7 +451,7 @@ namespace Khovsgol.Server
                     if path is null
                         library.abort_all()
                     else
-                        var directory = library.directories[path]
+                        var directory = library.get_directory(path)
                         if directory is not null
                             directory.abort()
 
@@ -467,16 +467,15 @@ namespace Khovsgol.Server
             var name = conversation.variables["library"]
             var library = _crucible.create_library()
             library.name = name
-            _crucible.libraries.libraries[name] = library
+            _crucible.libraries.add_library(library)
             set_response_json_object_or_not_found(library, conversation)
 
         def delete_library(conversation: Conversation) raises GLib.Error
             var library = conversation.variables["library"]
-            if not _crucible.libraries.libraries.has_key(library)
+            if _crucible.libraries.get_library(library) is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            // TODO: more!
-            _crucible.libraries.libraries.unset(library)
+            _crucible.libraries.remove_library(library)
 
         /*
          * receive {
@@ -485,11 +484,11 @@ namespace Khovsgol.Server
          * }
          */
         def get_directory(conversation: Conversation) raises GLib.Error
-            var library = _crucible.libraries.libraries[conversation.variables["library"]]
+            var library = _crucible.libraries.get_library(conversation.variables["library"])
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var directory = library.directories[conversation.variables["path"]]
+            var directory = library.get_directory(conversation.variables["path"])
             set_response_json_object_or_not_found(directory, conversation)
 
         /*
@@ -498,11 +497,11 @@ namespace Khovsgol.Server
          * receive =get_directory
          */
         def post_directory(conversation: Conversation) raises GLib.Error
-            var library = _crucible.libraries.libraries[conversation.variables["library"]]
+            var library = _crucible.libraries.get_library(conversation.variables["library"])
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            var directory = library.directories[conversation.variables["path"]]
+            var directory = library.get_directory(conversation.variables["path"])
             if directory is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
@@ -521,7 +520,7 @@ namespace Khovsgol.Server
          * receive =get_directory
          */
         def put_directory(conversation: Conversation) raises GLib.Error
-            var library = _crucible.libraries.libraries[conversation.variables["library"]]
+            var library = _crucible.libraries.get_library(conversation.variables["library"])
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
@@ -529,19 +528,19 @@ namespace Khovsgol.Server
             var directory = _crucible.create_directory()
             directory.path = path
             directory.library = library
-            library.directories[path] = directory
+            library.add_directory(directory)
             set_response_json_object_or_not_found(directory, conversation)
 
         def delete_directory(conversation: Conversation) raises GLib.Error
-            var library = _crucible.libraries.libraries[conversation.variables["library"]]
+            var library = _crucible.libraries.get_library(conversation.variables["library"])
             if library is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
             var path = conversation.variables["path"]
-            if !library.directories.has_key(path)
+            if library.get_directory(path) is null
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
-            library.directories.unset(path)
+            library.remove_directory(path)
 
         /*
          * receive [=get_player, ...]

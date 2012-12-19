@@ -172,7 +172,7 @@ namespace Khovsgol.Client.GTK
                 if dialog.@do()
                     var path = dialog.directory_path
                     if path.length > 0
-                        _instance.api.add_directory_to_library(name, path)
+                        _instance.api.add_directory_to_library(node.library, path)
 
         def private on_remove_directory()
             var node = get_selected_node()
@@ -180,7 +180,7 @@ namespace Khovsgol.Client.GTK
                 host: string
                 port: uint
                 _instance.api.get_connection(out host, out port)
-                var dialog = new MessageDialog.with_markup(self, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "Are you sure you want to delete directory \"%s\" in library \"%s\" and all its directories?\n\nNote that files will <i>not</i> be removed, only Khövsgöl's index of them.", node.directory, node.library)
+                var dialog = new MessageDialog.with_markup(self, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "Are you sure you want to delete directory \"%s\" in library \"%s\"?\n\nNote that files will <i>not</i> be removed, only Khövsgöl's index of them.", node.directory, node.library)
                 dialog.title = "Remove directory from %s:%u".printf(host, port)
                 var response = dialog.run()
                 dialog.destroy()
@@ -352,8 +352,6 @@ namespace Khovsgol.Client.GTK
 
             prop readonly library_name: string
 
-            _name: EntryBox
-
             def @do(): bool
                 show_all()
                 var response = run()
@@ -362,6 +360,8 @@ namespace Khovsgol.Client.GTK
                 destroy()
                 return response == ResponseType.OK
             
+            _name: EntryBox
+
             def private on_activate()
                 response(ResponseType.OK)
 
@@ -372,23 +372,24 @@ namespace Khovsgol.Client.GTK
                 destroy_with_parent = true
                 modal = true
                 
-                _path = new EntryBox("Directory _path:")
-                var box = new Box(Orientation.VERTICAL, 10)
+                _path = new EntryBox("Directory _root:")
+                var browse = new Button.with_mnemonic("_Browse")
+                browse.clicked.connect(on_browse)
+                var box = new Box(Orientation.HORIZONTAL, 10)
                 box.pack_start(_path)
+                box.pack_start(browse, false)
                 _path.entry.activate.connect(on_activate)
                 var alignment = new Alignment(0, 0, 1, 0)
                 alignment.set_padding(20, 20, 20, 20)
                 alignment.add(box)
                 get_content_area().pack_start(alignment)
-                set_default_size(400, -1)
+                set_default_size(600, -1)
 
                 add_button(Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL)
                 add_button(Gtk.Stock.OK, Gtk.ResponseType.OK)
                 set_default_response(Gtk.ResponseType.OK)
 
             prop readonly directory_path: string
-
-            _path: EntryBox
 
             def @do(): bool
                 show_all()
@@ -397,9 +398,19 @@ namespace Khovsgol.Client.GTK
                     _directory_path = _path.entry.text.strip()
                 destroy()
                 return response == ResponseType.OK
+
+            _path: EntryBox
             
             def private on_activate()
                 response(ResponseType.OK)
+            
+            def private on_browse()
+                var dialog = new FileChooserDialog("Select directory root", self, FileChooserAction.SELECT_FOLDER, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.OK)
+                dialog.show_hidden = false
+                var response = dialog.run()
+                if response == ResponseType.OK
+                    _path.entry.text = dialog.get_filename()
+                dialog.destroy()
         
         class Node: Object
             construct(library: string, directory: string? = null)

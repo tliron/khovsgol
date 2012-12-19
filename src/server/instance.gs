@@ -64,15 +64,8 @@ namespace Khovsgol.Server
 
         def create_libraries(): Libraries
             var libraries = new _Sqlite.Libraries()
-            for var name in _configuration.libraries
-                var library = create_library()
-                library.name = name
-                for var path in _configuration.get_directories(name)
-                    var directory = create_directory()
-                    directory.path = path
-                    directory.library = library
-                    library.directories[path] = directory
-                libraries.libraries[name] = library
+            libraries.crucible = self
+            libraries.configuration = _configuration
             return libraries
         
         def create_players(): Players
@@ -83,6 +76,7 @@ namespace Khovsgol.Server
         def create_library(): Library
             var library = new Library()
             library.crucible = self
+            library.configuration = _configuration
             return library
             
         def create_directory(): Directory
