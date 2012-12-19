@@ -332,7 +332,7 @@ namespace Khovsgol.Client.GTK
         def private on_save_as_compilation()
             if _tracks.to_json().get_length() > 0
                 var dialog = new CreateCustomCompilation(_instance.window)
-                if dialog.do()
+                if dialog.@do()
                     var title = dialog.compilation_name
                     if title.length > 0
                         var album_path = "*" + GLib.DBus.generate_guid()
@@ -549,25 +549,24 @@ namespace Khovsgol.Client.GTK
                 library_label.mnemonic_widget = library
                 var library_box = new Box(Orientation.HORIZONTAL, 5)
                 library_box.pack_start(library_label)
-                library_box.pack_start(library, true, true)
+                library_box.pack_start(library)
                 var box = new Box(Orientation.VERTICAL, 10)
-                box.pack_start(_name, true, true)
-                box.pack_start(library_box, true, true)
+                box.pack_start(_name)
+                box.pack_start(library_box)
                 var alignment = new Alignment(0, 0, 1, 0)
                 alignment.set_padding(20, 20, 20, 20)
                 alignment.add(box)
-                get_content_area().pack_start(alignment, true, true)
+                get_content_area().pack_start(alignment)
                 set_default_size(400, -1)
-                set_default_response(ResponseType.OK)
-
+                
                 add_button(Stock.CANCEL, ResponseType.CANCEL)
                 add_button(Stock.OK, ResponseType.OK)
-
-                show_all()
+                set_default_response(ResponseType.OK)
                 
             prop readonly compilation_name: string
 
-            def do(): bool
+            def @do(): bool
+                show_all()
                 var response = run()
                 if response == ResponseType.OK
                     _compilation_name = _name.entry.text.strip()

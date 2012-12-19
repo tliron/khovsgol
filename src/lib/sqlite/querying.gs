@@ -114,6 +114,9 @@ namespace SqliteUtil
      * SQL query builder.
      */
     class QueryBuilder
+        construct with_sql(sql: string)
+            _sql = sql
+    
         prop table: string
         prop readonly fields: list of string = new list of string
         prop readonly constants: dict of string, string = new dict of string, string

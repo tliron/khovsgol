@@ -138,10 +138,24 @@ namespace Khovsgol.Client.GTK
                 return false
             
         def private on_add_library()
-            pass
+            var dialog = new AddLibrary(self)
+            if dialog.@do()
+                var name = dialog.library_name
+                if name.length > 0
+                    _instance.api.create_library(name)
 
         def private on_remove_library()
-            pass
+            var node = get_selected_node()
+            if node is not null
+                host: string
+                port: uint
+                _instance.api.get_connection(out host, out port)
+                var dialog = new MessageDialog.with_markup(self, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "Are you sure you want to delete library \"%s\" and all its directories?\n\nNote that files will <i>not</i> be removed, only Khövsgöl's index of them.", node.library)
+                dialog.title = "Remove library from %s:%u".printf(host, port)
+                var response = dialog.run()
+                dialog.destroy()
+                if response == ResponseType.YES
+                    _instance.api.delete_library(node.library)
 
         def private on_scan()
             var node = get_selected_node()
@@ -152,10 +166,26 @@ namespace Khovsgol.Client.GTK
                     _instance.api.library_action(node.library, "scan")
 
         def private on_add_directory()
-            pass
+            var node = get_selected_node()
+            if node is not null
+                var dialog = new AddDirectory(self, node.library)
+                if dialog.@do()
+                    var path = dialog.directory_path
+                    if path.length > 0
+                        _instance.api.add_directory_to_library(name, path)
 
         def private on_remove_directory()
-            pass
+            var node = get_selected_node()
+            if (node is not null) and (node.directory is not null)
+                host: string
+                port: uint
+                _instance.api.get_connection(out host, out port)
+                var dialog = new MessageDialog.with_markup(self, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "Are you sure you want to delete directory \"%s\" in library \"%s\" and all its directories?\n\nNote that files will <i>not</i> be removed, only Khövsgöl's index of them.", node.directory, node.library)
+                dialog.title = "Remove directory from %s:%u".printf(host, port)
+                var response = dialog.run()
+                dialog.destroy()
+                if response == ResponseType.YES
+                    _instance.api.remove_directory_from_library(node.library, node.directory)
             
         def private on_selection_changed()
             var selection = _tree_view.get_selection()
@@ -195,24 +225,33 @@ namespace Khovsgol.Client.GTK
         
         _update_id: uint
         def private update(): bool
+            var nodes = new Nodes()
+        
+            // Add or update
             for var library in _instance.api.get_libraries()
                 var name = get_string_member_or_null(library, "name")
                 if name is not null
+                    var node = new Node(name)
+                    nodes.add(node)
+                
                     library_iter: TreeIter? = null
                     if not get_library(name, out library_iter)
                         _store.append(out library_iter, null)
-                        _store.@set(library_iter, Column.NODE, new Node(name), Column.ICON, _library_icon, Column.MARKUP1, Markup.escape_text(name), Column.ACTIVE, true, -1)
+                        _store.@set(library_iter, Column.NODE, node, Column.ICON, _library_icon, Column.MARKUP1, Markup.escape_text(name), Column.ACTIVE, true, -1)
                     
                     directory_iter: TreeIter? = null
                     for var directory in new JsonObjects(get_array_member_or_null(library, "directories"))
                         var path = get_string_member_or_null(directory, "path")
                         if path is not null
+                            node = new Node(name, path)
+                            nodes.add(node)
+                        
                             var scanning = get_bool_member_or_false(directory, "scanning")
                             var status = scanning ? "<i>Scanning...</i>" : ""
                             
                             if not get_directory(path, library_iter, out directory_iter)
                                 _store.append(out directory_iter, library_iter)
-                                _store.@set(directory_iter, Column.NODE, new Node(name, path), Column.ICON, _directory_icon, Column.MARKUP1, Markup.escape_text(path), Column.MARKUP2, status, -1)
+                                _store.@set(directory_iter, Column.NODE, node, Column.ICON, _directory_icon, Column.MARKUP1, Markup.escape_text(path), Column.MARKUP2, status, -1)
                             else
                                 // Just update the status column
                                 _store.@set(directory_iter, Column.MARKUP2, status, -1)
@@ -221,8 +260,34 @@ namespace Khovsgol.Client.GTK
                     if path is not null
                         _tree_view.expand_row(path, false)
 
+            // Prune
+            iter: TreeIter
+            child_iter: TreeIter
+            value: Value
+            if _store.get_iter_first(out iter)
+                while true
+                    if _store.iter_children(out child_iter, iter)
+                        while true
+                            _store.get_value(child_iter, Column.NODE, out value)
+                            var node = (Node) value
+                            if not nodes.contains(node)
+                                if not _store.remove(ref child_iter)
+                                    break
+                            else
+                                if not _store.iter_next(ref child_iter)
+                                    break
+                
+                    _store.get_value(iter, Column.NODE, out value)
+                    var node = (Node) value
+                    if not nodes.contains(node)
+                        if not _store.remove(ref iter)
+                            break
+                    else
+                        if not _store.iter_next(ref iter)
+                            break
+
             return true
-                        
+        
         def private get_library(name: string, out library_iter: TreeIter?): bool
             iter: TreeIter
             value: Value
@@ -264,6 +329,78 @@ namespace Khovsgol.Client.GTK
         _library_icon: Gdk.Pixbuf
         _directory_icon: Gdk.Pixbuf
         
+        class AddLibrary: Dialog
+            construct(parent: Window)
+                title = "Create new library"
+                transient_for = parent
+                destroy_with_parent = true
+                modal = true
+                
+                _name = new EntryBox("Library _name:")
+                var box = new Box(Orientation.VERTICAL, 10)
+                box.pack_start(_name)
+                _name.entry.activate.connect(on_activate)
+                var alignment = new Alignment(0, 0, 1, 0)
+                alignment.set_padding(20, 20, 20, 20)
+                alignment.add(box)
+                get_content_area().pack_start(alignment)
+                set_default_size(400, -1)
+
+                add_button(Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL)
+                add_button(Gtk.Stock.OK, Gtk.ResponseType.OK)
+                set_default_response(Gtk.ResponseType.OK)
+
+            prop readonly library_name: string
+
+            _name: EntryBox
+
+            def @do(): bool
+                show_all()
+                var response = run()
+                if response == ResponseType.OK
+                    _library_name = _name.entry.text.strip()
+                destroy()
+                return response == ResponseType.OK
+            
+            def private on_activate()
+                response(ResponseType.OK)
+
+        class AddDirectory: Dialog
+            construct(parent: Window, library: string)
+                title = "Create new directory in \"%s\"".printf(library)
+                transient_for = parent
+                destroy_with_parent = true
+                modal = true
+                
+                _path = new EntryBox("Directory _path:")
+                var box = new Box(Orientation.VERTICAL, 10)
+                box.pack_start(_path)
+                _path.entry.activate.connect(on_activate)
+                var alignment = new Alignment(0, 0, 1, 0)
+                alignment.set_padding(20, 20, 20, 20)
+                alignment.add(box)
+                get_content_area().pack_start(alignment)
+                set_default_size(400, -1)
+
+                add_button(Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL)
+                add_button(Gtk.Stock.OK, Gtk.ResponseType.OK)
+                set_default_response(Gtk.ResponseType.OK)
+
+            prop readonly directory_path: string
+
+            _path: EntryBox
+
+            def @do(): bool
+                show_all()
+                var response = run()
+                if response == ResponseType.OK
+                    _directory_path = _path.entry.text.strip()
+                destroy()
+                return response == ResponseType.OK
+            
+            def private on_activate()
+                response(ResponseType.OK)
+        
         class Node: Object
             construct(library: string, directory: string? = null)
                 self.library = library
@@ -271,6 +408,23 @@ namespace Khovsgol.Client.GTK
         
             library: string
             directory: string?
+
+        class Nodes
+            def add(node: Node)
+                _nodes.add(node)
+                
+            def contains(n: Node): bool
+                if n.directory is null
+                    for var node in _nodes
+                        if n.library == node.library
+                            return true
+                else
+                    for var node in _nodes
+                        if (n.library == node.library) and (n.directory == node.directory)
+                            return true
+                return false
+        
+            _nodes: list of Node = new list of Node
 
         enum private Column
             NODE = 0     // Node

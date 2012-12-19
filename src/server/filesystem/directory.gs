@@ -51,7 +51,7 @@ namespace Khovsgol.Server.Filesystem
 
                 // Note: renaming a file deletes the path, but will *not* change the timestamp of the
                 // containing directory; we want to make sure that we rescan it in phase 3, so we need
-                // to reset stored timestamps for the directory hierarchy
+                // to reset stored timestamps for the directory hierarchy; see reset_parents()
 
                 _logger.messagef("Phase 1: Pruning deleted albums: %s", path)
 
@@ -174,6 +174,7 @@ namespace Khovsgol.Server.Filesystem
                                 _logger.debugf("Moved out: %s", enumerator.get_container().get_path())
                             continue
                         else
+                            // Nothing left on stack means we're done
                             break
                         
                     // Ignore hidden and unreadable files
@@ -210,6 +211,7 @@ namespace Khovsgol.Server.Filesystem
                             tracks.add(track)
                             if album is not null
                                 if album.title is null
+                                    // The first track we find in the album will decide the album fields
                                     album.title = track.album
                                     album.title_sort = track.album_sort
                                     album.date = track.date

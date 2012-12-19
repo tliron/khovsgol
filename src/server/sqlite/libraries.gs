@@ -26,6 +26,9 @@ namespace Khovsgol.Server._Sqlite
      * a single shared write connection makes the most sense. We enforce
      * transaction atomicity via a mutex.
      * 
+     * Likewise, we are sharing a single shared read connection among
+     * multiple threads.
+     * 
      * To improve performance, we re-use prepared statements, again
      * guarding them with mutexes.
      */
@@ -415,13 +418,8 @@ namespace Khovsgol.Server._Sqlite
             finally
                 statement_lock->unlock()
         
-        // TODO: don't need query builder
         def override iterate_track_paths(path: string): IterableOfString raises GLib.Error
-            var q = new QueryBuilder()
-            q.table = "track"
-            q.fields.add("path")
-            q.requirements.add("path LIKE ? ESCAPE \"\\\"")
-            q.sort.add("path")
+            var q = new QueryBuilder.with_sql("SELECT path FROM track WHERE path LIKE ? ESCAPE \"\\\" ORDER BY path")
             q.bindings.add(escape_like(path + SEPARATOR) + "%")
 
             var statement_lock = _statement_cache.get_lock(q.as_sql)

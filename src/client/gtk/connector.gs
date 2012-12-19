@@ -250,10 +250,10 @@ namespace Khovsgol.Client.GTK
                     _store.get_value(iter, Column.NODE, out value)
                     var node = (ServerNode) value
                     if node.id == id
-                        _store.remove(ref iter)
                         if node.is_local
                             _stop_button.sensitive = false
                             _start_button.sensitive = true
+                        _store.remove(ref iter)
                         break
                     if not _store.iter_next(ref iter)
                         break
