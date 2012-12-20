@@ -47,7 +47,7 @@ namespace Nap
         prop abstract response_json_array: Json.Array?
             owned get
         
-        def abstract commit()
+        def abstract write_commit()
         def abstract pause()
         def abstract unpause()
 
@@ -103,7 +103,7 @@ namespace Nap
             set
                 _response_array = value
             
-        def commit()
+        def write_commit()
             pass
             
         def pause()

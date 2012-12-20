@@ -23,23 +23,12 @@ namespace Khovsgol.Server.Filesystem
         _is_scan_stopping: int
         _is_scanning: int
         
-        class Node
-            construct(enumerator: FileEnumerator, album: Album, tracks: list of Track)
-                self.enumerator = enumerator
-                self.album = album
-                self.tracks = tracks
-        
-            enumerator: FileEnumerator?
-            album: Album
-            tracks: list of Track
-        
         def private do_scan(): bool
             _logger.messagef("Started scanning: %s", path)
             
             var libraries = crucible.libraries
             var library_name = library.name
             var sortables = new Sortables()
-            count: uint = 0
             var timer = new Timer()
 
             info: FileInfo? = null
@@ -47,14 +36,13 @@ namespace Khovsgol.Server.Filesystem
             var stack = new Gee.LinkedList of Node
             
             try
-                libraries.begin()
-
                 // Note: renaming a file deletes the path, but will *not* change the timestamp of the
                 // containing directory; we want to make sure that we rescan it in phase 3, so we need
                 // to reset stored timestamps for the directory hierarchy; see reset_parents()
 
                 _logger.messagef("Phase 1: Pruning deleted albums: %s", path)
-
+                
+                var files_to_delete = new list of File
                 for var album_path in libraries.iterate_album_paths(path)
                     // Should we stop scanning?
                     if AtomicInt.get(ref _is_scan_stopping) == 1
@@ -63,15 +51,27 @@ namespace Khovsgol.Server.Filesystem
 
                     var file = File.new_for_path(album_path)
                     if not file.query_exists()
-                        // Note: this will also delete all associated tracks and track pointers
-                        libraries.delete_album(album_path)
+                        files_to_delete.add(file)
+                        _logger.infof("Pruning album: %s", album_path)
+                
+                // Note: this will also delete all associated tracks and track pointers
+                if not files_to_delete.is_empty
+                    libraries.write_begin()
+                    for var file in files_to_delete
+                        // Should we stop scanning?
+                        if AtomicInt.get(ref _is_scan_stopping) == 1
+                            _logger.messagef("Scanning aborted: %s", path)
+                            break
+
+                        libraries.delete_album(file.get_path())
                         reset_parents(file, libraries)
-                        _logger.infof("Pruned album: %s", album_path)
+                    libraries.write_commit()
 
-                    batch(libraries, ref count)
+                _logger.messagef("Phase 2: Pruning deleted tracks, updating changed tracks and albums: %s", path)
 
-                _logger.messagef("Phase 2: Looking for changed and deleted tracks: %s", path)
-
+                files_to_delete = new list of File
+                var files_to_update = new list of File
+                var timestamps = new list of Timestamp
                 current_album_path: string? = null
                 for var track_path in libraries.iterate_track_paths(path)
                     // Should we stop scanning?
@@ -82,46 +82,80 @@ namespace Khovsgol.Server.Filesystem
                     var file = File.new_for_path(track_path)
                     if not file.query_exists()
                         // Note: this will also delete associated track pointers
-                        libraries.delete_track(track_path)
-                        reset_parents(file, libraries)
-                        _logger.infof("Pruned track: %s", track_path)
+                        files_to_delete.add(file)
+                        _logger.infof("Pruning track: %s", track_path)
                     else
                         // Check timestamp
                         info = file.query_info(FileAttribute.TIME_MODIFIED, FileQueryInfoFlags.NONE)
                         var timestamp = new DateTime.from_timeval_utc(info.get_modification_time()).to_unix()
                         var stored_timestamp = libraries.get_timestamp(track_path)
                         if timestamp > stored_timestamp
-                            // Update changed file
-                            libraries.set_timestamp(track_path, timestamp)
-                            var track = create_track(track_path, sortables)
-                            if track is not null
-                                libraries.save_track(track)
-                                _logger.infof("Updated track: %s", track_path)
-                                
-                                // Might need to update album, too
-                                var album_path = file.get_parent().get_path()
-                                if album_path != current_album_path
-                                    current_album_path = album_path
-                                    var album = libraries.get_album(current_album_path)
-                                    if album is not null
-                                        if (album.title != track.album) or (album.artist != track.artist) or (album.date != track.date) or (album.file_type != track.file_type)
-                                            if (album.album_type == AlbumType.ARTIST) and (album.artist != track.artist)
-                                                album.album_type = AlbumType.COMPILATION
+                            timestamps.add(new Timestamp(track_path, timestamp))
+                            files_to_update.add(file)
+                            _logger.infof("Updating track: %s", track_path)
+                            
+                if not files_to_delete.is_empty
+                    libraries.write_begin()
+                    for var file in files_to_delete
+                        // Should we stop scanning?
+                        if AtomicInt.get(ref _is_scan_stopping) == 1
+                            _logger.messagef("Scanning aborted: %s", path)
+                            break
+
+                        libraries.delete_track(file.get_path())
+                        reset_parents(file, libraries)
+                    libraries.write_commit()
+
+                // Update timestamps
+                if not timestamps.is_empty
+                    libraries.write_begin()
+                    for var timestamp in timestamps
+                        // Should we stop scanning?
+                        if AtomicInt.get(ref _is_scan_stopping) == 1
+                            _logger.messagef("Scanning aborted: %s", path)
+                            break
+
+                        libraries.set_timestamp(timestamp.path, timestamp.timestamp)
+                    libraries.write_commit()
+
+                if not files_to_update.is_empty
+                    libraries.write_begin()
+                    for var file in files_to_update
+                        var track_path = file.get_path()
+                    
+                        // Should we stop scanning?
+                        if AtomicInt.get(ref _is_scan_stopping) == 1
+                            _logger.messagef("Scanning aborted: %s", path)
+                            break
+
+                        // Update changed file
+                        var track = create_track(track_path, sortables)
+                        if track is not null
+                            libraries.save_track(track)
+                            
+                            // Might need to update album, too
+                            var album_path = file.get_parent().get_path()
+                            if album_path != current_album_path
+                                current_album_path = album_path
+                                var album = libraries.get_album(current_album_path)
+                                if album is not null
+                                    if (album.title != track.album) or (album.artist != track.artist) or (album.date != track.date) or (album.file_type != track.file_type)
+                                        if (album.album_type == AlbumType.ARTIST) and (album.artist != track.artist)
+                                            album.album_type = AlbumType.COMPILATION
+                                    
+                                        album.title = track.album
+                                        album.title_sort = track.album_sort
+                                        album.artist = track.artist
+                                        album.artist_sort = track.artist_sort
+                                        album.date = track.date
+                                        album.file_type = track.file_type
+                                        libraries.save_album(album)
+                                        _logger.infof("Updated album: %s", current_album_path)
                                         
-                                            album.title = track.album
-                                            album.title_sort = track.album_sort
-                                            album.artist = track.artist
-                                            album.artist_sort = track.artist_sort
-                                            album.date = track.date
-                                            album.file_type = track.file_type
-                                            libraries.save_album(album)
-                                            _logger.infof("Updated album: %s", current_album_path)
-                                            
-                                            // TODO: a changed album might have become an artist album! we need to somehow verify this
-
-                    batch(libraries, ref count)
-
-                _logger.messagef("Phase 3: Adding tracks and albums: %s", path)
+                                        // TODO: a changed album might have become an artist album! we need to somehow verify this
+                    libraries.write_commit()
+                    
+                _logger.messagef("Phase 3: Adding new tracks and albums: %s", path)
 
                 enumerator = File.new_for_path(path).enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
 
@@ -130,6 +164,7 @@ namespace Khovsgol.Server.Filesystem
                 album.library = library_name
                 album.album_type = AlbumType.ARTIST
                 var tracks = new list of Track
+                timestamps = new list of Timestamp
 
                 _logger.debugf("Switched to: %s", enumerator.get_container().get_path())
 
@@ -143,6 +178,8 @@ namespace Khovsgol.Server.Filesystem
                     
                     // Have we finished enumerating files in this directory?
                     if info is null
+                        libraries.write_begin()
+                        
                         // Make sure the album has tracks
                         if (album is not null) and not tracks.is_empty
                             // Ensure that artist albums have an artist
@@ -163,6 +200,19 @@ namespace Khovsgol.Server.Filesystem
                                 libraries.save_track(track)
                                 if _logger.can(LogLevelFlags.LEVEL_INFO)
                                     _logger.infof("Added track: %s", track.path)
+
+                        // Update timestamps
+                        if not timestamps.is_empty
+                            for var timestamp in timestamps
+                                // Should we stop scanning?
+                                if AtomicInt.get(ref _is_scan_stopping) == 1
+                                    _logger.messagef("Scanning aborted: %s", path)
+                                    break
+
+                                libraries.set_timestamp(timestamp.path, timestamp.timestamp)
+                            timestamps = new list of Timestamp
+
+                        libraries.write_commit()
                             
                         // Go back to previous node in stack
                         var node = stack.poll_tail()
@@ -170,6 +220,7 @@ namespace Khovsgol.Server.Filesystem
                             enumerator = node.enumerator
                             album = node.album
                             tracks = node.tracks
+
                             if _logger.can(LogLevelFlags.LEVEL_DEBUG)
                                 _logger.debugf("Moved out: %s", enumerator.get_container().get_path())
                             continue
@@ -187,7 +238,7 @@ namespace Khovsgol.Server.Filesystem
                     var stored_timestamp = libraries.get_timestamp(file_path)
 
                     if timestamp > stored_timestamp
-                        libraries.set_timestamp(file_path, timestamp)
+                        timestamps.add(new Timestamp(file_path, timestamp))
 
                         if info.get_file_type() == FileType.DIRECTORY
                             // Put current node on stack
@@ -203,7 +254,7 @@ namespace Khovsgol.Server.Filesystem
                             tracks = new list of Track
                             
                             if _logger.can(LogLevelFlags.LEVEL_DEBUG)
-                                _logger.debugf("Moved in: %s", enumerator.get_container().get_path())
+                                _logger.debugf("Moved into: %s", enumerator.get_container().get_path())
                             continue
                             
                         var track = create_track(file_path, sortables)
@@ -227,10 +278,12 @@ namespace Khovsgol.Server.Filesystem
                                         album.artist = null
                                         album.artist_sort = null
 
-                    batch(libraries, ref count)
-
             except e: GLib.Error
                 _logger.exception(e)
+                try
+                    libraries.write_commit()
+                except e: GLib.Error
+                    _logger.exception(e)
 
             // Close remaining enumerators
             if enumerator is not null
@@ -244,15 +297,9 @@ namespace Khovsgol.Server.Filesystem
                 except e: GLib.Error
                     _logger.exception(e)
             
-            // Commit
-            try
-                libraries.commit()
-            except e: GLib.Error
-                _logger.exception(e)
-
             timer.stop()
             var seconds = timer.elapsed()
-            _logger.messagef("Scanning ended: %s (%.2f seconds, %u operations)", path, seconds, count)
+            _logger.messagef("Scanning ended: %s (%s)", path, format_duration(seconds))
 
             // We've stopped scanning
             AtomicInt.set(ref _is_scanning, 0)
@@ -284,8 +331,26 @@ namespace Khovsgol.Server.Filesystem
             else
                 return null
 
+        class private Node
+            construct(enumerator: FileEnumerator, album: Album, tracks: list of Track)
+                self.enumerator = enumerator
+                self.album = album
+                self.tracks = tracks
+        
+            enumerator: FileEnumerator?
+            album: Album
+            tracks: list of Track
+            
+        class private Timestamp
+            construct(path: string, timestamp: int64)
+                self.path = path
+                self.timestamp = timestamp
+        
+            path: string
+            timestamp: int64
+        
         const private FILE_ATTRIBUTES: string = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE + "," + FileAttribute.STANDARD_IS_HIDDEN + "," + FileAttribute.ACCESS_CAN_READ + "," + FileAttribute.TIME_MODIFIED
-        const private BATCH_SIZE: uint = 100
+        const private BATCH_SIZE: uint = 50
 
         _logger: static Logging.Logger
 
@@ -294,16 +359,6 @@ namespace Khovsgol.Server.Filesystem
             while parent is not null
                 libraries.delete_timestamp(parent.get_path())
                 parent = parent.get_parent()
-
-        def private static batch(libraries: Libraries, ref count: uint) raises GLib.Error
-            if ++count % BATCH_SIZE == 0
-                libraries.commit()
-                _logger.debugf("Batch commit: %u", count)
-                
-                // This gives an opportunity for other threads to write to the database
-                Thread.usleep(1)
-                
-                libraries.begin()
     
         init
             _logger = Logging.get_logger("khovsgol.directory")

@@ -1,3 +1,9 @@
+khovsgol (0.6-0ubuntu2) %DISTRIBUTION%; urgency=low
+
+  * First fully usable version.
+
+ -- Tal Liron <tal.liron@gmail.com>  Wed, 19 Dec 2012 16:53:38 -0600
+
 khovsgol (0.6-0ubuntu1) %DISTRIBUTION%; urgency=low
 
   * First port to the Genie language.

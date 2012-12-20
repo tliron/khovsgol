@@ -23,7 +23,7 @@ namespace Nap
         def private static handle(context: Context)
             try
                 context.handler(context.conversation)
-                context.conversation.commit()
+                context.conversation.write_commit()
                 context.conversation.unpause()
             except e: GLib.Error
                 if context.error_handler is not null

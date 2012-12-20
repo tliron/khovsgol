@@ -20,6 +20,22 @@ namespace Khovsgol.Server
         except e: RegexError
             Logging.get_logger("khovsgol.directory").warning(e.message)
             return text
+
+    /*
+     * Formats a duration in seconds as "hh:mm:ss".
+     */
+    def format_duration(duration: double): string
+        var seconds = (int) Math.round(duration)
+        var minutes = seconds / 60
+        var hours = seconds / 3600
+        seconds -= minutes * 60
+        minutes -= hours * 60
+        if hours > 0
+            return "%d:%02d:%02d".printf(hours, minutes, seconds)
+        else if minutes > 0
+            return "%d:%02d".printf(minutes, seconds)
+        else
+            return seconds.to_string()
             
     def get_album_path_dynamic(obj: Json.Object)
         var track = new Track.from_json(obj)

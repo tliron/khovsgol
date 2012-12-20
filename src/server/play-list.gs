@@ -38,16 +38,16 @@ namespace Khovsgol.Server
         def set_paths(paths: Json.Array) raises GLib.Error
             _player.position_in_play_list = int.MIN
             
-            _crucible.libraries.begin()
+            _crucible.libraries.write_begin()
             try
                 _crucible.libraries.delete_track_pointers(_album_path)
                 stable_position: int = int.MIN
                 _crucible.libraries.add_to_album(_album_path, 0, paths, ref stable_position, false)
                 update_stored_version()
             except e: GLib.Error
-                _crucible.libraries.rollback()
+                _crucible.libraries.write_rollback()
                 raise e
-            _crucible.libraries.commit()
+            _crucible.libraries.write_commit()
             
             _player.next()
             
@@ -59,14 +59,14 @@ namespace Khovsgol.Server
             var position_in_play_list = _player.position_in_play_list
             var final_position_in_play_list = position_in_play_list
 
-            _crucible.libraries.begin()
+            _crucible.libraries.write_begin()
             try
                 destination = _crucible.libraries.add_to_album(_album_path, destination, paths, ref final_position_in_play_list, false)
                 update_stored_version()
             except e: GLib.Error
-                _crucible.libraries.rollback()
+                _crucible.libraries.write_rollback()
                 raise e
-            _crucible.libraries.commit()
+            _crucible.libraries.write_commit()
 
             // If we're stopped, play first track we added
             if destination != int.MIN
@@ -85,14 +85,14 @@ namespace Khovsgol.Server
             var position_in_play_list = _player.position_in_play_list
             var final_position_in_play_list = position_in_play_list
 
-            _crucible.libraries.begin()
+            _crucible.libraries.write_begin()
             try
                 _crucible.libraries.remove_from_album(_album_path, positions, ref final_position_in_play_list, false)
                 update_stored_version()
             except e: GLib.Error
-                _crucible.libraries.rollback()
+                _crucible.libraries.write_rollback()
                 raise e
-            _crucible.libraries.commit()
+            _crucible.libraries.write_commit()
 
             if final_position_in_play_list != position_in_play_list
                 _player.position_in_play_list = final_position_in_play_list
@@ -105,14 +105,14 @@ namespace Khovsgol.Server
             var position_in_play_list = _player.position_in_play_list
             var final_position_in_play_list = position_in_play_list
         
-            _crucible.libraries.begin()
+            _crucible.libraries.write_begin()
             try
                 destination = _crucible.libraries.move_in_album(_album_path, destination, positions, ref final_position_in_play_list, false)
                 update_stored_version()
             except e: GLib.Error
-                _crucible.libraries.rollback()
+                _crucible.libraries.write_rollback()
                 raise e
-            _crucible.libraries.commit()
+            _crucible.libraries.write_commit()
 
             if final_position_in_play_list != position_in_play_list
                 _player.position_in_play_list = final_position_in_play_list
@@ -157,13 +157,13 @@ namespace Khovsgol.Server
                 return album.date
             else
                 version: int64
-                _crucible.libraries.begin()
+                _crucible.libraries.write_begin()
                 try
                     version = update_stored_version()
                 except e: GLib.Error
-                    _crucible.libraries.rollback()
+                    _crucible.libraries.write_rollback()
                     raise e
-                _crucible.libraries.commit()
+                _crucible.libraries.write_commit()
                 return version
 
         /*

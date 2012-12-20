@@ -96,7 +96,7 @@ namespace Nap._Soup
                     if _response_media_type is null
                         _response_media_type = "application/json"
         
-        def commit()
+        def write_commit()
             _soup_message.set_status(_status_code)
             
             if _response_text is not null
@@ -219,7 +219,7 @@ namespace Nap._Soup
             set
                 pass
         
-        def commit()
+        def write_commit()
             if _base_url is null
                 return
         
@@ -323,7 +323,7 @@ namespace Nap._Soup
                     except e: GLib.Error
                         if _error_handler is not null
                             _error_handler(conversation, e)
-                    conversation.commit()
+                    conversation.write_commit()
 
         _soup_server: Soup.Server
         _handler: unowned Handler?

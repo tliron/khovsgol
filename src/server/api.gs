@@ -337,7 +337,7 @@ namespace Khovsgol.Server
                 album.library = library
                 album.album_type = AlbumType.CUSTOM_COMPILATION
                 
-                _crucible.libraries.begin()
+                _crucible.libraries.write_begin()
                 try
                     _crucible.libraries.save_album(album)
                     _crucible.libraries.delete_track_pointers(album_path)
@@ -352,9 +352,9 @@ namespace Khovsgol.Server
                         track_pointer.position = position++
                         _crucible.libraries.save_track_pointer(track_pointer)
                 except e: GLib.Error
-                    _crucible.libraries.rollback()
+                    _crucible.libraries.write_rollback()
                     raise e
-                _crucible.libraries.commit()
+                _crucible.libraries.write_commit()
 
                 set_response_json_object_or_not_found(album, conversation)
             else
@@ -371,13 +371,13 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
 
-            _crucible.libraries.begin()
+            _crucible.libraries.write_begin()
             try
                 _crucible.libraries.delete_album(path)
             except e: GLib.Error
-                _crucible.libraries.rollback()
+                _crucible.libraries.write_rollback()
                 raise e
-            _crucible.libraries.commit()
+            _crucible.libraries.write_commit()
         
         /*
          * receive {

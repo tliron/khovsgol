@@ -35,11 +35,9 @@ namespace Khovsgol.Server
             _configuration.delete_library(name)
             _configuration.save()
 
-        def abstract begin() raises GLib.Error
-        def abstract commit() raises GLib.Error
-        def abstract rollback() raises GLib.Error
-        def abstract write_lock()
-        def abstract write_unlock()
+        def abstract write_begin() raises GLib.Error
+        def abstract write_commit() raises GLib.Error
+        def abstract write_rollback() raises GLib.Error
         
         // Tracks
         def abstract get_track(path: string): Track? raises GLib.Error
@@ -104,7 +102,7 @@ namespace Khovsgol.Server
                 destination++
 
             if transaction
-                begin()
+                write_begin()
             try
                 // Make room by moving the track pointers after us forward
                 move_track_pointers(album_path, (int) length, destination)
@@ -119,10 +117,10 @@ namespace Khovsgol.Server
                     save_track_pointer(track_pointer)
             except e: GLib.Error
                 if transaction
-                    rollback()
+                    write_rollback()
                 raise e
             if transaction
-                commit()
+                write_commit()
 
             if (stable_position != int.MIN) and (destination <= stable_position)
                 stable_position += (int) length
@@ -139,7 +137,7 @@ namespace Khovsgol.Server
             var last = length - 1
 
             if transaction
-                begin()
+                write_begin()
             try
                 for var i = 0 to last
                     var position = get_int_element_or_min(positions, i)
@@ -164,10 +162,10 @@ namespace Khovsgol.Server
                                 stable_position--
             except e: GLib.Error
                 if transaction
-                    rollback()
+                    write_rollback()
                 raise e
             if transaction
-                commit()
+                write_commit()
         
         /*
          * Note: we will change the positions array!
@@ -190,7 +188,7 @@ namespace Khovsgol.Server
                 destination++
                 
             if transaction
-                begin()
+                write_begin()
             try
                 var paths = new list of string
                 for var i = 0 to last
@@ -240,10 +238,10 @@ namespace Khovsgol.Server
                     position++
             except e: GLib.Error
                 if transaction
-                    rollback()
+                    write_rollback()
                 raise e
             if transaction
-                commit()
+                write_commit()
             
             return destination
 
