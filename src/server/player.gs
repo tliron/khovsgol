@@ -52,13 +52,13 @@ namespace Khovsgol.Server
             return CursorMode.TRACK
         else if name == "album"
             return CursorMode.ALBUM
-        else if name == "play_list"
+        else if name == "playlist"
             return CursorMode.PLAY_LIST
         else if name == "repeat_track"
             return CursorMode.REPEAT_TRACK
         else if name == "repeat_album"
             return CursorMode.REPEAT_ALBUM
-        else if name == "repeat_play_list"
+        else if name == "repeat_playlist"
             return CursorMode.REPEAT_PLAY_LIST
         else if name == "shuffle"
             return CursorMode.SHUFFLE
@@ -73,13 +73,13 @@ namespace Khovsgol.Server
         else if mode == CursorMode.ALBUM
             return "album"
         else if mode == CursorMode.PLAY_LIST
-            return "play_list"
+            return "playlist"
         else if mode == CursorMode.REPEAT_TRACK
             return "repeat_track"
         else if mode == CursorMode.REPEAT_ALBUM
             return "repeat_album"
         else if mode == CursorMode.REPEAT_PLAY_LIST
-            return "repeat_play_list"
+            return "repeat_playlist"
         else if mode == CursorMode.SHUFFLE
             return "shuffle"
         else if mode == CursorMode.REPEAT_SHUFFLE
@@ -109,33 +109,33 @@ namespace Khovsgol.Server
         prop name: string
         prop plugs: list of Plug = new list of Plug
 
-        prop readonly play_list: PlayList
+        prop readonly playlist: Playlist
             get
-                if _play_list is null
-                    _play_list = _crucible.create_play_list()
-                    _play_list.player = self
+                if _playlist is null
+                    _playlist = _crucible.create_playlist()
+                    _playlist.player = self
                     try
-                        _play_list.initialize()
+                        _playlist.initialize()
                     except e: GLib.Error
                         Logging.get_logger("khovsgol.playlist").warning(e.message)
-                return _play_list
+                return _playlist
 
-        prop position_in_play_list: int
+        prop position_in_playlist: int
             get
-                return _position_in_play_list
+                return _position_in_playlist
             set
-                _position_in_play_list = value
+                _position_in_playlist = value
                 
-                if _position_in_play_list < 1
-                    _position_in_play_list = int.MIN
+                if _position_in_playlist < 1
+                    _position_in_playlist = int.MIN
                     path = null
                 else
-                    var tracks = play_list.tracks
-                    if _position_in_play_list > tracks.size
-                        _position_in_play_list = int.MIN
+                    var tracks = playlist.tracks
+                    if _position_in_playlist > tracks.size
+                        _position_in_playlist = int.MIN
                         path = null
                     else
-                        var track = tracks[_position_in_play_list - 1]
+                        var track = tracks[_position_in_playlist - 1]
                         path = track.path
 
         prop abstract path: string?
@@ -149,53 +149,53 @@ namespace Khovsgol.Server
         def prev()
             // TODO: different behavior for shuffle...
         
-            position_in_play_list = _position_in_play_list - 1
+            position_in_playlist = _position_in_playlist - 1
             
         def next()
-            var tracks = _play_list.tracks
+            var tracks = _playlist.tracks
             var size = tracks.size
             var mode = cursor_mode
             
             if mode == CursorMode.TRACK
                 // Play first track if we are not pointing anywhere
-                if _position_in_play_list == int.MIN
-                    position_in_play_list = 1
+                if _position_in_playlist == int.MIN
+                    position_in_playlist = 1
                     return
 
             else if mode == CursorMode.ALBUM
                 // Play first track if we are not pointing anywhere
-                if _position_in_play_list == int.MIN
-                    position_in_play_list = 1
+                if _position_in_playlist == int.MIN
+                    position_in_playlist = 1
                     return
                 
                 // Play subsequent track if it's in the same album
-                else if _position_in_play_list < size
-                    var current = tracks[_position_in_play_list - 1]
-                    var next = tracks[_position_in_play_list]
+                else if _position_in_playlist < size
+                    var current = tracks[_position_in_playlist - 1]
+                    var next = tracks[_position_in_playlist]
                     if current.album_path == next.album_path
-                        position_in_play_list = _position_in_play_list + 1
+                        position_in_playlist = _position_in_playlist + 1
                         return
                 
             else if mode == CursorMode.PLAY_LIST
                 // Play first track if we are not pointing anywhere
-                if _position_in_play_list == int.MIN
-                    position_in_play_list = 1
+                if _position_in_playlist == int.MIN
+                    position_in_playlist = 1
                     return
                 
                 // Otherwise, play subsequent track
                 else
-                    position_in_play_list = _position_in_play_list + 1
+                    position_in_playlist = _position_in_playlist + 1
                     return
                 
             else if mode == CursorMode.REPEAT_TRACK
                 // Play first track if we are not pointing anywhere
-                if _position_in_play_list == int.MIN
-                    position_in_play_list = 1
+                if _position_in_playlist == int.MIN
+                    position_in_playlist = 1
                     return
                 
                 // Otherwise, repeat our track
                 else
-                    position_in_play_list = _position_in_play_list
+                    position_in_playlist = _position_in_playlist
                     return
                 
             else if mode == CursorMode.REPEAT_ALBUM
@@ -205,13 +205,13 @@ namespace Khovsgol.Server
             else if mode == CursorMode.REPEAT_PLAY_LIST
                 // Play first track if we are not pointing anywhere
                 // Or if we're at the end
-                if (_position_in_play_list == int.MIN) or (_position_in_play_list == size)
-                    position_in_play_list = 1
+                if (_position_in_playlist == int.MIN) or (_position_in_playlist == size)
+                    position_in_playlist = 1
                     return
 
                 // Otherwise, play subsequent track
                 else
-                    position_in_play_list = _position_in_play_list + 1
+                    position_in_playlist = _position_in_playlist + 1
                     return
                 
             else if mode == CursorMode.SHUFFLE
@@ -223,7 +223,7 @@ namespace Khovsgol.Server
                 pass
 
             // Default to point nowhere
-            position_in_play_list = int.MIN
+            position_in_playlist = int.MIN
         
         def to_json(): Json.Object
             var json = new Json.Object()
@@ -236,15 +236,15 @@ namespace Khovsgol.Server
                 plugs.set_object_member(plug.name, plug.to_json())
             json.set_object_member("plugs", plugs)
             var cursor = new Json.Object()
-            set_int_member_not_min(cursor, "positionInPlayList", position_in_play_list)
+            set_int_member_not_min(cursor, "positionInPlaylist", position_in_playlist)
             set_double_member_not_min(cursor, "positionInTrack", position_in_track)
             set_double_member_not_min(cursor, "trackDuration", track_duration)
             json.set_object_member("cursor", cursor)
-            json.set_object_member("playList", play_list.to_json())
+            json.set_object_member("playList", playlist.to_json())
             return json
         
-        _play_list: PlayList
-        _position_in_play_list: int = int.MIN
+        _playlist: Playlist
+        _position_in_playlist: int = int.MIN
 
     //
     // Plug

@@ -34,17 +34,17 @@ namespace Khovsgol.Client.CLI
                 print_player(_api.set_play_mode(_arguments.player, "toggle_paused"))
 
             else if command == "next"
-                print_player(_api.set_position_in_play_list_string(_arguments.player, "next"))
+                print_player(_api.set_position_in_playlist_string(_arguments.player, "next"))
 
             else if command == "prev"
-                print_player(_api.set_position_in_play_list_string(_arguments.player, "prev"))
+                print_player(_api.set_position_in_playlist_string(_arguments.player, "prev"))
 
             else if command == "cursor"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the position (a number)\n")
                     Posix.exit(1)
                 var position = int.parse(_arguments.args[2])
-                print_player(_api.set_position_in_play_list(_arguments.player, position))
+                print_player(_api.set_position_in_playlist(_arguments.player, position))
 
             else if command == "trackposition"
                 if _arguments.args.length < 3
@@ -237,13 +237,13 @@ namespace Khovsgol.Client.CLI
                 if name is not null
                     stdout.printf("Player: %s\n", name)
 
-                    var play_list = get_object_member_or_null(player, "playList")
-                    if play_list is not null
-                        var id = get_string_member_or_null(play_list, "id")
+                    var playlist = get_object_member_or_null(player, "playList")
+                    if playlist is not null
+                        var id = get_string_member_or_null(playlist, "id")
                         if id is not null
                             indent(1)
                             stdout.printf("Unique ID: %s\n", id)
-                        var version = get_int64_member_or_min(play_list, "version")
+                        var version = get_int64_member_or_min(playlist, "version")
                         if version != int64.MIN
                             indent(1)
                             stdout.printf("Version: %lld\n", version)
@@ -255,10 +255,10 @@ namespace Khovsgol.Client.CLI
                     
                     var track_duration = double.MIN
                     var ratio = double.MIN
-                    var position_in_play_list = int.MIN
+                    var position_in_playlist = int.MIN
                     var cursor = get_object_member_or_null(player, "cursor")
                     if cursor is not null
-                        position_in_play_list = get_int_member_or_min(cursor, "positionInPlayList")
+                        position_in_playlist = get_int_member_or_min(cursor, "positionInPlaylist")
                         var position_in_track = get_double_member_or_min(cursor, "positionInTrack")
                         track_duration = get_double_member_or_min(cursor, "trackDuration")
                         if (position_in_track != double.MIN) and (track_duration != double.MIN)
@@ -272,14 +272,14 @@ namespace Khovsgol.Client.CLI
                         else
                             stdout.printf("Currently %s\n", play_mode)
                             
-                    if play_list is not null
-                        for var track in new JsonTracks(get_array_member_or_null(play_list, "tracks"))
-                            var position = track.position_in_play_list
+                    if playlist is not null
+                        for var track in new JsonTracks(get_array_member_or_null(playlist, "tracks"))
+                            var position = track.position_in_playlist
                             var path = track.path
                             if path is not null
                                 indent(2)
                                 if position != int.MIN
-                                    if position == position_in_play_list
+                                    if position == position_in_playlist
                                         stdout.printf(">%d: %s\n", position, path)
                                     else
                                         stdout.printf(" %d: %s\n", position, path)

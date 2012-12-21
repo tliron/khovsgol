@@ -85,11 +85,11 @@ namespace Khovsgol
             set
                 set_int_member_not_min(_json, "position_in_album", value)
 
-        prop position_in_play_list: int
+        prop position_in_playlist: int
             get
-                return get_int_member_or_min(_json, "position_in_play_list")
+                return get_int_member_or_min(_json, "position_in_playlist")
             set
-                set_int_member_not_min(_json, "position_in_play_list", value)
+                set_int_member_not_min(_json, "position_in_playlist", value)
                 
         prop duration: double
             get
@@ -121,7 +121,7 @@ namespace Khovsgol
             track.album_path = album_path
             track.album_type = album_type
             track.position_in_album = position_in_album
-            track.position_in_play_list = position_in_play_list
+            track.position_in_playlist = position_in_playlist
             track.duration = duration
             track.date = date
             track.file_type = file_type
@@ -184,8 +184,8 @@ namespace Khovsgol
         ANY = -1
         ARTIST = 0
         COMPILATION = 1
-        CUSTOM_COMPILATION = 2
-        OTHER = 3
+        SAVED_PLAYLIST = 2
+        PLAYLIST = 3
 
     class Album: Object implements HasJsonObject
         construct()

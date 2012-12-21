@@ -130,7 +130,7 @@ namespace Khovsgol.Client.GTK
             new Connector(_instance).show_all()
 
         def private on_previous()
-            _instance.api.set_position_in_play_list_string(_instance.player, "prev")
+            _instance.api.set_position_in_playlist_string(_instance.player, "prev")
             
         def private on_play()
             _instance.api.set_play_mode(_instance.player, "playing")
@@ -143,7 +143,7 @@ namespace Khovsgol.Client.GTK
             _instance.api.set_play_mode(_instance.player, "stopped")
             
         def private on_next()
-            _instance.api.set_position_in_play_list_string(_instance.player, "next")
+            _instance.api.set_position_in_playlist_string(_instance.player, "next")
 
         def private on_info_clicked(e: Gdk.EventButton): bool
             on_connector()

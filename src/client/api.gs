@@ -49,9 +49,9 @@ namespace Khovsgol.Client
         event volume_change(volume: double, old_volume: double)
         event play_mode_change(play_mode: string?, old_last_play_mode: string?)
         event cursor_mode_change(cursor_mode: string?, old_last_cursor_mode: string?)
-        event position_in_play_list_change(position_in_last_play_list: int, old_position_in_last_play_list: int)
+        event position_in_playlist_change(position_in_last_playlist: int, old_position_in_last_playlist: int)
         event position_in_track_change(position_in_last_track: double, old_position_in_last_track: double, track_duration: double)
-        event play_list_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
+        event playlist_change(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
         event track_change(track: Track?, old_last_track: Track?)
         event error(e: GLib.Error)
         
@@ -86,10 +86,10 @@ namespace Khovsgol.Client
                 _last_volume = double.MIN
                 _last_play_mode = null
                 _last_cursor_mode = null
-                _last_position_in_last_play_list = int.MIN
+                _last_position_in_last_playlist = int.MIN
                 _last_position_in_last_track = double.MIN
-                _last_play_list_id = null
-                _last_play_list_version = int64.MIN
+                _last_playlist_id = null
+                _last_playlist_version = int64.MIN
                 _last_tracks = null
                 _last_track = null
             finally
@@ -602,11 +602,11 @@ namespace Khovsgol.Client
          *  cursorMode: string,
          *  plugs: {},
          *  cursor: {
-         *   positionInPlayList: int,
+         *   positionInPlaylist: int,
          *   positionInTrack: int,
          *   trackDuration: int
          *  },
-         *  playList: =get_play_list
+         *  playList: =get_playlist
          * }
          */
         def get_player(player: string): Json.Object?
@@ -705,15 +705,15 @@ namespace Khovsgol.Client
                 return null
 
         /*
-         * send {cursor: {positionInPlayList: int}}
+         * send {cursor: {positionInPlaylist: int}}
          * 
          * receive =get_player
          */
-        def set_position_in_play_list(player: string, position: int): Json.Object?
+        def set_position_in_playlist(player: string, position: int): Json.Object?
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
-                cursor.set_int_member("positionInPlayList", position)
+                cursor.set_int_member("positionInPlaylist", position)
                 payload.set_object_member("cursor", cursor)
 
                 var conversation = _client.create_conversation()
@@ -733,15 +733,15 @@ namespace Khovsgol.Client
                 return null
         
         /*
-         * send {cursor: {positionInPlayList: string}}
+         * send {cursor: {positionInPlaylist: string}}
          * 
          * receive =get_player
          */
-        def set_position_in_play_list_string(player: string, position: string): Json.Object?
+        def set_position_in_playlist_string(player: string, position: string): Json.Object?
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
-                cursor.set_string_member("positionInPlayList", position)
+                cursor.set_string_member("positionInPlaylist", position)
                 payload.set_object_member("cursor", cursor)
 
                 var conversation = _client.create_conversation()
@@ -843,7 +843,7 @@ namespace Khovsgol.Client
          *  albums: =get_albums
          * }
          */
-        def get_play_list(player: string, full: bool = false): Json.Object?
+        def get_playlist(player: string, full: bool = false): Json.Object?
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
@@ -866,9 +866,9 @@ namespace Khovsgol.Client
         /*
          * send {paths: [string, ...]}
          * 
-         * receive =get_play_list
+         * receive =get_playlist
          */
-        def set_play_list_paths(player: string, paths: Json.Array, full: bool = false): Json.Object?
+        def set_playlist_paths(player: string, paths: Json.Array, full: bool = false): Json.Object?
             try
                 var payload = new Json.Object()
                 payload.set_array_member("paths", paths)
@@ -896,9 +896,9 @@ namespace Khovsgol.Client
          * send {move: [int, ...]}
          * send {move: {to: int, positions: [int, ...]}}
          * 
-         * receive =get_play_list
+         * receive =get_playlist
          */
-        def move_in_play_list(player: string, destination: int, positions: Json.Array, full: bool = false): Json.Object?
+        def move_in_playlist(player: string, destination: int, positions: Json.Array, full: bool = false): Json.Object?
             try
                 var payload = new Json.Object()
                 if destination != int.MIN
@@ -932,9 +932,9 @@ namespace Khovsgol.Client
          * send {add: [string, ...]}
          * send {add: {to: int, paths: [string, ...]}}
          * 
-         * receive =get_play_list
+         * receive =get_playlist
          */
-        def add_to_play_list(player: string, position: int, paths: Json.Array, full: bool = false): Json.Object?
+        def add_to_playlist(player: string, position: int, paths: Json.Array, full: bool = false): Json.Object?
             try
                 var payload = new Json.Object()
                 if position != int.MIN
@@ -967,9 +967,9 @@ namespace Khovsgol.Client
         /*
          * send {remove: [int, ...]}
          * 
-         * receive =get_play_list
+         * receive =get_playlist
          */
-        def remove_from_play_list(player: string, positions: Json.Array, full: bool = false): Json.Object?
+        def remove_from_playlist(player: string, positions: Json.Array, full: bool = false): Json.Object?
             try
                 var payload = new Json.Object()
                 payload.set_array_member("remove", positions)
@@ -1030,10 +1030,10 @@ namespace Khovsgol.Client
         _last_volume: double
         _last_play_mode: string?
         _last_cursor_mode: string?
-        _last_position_in_last_play_list: int
+        _last_position_in_last_playlist: int
         _last_position_in_last_track: double
-        _last_play_list_id: string?
-        _last_play_list_version: int64
+        _last_playlist_id: string?
+        _last_playlist_version: int64
         _last_tracks: IterableOfTrack?
         _last_track: Track?
 
@@ -1066,16 +1066,16 @@ namespace Khovsgol.Client
                 if name != _watching_player
                     return
                     
-                var play_list = get_object_member_or_null(player, "playList")
-                if play_list is not null
-                    var id = get_string_member_or_null(play_list, "id")
-                    var version = get_int64_member_or_min(play_list, "version")
-                    if (id != _last_play_list_id) or (version != _last_play_list_version)
-                        var tracks = new JsonTracks(get_array_member_or_null(play_list, "tracks"))
-                        var albums = new JsonAlbums(get_array_member_or_null(play_list, "albums"))
-                        play_list_change(id, version, _last_play_list_id, _last_play_list_version, tracks, albums)
-                        _last_play_list_id = id
-                        _last_play_list_version = version
+                var playlist = get_object_member_or_null(player, "playList")
+                if playlist is not null
+                    var id = get_string_member_or_null(playlist, "id")
+                    var version = get_int64_member_or_min(playlist, "version")
+                    if (id != _last_playlist_id) or (version != _last_playlist_version)
+                        var tracks = new JsonTracks(get_array_member_or_null(playlist, "tracks"))
+                        var albums = new JsonAlbums(get_array_member_or_null(playlist, "albums"))
+                        playlist_change(id, version, _last_playlist_id, _last_playlist_version, tracks, albums)
+                        _last_playlist_id = id
+                        _last_playlist_version = version
                         _last_tracks = tracks
 
                 var volume = get_double_member_or_min(player, "volume")
@@ -1098,18 +1098,18 @@ namespace Khovsgol.Client
 
                 var cursor = get_object_member_or_null(player, "cursor")
                 if cursor is not null
-                    var position_in_last_play_list = get_int_member_or_min(cursor, "positionInPlayList")
-                    if position_in_last_play_list != _last_position_in_last_play_list
-                        position_in_play_list_change(position_in_last_play_list, _last_position_in_last_play_list)
-                        _last_position_in_last_play_list = position_in_last_play_list
+                    var position_in_last_playlist = get_int_member_or_min(cursor, "positionInPlaylist")
+                    if position_in_last_playlist != _last_position_in_last_playlist
+                        position_in_playlist_change(position_in_last_playlist, _last_position_in_last_playlist)
+                        _last_position_in_last_playlist = position_in_last_playlist
 
-                        if _last_position_in_last_play_list == int.MIN
+                        if _last_position_in_last_playlist == int.MIN
                             if _last_track is not null
                                 track_change(null, _last_track)
                                 _last_track = null
                         else if _last_tracks is not null
                             for var track in _last_tracks
-                                if track.position_in_play_list == _last_position_in_last_play_list
+                                if track.position_in_playlist == _last_position_in_last_playlist
                                     if (_last_track is null) or (_last_track.path != track.path)
                                         track_change(track, _last_track)
                                         _last_track = track

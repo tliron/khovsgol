@@ -74,7 +74,7 @@ namespace Khovsgol.Client.GTK
             _style_box.append(new ArtistsAndTheirTracks())
             _style_box.append(new YearsAndAlbums())
             _style_box.append(new AllAlbums())
-            _style_box.append(new CustomCompilations())
+            _style_box.append(new Playlists())
             var style = _instance.configuration.library_style
             if style is not null
                 _style_box.active_style_name = style
@@ -218,7 +218,7 @@ namespace Khovsgol.Client.GTK
             var tracks = gather_selected_tracks()
             if tracks is not null
                 API.in_gdk = true
-                _instance.api.add_to_play_list(_instance.player, int.MIN, tracks, true)
+                _instance.api.add_to_playlist(_instance.player, int.MIN, tracks, true)
                 API.in_gdk = false
 
         def private on_add_at()
@@ -301,7 +301,7 @@ namespace Khovsgol.Client.GTK
                 menu.append(item)
                 if is_compilation
                     menu.append(new SeparatorMenuItem())
-                    item = new Gtk.MenuItem.with_mnemonic("_Delete these tracks from my compilations")
+                    item = new Gtk.MenuItem.with_mnemonic("_Delete these tracks from my playlists")
                     item.activate.connect(on_delete)
                     menu.append(item)
                 menu.append(new SeparatorMenuItem())

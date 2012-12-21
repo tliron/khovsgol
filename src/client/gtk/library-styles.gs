@@ -31,7 +31,7 @@ namespace Khovsgol.Client.GTK
         
                     // Compilation section
                     node.append_string("compilations", "compilations", "<b>Compilations</b>", null, true)
-                    node.append_string("custom_compilations", "playlists", "<b>Playlists</b>", null, true)
+                    node.append_string("playlists", "playlists", "<b>Playlists</b>", null, true)
                 else
                     // Album artists (with all albums and tracks cached inside each node)
                     first: bool = true
@@ -41,7 +41,7 @@ namespace Khovsgol.Client.GTK
                     current_letter: unichar = 0
                     last_artist_name: string? = null
                     var compilations = new Json.Array()
-                    var custom_compilations = new Json.Array()
+                    var playlists = new Json.Array()
 
                     var args = new Client.API.GetTracksArgs()
                     var like = "%" + filter + "%"
@@ -93,15 +93,15 @@ namespace Khovsgol.Client.GTK
                             
                             if album_type == AlbumType.COMPILATION
                                 compilations.add_object_element(album_node)
-                            else if album_type == AlbumType.CUSTOM_COMPILATION
-                                custom_compilations.add_object_element(album_node)
+                            else if album_type == AlbumType.SAVED_PLAYLIST
+                                playlists.add_object_element(album_node)
                             else if current_albums is not null
                                 current_albums.add_object_element(album_node)
                         
                         if current_tracks is not null
                             current_tracks.add_object_element(track.to_json())
 
-                    if !first and ((compilations.get_length() > 0) or (custom_compilations.get_length() > 0))
+                    if !first and ((compilations.get_length() > 0) or (playlists.get_length() > 0))
                         node.append_separator()
                     
                     if compilations.get_length() > 0
@@ -109,9 +109,9 @@ namespace Khovsgol.Client.GTK
                         special.set_array_member("_albums", compilations)
                         node.append_object(special, "compilations", "<b>Compilations</b>", null, true)
 
-                    if custom_compilations.get_length() > 0
+                    if playlists.get_length() > 0
                         var special = new Json.Object()
-                        special.set_array_member("_albums", custom_compilations)
+                        special.set_array_member("_albums", playlists)
                         node.append_object(special, "playlists", "<b>Playlists</b>", null, true)
             
             else if level == 1
@@ -151,7 +151,7 @@ namespace Khovsgol.Client.GTK
                 else
                     // Compilations
                     var args = new Client.API.GetAlbumsArgs()
-                    args.album_type = node.as_string == "custom" ? AlbumType.CUSTOM_COMPILATION : AlbumType.COMPILATION
+                    args.album_type = node.as_string == "custom" ? AlbumType.SAVED_PLAYLIST : AlbumType.COMPILATION
                     args.sort.add("date")
                     args.sort.add("title_sort")
                     fill_albums_by(node.instance.api.get_albums(args), node, subdue_lossy)
@@ -629,13 +629,13 @@ namespace Khovsgol.Client.GTK
         prop override readonly label: string = "Albums and playlists"
     
     /*
-     * Custom compilations only.
+     * Playlists only.
      */
-    class CustomCompilations: CommonAlbums
+    class Playlists: CommonAlbums
         construct()
-            super(AlbumType.CUSTOM_COMPILATION)
+            super(AlbumType.SAVED_PLAYLIST)
     
-        prop override readonly name: string = "custom_compilations"
+        prop override readonly name: string = "playlists"
         prop override readonly label: string = "Playlists"
     
     //

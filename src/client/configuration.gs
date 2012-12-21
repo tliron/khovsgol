@@ -56,7 +56,7 @@ namespace Khovsgol.Client
             set
                 _key_file.set_integer("ui", "split", value)
 
-        prop play_list_style: string
+        prop playlist_style: string
             owned get
                 try
                     return _key_file.get_string("ui", "playlist-style")

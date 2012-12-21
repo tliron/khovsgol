@@ -6,7 +6,7 @@ uses
 
 namespace Khovsgol.Client.GTK
 
-    class PlayList: Alignment
+    class Playlist: Alignment
         construct(instance: Instance)
             _instance = instance
             _accel_group = new AccelGroup()
@@ -116,10 +116,10 @@ namespace Khovsgol.Client.GTK
             // Bottom
 
             _mode_box = new SimpleComboBox()
-            _mode_box.append("play_list", "Play entire list")
+            _mode_box.append("playlist", "Play entire list")
             _mode_box.append("album", "Stop after album")
             _mode_box.append("track", "Stop after track")
-            _mode_box.append("repeat_play_list", "Repeat playlist")
+            _mode_box.append("repeat_playlist", "Repeat playlist")
             _mode_box.append("repeat_album", "Repeat album")
             _mode_box.append("repeat_track", "Repeat track")
             _mode_box.append("shuffle", "Shuffle")
@@ -130,7 +130,7 @@ namespace Khovsgol.Client.GTK
             _style_box.append(new GroupByAlbums())
             _style_box.append(new Compact())
             _style_box.append(new Extended())
-            var style = _instance.configuration.play_list_style
+            var style = _instance.configuration.playlist_style
             if style is not null
                 _style_box.active_style_name = style
             if _style_box.active_style_name is null
@@ -163,8 +163,8 @@ namespace Khovsgol.Client.GTK
             var api = (API) _instance.api
             api.cursor_mode_change_gdk.connect(on_cursor_mode_changed)
             api.play_mode_change_gdk.connect(on_play_mode_changed)
-            api.play_list_change_gdk.connect(on_play_list_changed)
-            api.position_in_play_list_change_gdk.connect(on_position_in_play_list_changed)
+            api.playlist_change_gdk.connect(on_playlist_changed)
+            api.position_in_playlist_change_gdk.connect(on_position_in_playlist_changed)
             api.position_in_track_change_gdk.connect(on_position_in_track_changed)
 
         prop readonly accel_group: AccelGroup
@@ -179,14 +179,14 @@ namespace Khovsgol.Client.GTK
             var api = (API) _instance.api
             api.cursor_mode_change_gdk.disconnect(on_cursor_mode_changed)
             api.play_mode_change_gdk.disconnect(on_play_mode_changed)
-            api.play_list_change_gdk.disconnect(on_play_list_changed)
-            api.position_in_play_list_change_gdk.disconnect(on_position_in_play_list_changed)
+            api.playlist_change_gdk.disconnect(on_playlist_changed)
+            api.position_in_playlist_change_gdk.disconnect(on_position_in_playlist_changed)
             api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
             
         def private on_progress_render(layout: CellLayout, renderer: dynamic CellRenderer, model: TreeModel, iter: TreeIter)
             position: Value
             _store.get_value(iter, Column.POSITION, out position)
-            if _position_in_play_list == (int) position
+            if _position_in_playlist == (int) position
                 renderer.visible = true
                 if (_position_in_track != double.MIN) and (_track_duration != double.MIN)
                     var percent = (_position_in_track / _track_duration) * 100.0
@@ -260,7 +260,7 @@ namespace Khovsgol.Client.GTK
                     try
                         var positions = from_array(text)
                         API.in_gdk = true
-                        _instance.api.move_in_play_list(_instance.player, destination, positions, true)
+                        _instance.api.move_in_playlist(_instance.player, destination, positions, true)
                         API.in_gdk = false
                         Gdk.drop_finish(context, true, time)
                     except e: GLib.Error
@@ -273,7 +273,7 @@ namespace Khovsgol.Client.GTK
                     try
                         var tracks = from_array(text)
                         API.in_gdk = true
-                        _instance.api.add_to_play_list(_instance.player, destination, tracks, true)
+                        _instance.api.add_to_playlist(_instance.player, destination, tracks, true)
                         API.in_gdk = false
                         Gdk.drop_finish(context, true, time)
                     except e: GLib.Error
@@ -301,16 +301,16 @@ namespace Khovsgol.Client.GTK
         
         def private on_style()
             var style = _style_box.active_style
-            if (style is not null) and (style.name != _instance.configuration.play_list_style)
-                _instance.configuration.play_list_style = style.name
+            if (style is not null) and (style.name != _instance.configuration.playlist_style)
+                _instance.configuration.playlist_style = style.name
                 _instance.configuration.save()
             update()
             
         def private on_play()
             var position = get_first_selected_position()
             if position != int.MIN
-                if _position_in_play_list != position
-                    _instance.api.set_position_in_play_list(_instance.player, position)
+                if _position_in_playlist != position
+                    _instance.api.set_position_in_playlist(_instance.player, position)
                 else
                     _instance.api.set_position_in_track(_instance.player, 0)
         
@@ -321,19 +321,19 @@ namespace Khovsgol.Client.GTK
             var positions = get_selected_positions()
             if positions.get_length() > 0
                 API.in_gdk = true
-                _instance.api.remove_from_play_list(_instance.player, positions, true)
+                _instance.api.remove_from_playlist(_instance.player, positions, true)
                 API.in_gdk = false
         
         def private on_clear()
             API.in_gdk = true
-            _instance.api.set_play_list_paths(_instance.player, new Json.Array(), true)
+            _instance.api.set_playlist_paths(_instance.player, new Json.Array(), true)
             API.in_gdk = false
 
         def private on_save_as_compilation()
             if _tracks.to_json().get_length() > 0
-                var dialog = new CreateCustomCompilation(_instance.window)
+                var dialog = new SavePlaylist(_instance.window)
                 if dialog.@do()
-                    var title = dialog.compilation_name
+                    var title = dialog.playlist_name
                     if title.length > 0
                         var album_path = "*" + GLib.DBus.generate_guid()
                         var paths = new Json.Array()
@@ -368,22 +368,22 @@ namespace Khovsgol.Client.GTK
 
         def private on_play_mode_changed(play_mode: string?, old_play_mode: string?)
             _play_mode = play_mode
-            refresh_row(_position_in_play_list)
+            refresh_row(_position_in_playlist)
                     
-        def private on_play_list_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
+        def private on_playlist_changed(id: string?, version: int64, old_id: string?, old_version: int64, tracks: IterableOfTrack, albums: IterableOfAlbum)
             _tracks = tracks
             _albums = albums
             update()
         
-        def private on_position_in_play_list_changed(position_in_play_list: int, old_position_in_play_list: int)
-            _position_in_play_list = position_in_play_list
-            refresh_row(old_position_in_play_list)
-            refresh_row(position_in_play_list)
+        def private on_position_in_playlist_changed(position_in_playlist: int, old_position_in_playlist: int)
+            _position_in_playlist = position_in_playlist
+            refresh_row(old_position_in_playlist)
+            refresh_row(position_in_playlist)
         
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             _position_in_track = position_in_track
             _track_duration = track_duration
-            refresh_row(_position_in_play_list)
+            refresh_row(_position_in_playlist)
                 
         def private on_show_duration_changed(value: bool)
             update()
@@ -396,9 +396,9 @@ namespace Khovsgol.Client.GTK
             _tree_view.model = null
             _store.clear()
             if _tracks is not null
-                var style = (PlayListStyle) _style_box.active_style
+                var style = (PlaylistStyle) _style_box.active_style
                 if style is not null
-                    var node = new PlayListNode(_instance, _tree_view, _store, _tracks, _albums)
+                    var node = new PlaylistNode(_instance, _tree_view, _store, _tracks, _albums)
                     style.fill(node)
             _tree_view.model = _store
             _tree_view.thaw_child_notify()
@@ -419,27 +419,27 @@ namespace Khovsgol.Client.GTK
 
         def private get_selected_positions(): Json.Array
             var positions = new Json.Array()
-            var style = (PlayListStyle) _style_box.active_style
+            var style = (PlaylistStyle) _style_box.active_style
             if style is not null
                 var selection = _tree_view.get_selection()
                 var tree_paths = selection.get_selected_rows(null)
                 iter: TreeIter
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
-                        var node = new PlayListNode(_instance, _tree_view, _store, _tracks, _albums, iter)
+                        var node = new PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                         style.gather_positions(node, ref positions)
             return positions
 
         def private get_selected_paths(): Json.Array
             var paths = new Json.Array()
-            var style = (PlayListStyle) _style_box.active_style
+            var style = (PlaylistStyle) _style_box.active_style
             if style is not null
                 var selection = _tree_view.get_selection()
                 var tree_paths = selection.get_selected_rows(null)
                 iter: TreeIter
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
-                        var node = new PlayListNode(_instance, _tree_view, _store, _tracks, _albums, iter)
+                        var node = new PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                         style.gather_paths(node, ref paths)
             return paths
 
@@ -453,9 +453,9 @@ namespace Khovsgol.Client.GTK
             return int.MIN
 
         def private get_first_position(iter: TreeIter): int
-            var style = (PlayListStyle) _style_box.active_style
+            var style = (PlaylistStyle) _style_box.active_style
             if style is not null
-                var node = new PlayListNode(_instance, _tree_view, _store, _tracks, _albums, iter)
+                var node = new PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                 var position = style.get_first_position(node)
                 if position != int.MIN
                     return position
@@ -501,7 +501,7 @@ namespace Khovsgol.Client.GTK
         _popup_one: Gtk.Menu
         _popup_many: Gtk.Menu
         _play_mode: string
-        _position_in_play_list: int = int.MIN
+        _position_in_playlist: int = int.MIN
         _position_in_track: double = double.MIN
         _track_duration: double = double.MIN
         _tracks: IterableOfTrack?
@@ -532,14 +532,14 @@ namespace Khovsgol.Client.GTK
             {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, TargetInfo.JSON_NUMBER_ARRAY},
             {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY}}
         
-        class private CreateCustomCompilation: Dialog
+        class private SavePlaylist: Dialog
             construct(parent: Window)
-                title = "Create Custom Compilation"
+                title = "Save Playlist"
                 transient_for = parent
                 destroy_with_parent = true
                 modal = true
                 
-                _name = new EntryBox("Compilation _name:")
+                _name = new EntryBox("Playlist _name:")
                 _name.entry.activate.connect(on_activate)
                 var library = new SimpleComboBox()
                 //for l in libraries:
@@ -563,13 +563,13 @@ namespace Khovsgol.Client.GTK
                 add_button(Stock.OK, ResponseType.OK)
                 set_default_response(ResponseType.OK)
                 
-            prop readonly compilation_name: string
+            prop readonly playlist_name: string
 
             def @do(): bool
                 show_all()
                 var response = run()
                 if response == ResponseType.OK
-                    _compilation_name = _name.entry.text.strip()
+                    _playlist_name = _name.entry.text.strip()
                 destroy()
                 return response == ResponseType.OK
             

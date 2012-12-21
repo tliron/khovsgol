@@ -50,9 +50,9 @@ namespace Khovsgol.Client.Plugins
             else if key == "Stop"
                 _instance.api.set_play_mode(_instance.player, "stopped")
             else if key == "Previous"
-                _instance.api.set_position_in_play_list_string(_instance.player, "prev")
+                _instance.api.set_position_in_playlist_string(_instance.player, "prev")
             else if key == "Next"
-                _instance.api.set_position_in_play_list_string(_instance.player, "next")
+                _instance.api.set_position_in_playlist_string(_instance.player, "next")
 
         _logger: static Logging.Logger
         

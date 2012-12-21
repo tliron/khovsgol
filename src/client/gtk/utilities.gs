@@ -25,10 +25,10 @@ namespace Khovsgol.Client.GTK
         prop abstract readonly label: string
     
     /*
-     * Represents a node in the PlayList pane, with a simplified API for
+     * Represents a node in the Playlist pane, with a simplified API for
      * accessing and modifying the node data.
      */
-    class PlayListNode
+    class PlaylistNode
         construct(instance: Instance, tree_view: TreeView, store: ListStore, tracks: IterableOfTrack, albums: IterableOfAlbum, iter: TreeIter? = null)
             _instance = instance
             _tree_view = tree_view
@@ -44,19 +44,19 @@ namespace Khovsgol.Client.GTK
         prop readonly position: int
             get
                 value: Value
-                _store.get_value(_iter, PlayList.Column.POSITION, out value)
+                _store.get_value(_iter, Playlist.Column.POSITION, out value)
                 return (int) value
         
         prop readonly as_object: Json.Object?
             get
                 value: Value
-                _store.get_value(_iter, PlayList.Column.NODE, out value)
+                _store.get_value(_iter, Playlist.Column.NODE, out value)
                 return ((Json.Node) value).get_object()
 
         prop readonly as_array: Json.Array
             get
                 value: Value
-                _store.get_value(_iter, PlayList.Column.NODE, out value)
+                _store.get_value(_iter, Playlist.Column.NODE, out value)
                 return ((Json.Node) value).get_array()
                 
         def get_album(path: string): Album?
@@ -72,7 +72,7 @@ namespace Khovsgol.Client.GTK
                 _is_frozen = true
             iter: TreeIter
             _store.append(out iter)
-            _store.@set(iter, PlayList.Column.NODE, node, PlayList.Column.SEARCH, search, PlayList.Column.MARKUP1, markup1, PlayList.Column.MARKUP2, markup2, PlayList.Column.POSITION, position, -1)
+            _store.@set(iter, Playlist.Column.NODE, node, Playlist.Column.SEARCH, search, Playlist.Column.MARKUP1, markup1, Playlist.Column.MARKUP2, markup2, Playlist.Column.POSITION, position, -1)
 
         def append_object(obj: Json.Object, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
             var node = new Json.Node(Json.NodeType.OBJECT)
@@ -85,7 +85,7 @@ namespace Khovsgol.Client.GTK
             append(node, position, search, markup1, markup2)
 
         def append_separator()
-            append(null, PlayList.SEPARATOR_POSITION)
+            append(null, Playlist.SEPARATOR_POSITION)
 
         _tree_view: TreeView
         _store: ListStore

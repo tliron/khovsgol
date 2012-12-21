@@ -14,7 +14,7 @@ dsc.pbuilder: .deb.prepare
 deb.pbuilder: .deb.prepare
 	cd $(DEBIAN); pdebuild -b --debsign-k $(DEBSIGN_KEYID)
 
-deb.clean:
+debian.clean:
 	$(RM) -f $(DEBIAN)/README
 	$(RM) -f $(DEBIAN)/Makefile
 	$(RM) -f $(DEBIAN)/*.mk

@@ -105,12 +105,12 @@ namespace Khovsgol.Server
             json: Json.Array = null
 
             // Note: AlbumType.COMPILATION handling is identical to AlbumType.ARTIST
-            if album_type != AlbumType.CUSTOM_COMPILATION
+            if album_type != AlbumType.SAVED_PLAYLIST
                 var iterator = _crucible.libraries.iterate_tracks(args)
                 json = iterator.to_json()
                 foreach_object_in_json_array(json, get_album_path_dynamic)
             // Note: custom compilation tracks are always put *after* regular tracks, whatever the sort order
-            if (album_type == AlbumType.ANY) or (album_type == AlbumType.CUSTOM_COMPILATION)
+            if (album_type == AlbumType.ANY) or (album_type == AlbumType.SAVED_PLAYLIST)
                 var json2 = _crucible.libraries.iterate_track_pointers(args).to_json()
                 if json is null
                     json = json2
@@ -335,7 +335,7 @@ namespace Khovsgol.Server
                 album.title = title
                 album.title_sort = to_sortable(title)
                 album.library = library
-                album.album_type = AlbumType.CUSTOM_COMPILATION
+                album.album_type = AlbumType.SAVED_PLAYLIST
                 
                 _crucible.libraries.write_begin()
                 try
@@ -555,11 +555,11 @@ namespace Khovsgol.Server
          *  cursorMode: string,
          *  plugs: {},
          *  cursor: {
-         *   positionInPlayList: int,
+         *   positionInPlaylist: int,
          *   positionInTrack: int,
          *   trackDuration: int
          *  },
-         *  playList: =get_play_list
+         *  playList: =get_playlist
          * }
          */
         def get_player(conversation: Conversation) raises GLib.Error
@@ -570,12 +570,12 @@ namespace Khovsgol.Server
          * send {volume: string}
          * send {playMode: string}
          * send {cursorMode: string}
-         * send {cursor: {positionInPlayList: string/int}}
+         * send {cursor: {positionInPlaylist: string/int}}
          * send {cursor: {positionInTrack: double}}
          * send {cursor: {ratioInTrack: double}}
          * send {addPlug: {name: string, ...}}
          * send {removePlug: string}
-         * send {playList: =post_play_list}
+         * send {playList: =post_playlist}
          * 
          * receive =get_player
          */
@@ -624,18 +624,18 @@ namespace Khovsgol.Server
             var cursor = get_object_member_or_null(entity, "cursor")
             if cursor is not null
                 // Set position in play list
-                var position_in_play_list = get_member_or_null(cursor, "positionInPlayList")
-                if position_in_play_list is not null
-                    if is_string(position_in_play_list)
-                        var str = position_in_play_list.get_string()
+                var position_in_playlist = get_member_or_null(cursor, "positionInPlaylist")
+                if position_in_playlist is not null
+                    if is_string(position_in_playlist)
+                        var str = position_in_playlist.get_string()
                         if str == "next"
                             player.next()
                             processed = true
                         else if str == "prev"
                             player.prev()
                             processed = true
-                    else if is_int64(position_in_play_list)
-                        player.position_in_play_list = (int) position_in_play_list.get_int()
+                    else if is_int64(position_in_playlist)
+                        player.position_in_playlist = (int) position_in_playlist.get_int()
                         processed = true
 
                 // Set position in track
@@ -665,9 +665,9 @@ namespace Khovsgol.Server
                 processed = true
             
             // Set play list attributes
-            var play_list = get_object_member_or_null(entity, "playList")
-            if play_list is not null
-                update_play_list(player, play_list, conversation)
+            var playlist = get_object_member_or_null(entity, "playList")
+            if playlist is not null
+                update_playlist(player, playlist, conversation)
                 return
             
             if processed
@@ -696,7 +696,7 @@ namespace Khovsgol.Server
          *  albums: =get_albums
          * }
          */
-        def get_play_list(conversation: Conversation) raises GLib.Error
+        def get_playlist(conversation: Conversation) raises GLib.Error
             var player = _crucible.players.get_or_create_player(conversation.variables["player"])
             if player is null
                 conversation.status_code = StatusCode.NOT_FOUND
@@ -705,7 +705,7 @@ namespace Khovsgol.Server
             if conversation.query["fullrepresentation"] == "true"
                 set_response_json_object_or_not_found(player, conversation)
             else
-                set_response_json_object_or_not_found(player.play_list, conversation)
+                set_response_json_object_or_not_found(player.playlist, conversation)
 
         /*
          * send {paths: [string, ...]}
@@ -715,9 +715,9 @@ namespace Khovsgol.Server
          * send {add: {to: int, paths: [string, ...]}}
          * send {remove: [int, ...]}
          * 
-         * receive =get_play_list
+         * receive =get_playlist
          */
-        def post_play_list(conversation: Conversation) raises GLib.Error
+        def post_playlist(conversation: Conversation) raises GLib.Error
             var player = _crucible.players.get_or_create_player(conversation.variables["player"])
             if player is null
                 conversation.status_code = StatusCode.NOT_FOUND
@@ -727,15 +727,15 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
                 
-            update_play_list(player, entity, conversation)
+            update_playlist(player, entity, conversation)
 
-        def update_play_list(player: Player, entity: Json.Object, conversation: Conversation) raises GLib.Error
+        def update_playlist(player: Player, entity: Json.Object, conversation: Conversation) raises GLib.Error
             var processed = false
             
             // Set entire play list by paths
             var paths = get_array_member_or_null(entity, "paths")
             if paths is not null
-                player.play_list.set_paths(paths)
+                player.playlist.set_paths(paths)
 
                 processed = true
 
@@ -753,7 +753,7 @@ namespace Khovsgol.Server
                 else
                     conversation.status_code = StatusCode.BAD_REQUEST
                     return
-                player.play_list.move(destination, positions)
+                player.playlist.move(destination, positions)
 
                 processed = true
 
@@ -771,14 +771,14 @@ namespace Khovsgol.Server
                 else
                     conversation.status_code = StatusCode.BAD_REQUEST
                     return
-                player.play_list.add(position, add_paths)
+                player.playlist.add(position, add_paths)
 
                 processed = true
 
             // Remove tracks by their positions
             var remove = get_array_member_or_null(entity, "remove")
             if remove is not null
-                player.play_list.remove(remove)
+                player.playlist.remove(remove)
 
                 processed = true
 
@@ -786,7 +786,7 @@ namespace Khovsgol.Server
                 if conversation.query["fullrepresentation"] == "true"
                     set_response_json_object_or_not_found(player, conversation)
                 else
-                    set_response_json_object_or_not_found(player.play_list, conversation)
+                    set_response_json_object_or_not_found(player.playlist, conversation)
             else
                 conversation.status_code = StatusCode.BAD_REQUEST
 
@@ -833,7 +833,7 @@ namespace Khovsgol.Server
 
             add_node("/players/", new DelegatedResource(_api.get_players))
             add_node("/player/{player}/", new DelegatedResource(_api.get_player, _api.post_player, _api.put_player, _api.delete_player))
-            add_node("/player/{player}/playlist/", new DelegatedResource(_api.get_play_list, _api.post_play_list))
+            add_node("/player/{player}/playlist/", new DelegatedResource(_api.get_playlist, _api.post_playlist))
             add_node("/player/{player}/plug/{plug}/", new DelegatedResource(_api.get_plug, null, _api.put_plug, _api.delete_plug))
         
         _api: Api

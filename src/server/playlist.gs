@@ -5,7 +5,7 @@ uses
 
 namespace Khovsgol.Server
 
-    class PlayList: Object implements HasJsonObject
+    class Playlist: Object implements HasJsonObject
         prop crucible: Crucible
         prop player: Player
         prop id: string
@@ -36,7 +36,7 @@ namespace Khovsgol.Server
                 _id = DBus.generate_guid()
         
         def set_paths(paths: Json.Array) raises GLib.Error
-            _player.position_in_play_list = int.MIN
+            _player.position_in_playlist = int.MIN
             
             _crucible.libraries.write_begin()
             try
@@ -56,12 +56,12 @@ namespace Khovsgol.Server
             if length == 0
                 return
 
-            var position_in_play_list = _player.position_in_play_list
-            var final_position_in_play_list = position_in_play_list
+            var position_in_playlist = _player.position_in_playlist
+            var final_position_in_playlist = position_in_playlist
 
             _crucible.libraries.write_begin()
             try
-                destination = _crucible.libraries.add_to_album(_album_path, destination, paths, ref final_position_in_play_list, false)
+                destination = _crucible.libraries.add_to_album(_album_path, destination, paths, ref final_position_in_playlist, false)
                 update_stored_version()
             except e: GLib.Error
                 _crucible.libraries.write_rollback()
@@ -71,51 +71,51 @@ namespace Khovsgol.Server
             // If we're stopped, play first track we added
             if destination != int.MIN
                 if _player.play_mode == PlayMode.STOPPED
-                    _player.position_in_play_list = destination
+                    _player.position_in_playlist = destination
                     return
 
-            if final_position_in_play_list != position_in_play_list
-                _player.position_in_play_list = final_position_in_play_list
+            if final_position_in_playlist != position_in_playlist
+                _player.position_in_playlist = final_position_in_playlist
         
         def remove(positions: Json.Array) raises GLib.Error
             var length = positions.get_length()
             if length == 0
                 return
             
-            var position_in_play_list = _player.position_in_play_list
-            var final_position_in_play_list = position_in_play_list
+            var position_in_playlist = _player.position_in_playlist
+            var final_position_in_playlist = position_in_playlist
 
             _crucible.libraries.write_begin()
             try
-                _crucible.libraries.remove_from_album(_album_path, positions, ref final_position_in_play_list, false)
+                _crucible.libraries.remove_from_album(_album_path, positions, ref final_position_in_playlist, false)
                 update_stored_version()
             except e: GLib.Error
                 _crucible.libraries.write_rollback()
                 raise e
             _crucible.libraries.write_commit()
 
-            if final_position_in_play_list != position_in_play_list
-                _player.position_in_play_list = final_position_in_play_list
+            if final_position_in_playlist != position_in_playlist
+                _player.position_in_playlist = final_position_in_playlist
 
         def move(destination: int, positions: Json.Array) raises GLib.Error
             var length = positions.get_length()
             if length == 0
                 return
 
-            var position_in_play_list = _player.position_in_play_list
-            var final_position_in_play_list = position_in_play_list
+            var position_in_playlist = _player.position_in_playlist
+            var final_position_in_playlist = position_in_playlist
         
             _crucible.libraries.write_begin()
             try
-                destination = _crucible.libraries.move_in_album(_album_path, destination, positions, ref final_position_in_play_list, false)
+                destination = _crucible.libraries.move_in_album(_album_path, destination, positions, ref final_position_in_playlist, false)
                 update_stored_version()
             except e: GLib.Error
                 _crucible.libraries.write_rollback()
                 raise e
             _crucible.libraries.write_commit()
 
-            if final_position_in_play_list != position_in_play_list
-                _player.position_in_play_list = final_position_in_play_list
+            if final_position_in_playlist != position_in_playlist
+                _player.position_in_playlist = final_position_in_playlist
 
         def to_json(): Json.Object
             try
@@ -146,7 +146,7 @@ namespace Khovsgol.Server
             var album = new Album()
             album.path = _album_path
             album.date = version
-            album.album_type = AlbumType.OTHER
+            album.album_type = AlbumType.PLAYLIST
             _crucible.libraries.save_album(album)
             return version
 
@@ -204,7 +204,7 @@ namespace Khovsgol.Server
                             continue
                     
                     // Fit track in playlist
-                    track.position_in_play_list = track_pointer.position
+                    track.position_in_playlist = track_pointer.position
                     get_album_path_dynamic(track.to_json())
 
                     tracks.add(track)

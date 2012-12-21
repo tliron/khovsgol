@@ -204,9 +204,9 @@ namespace Khovsgol.Client.Plugins
                 set
                     _LoopStatus = value
                     if value == "None"
-                        _instance.api.set_cursor_mode(_instance.player, "play_list")
+                        _instance.api.set_cursor_mode(_instance.player, "playlist")
                     else if value == "Playlist"
-                        _instance.api.set_cursor_mode(_instance.player, "repeat_play_list")
+                        _instance.api.set_cursor_mode(_instance.player, "repeat_playlist")
                     else if value == "Track"
                         _instance.api.set_cursor_mode(_instance.player, "repeat_track")
 
@@ -220,7 +220,7 @@ namespace Khovsgol.Client.Plugins
                     if value
                         _instance.api.set_cursor_mode(_instance.player, "repeat_track")
                     else
-                        _instance.api.set_cursor_mode(_instance.player, "play_list")
+                        _instance.api.set_cursor_mode(_instance.player, "playlist")
                         
             prop readonly Metadata: HashTable of string, Variant?
                 owned get
@@ -241,10 +241,10 @@ namespace Khovsgol.Client.Plugins
             event Seeked(position: int64)
             
             def Next()
-                _instance.api.set_position_in_play_list_string(_instance.player, "next")
+                _instance.api.set_position_in_playlist_string(_instance.player, "next")
 
             def Previous()
-                _instance.api.set_position_in_play_list_string(_instance.player, "prev")
+                _instance.api.set_position_in_playlist_string(_instance.player, "prev")
 
             def Pause()
                  _instance.api.set_play_mode(_instance.player, "paused")
@@ -298,7 +298,7 @@ namespace Khovsgol.Client.Plugins
                 if cursor_mode == "album"
                     _LoopStatus = "None"
                     _Shuffle = false
-                else if cursor_mode == "play_list"
+                else if cursor_mode == "playlist"
                     _LoopStatus = "None"
                     _Shuffle = false
                 else if cursor_mode == "repeat_track"
@@ -307,7 +307,7 @@ namespace Khovsgol.Client.Plugins
                 else if cursor_mode == "repeat_album"
                     _LoopStatus = "None"
                     _Shuffle = false
-                else if cursor_mode == "repeat_play_list"
+                else if cursor_mode == "repeat_playlist"
                     _LoopStatus = "Playlist"
                     _Shuffle = false
                 else if cursor_mode == "shuffle"

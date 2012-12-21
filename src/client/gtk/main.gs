@@ -30,11 +30,11 @@ namespace Khovsgol.Client.GTK
             show.connect(on_show)
             
             _control_bar = new ControlBar(_instance)
-            _play_list = new PlayList(_instance)
+            _playlist = new Playlist(_instance)
             _library = new Library(_instance)
 
             add_accel_group(_control_bar.accel_group)
-            add_accel_group(_play_list.accel_group)
+            add_accel_group(_playlist.accel_group)
             add_accel_group(_library.accel_group)
             
             // CSS
@@ -51,7 +51,7 @@ namespace Khovsgol.Client.GTK
 
             _panes = new Paned(Orientation.HORIZONTAL)
             _panes.border_width = 10
-            _panes.pack1(_play_list, true, true)
+            _panes.pack1(_playlist, true, true)
             _panes.pack2(_library, true, true)
             _panes.realize.connect(on_realize_panes)
             
@@ -81,7 +81,7 @@ namespace Khovsgol.Client.GTK
             if _instance.configuration.focus_on_library
                 _library.initial_focus()
             else
-                _play_list.initial_focus()
+                _playlist.initial_focus()
 
             show_all()
             
@@ -89,7 +89,7 @@ namespace Khovsgol.Client.GTK
             _panes.notify.connect(on_split)
             
         prop readonly control_bar: ControlBar
-        prop readonly play_list: PlayList
+        prop readonly playlist: Playlist
         prop readonly library: Library
               
         def private on_realized()

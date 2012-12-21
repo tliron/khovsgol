@@ -57,7 +57,7 @@ namespace Khovsgol.Server.GStreamer
                         if state == State.PAUSED
                             _pipeline.state = State.PLAYING
                         else if state == State.NULL
-                            if position_in_play_list != int.MIN
+                            if position_in_playlist != int.MIN
                                 _pipeline.state = State.PLAYING
                             else
                                 next()
@@ -68,7 +68,7 @@ namespace Khovsgol.Server.GStreamer
                         else if state == State.PAUSED
                             _pipeline.state = State.PLAYING
                         else if state == State.NULL
-                            if position_in_play_list != int.MIN
+                            if position_in_playlist != int.MIN
                                 _pipeline.state = State.PLAYING
                             else
                                 next()

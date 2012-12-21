@@ -13,7 +13,7 @@ namespace Khovsgol.Server
         def abstract create_library(): Library
         def abstract create_directory(): Directory
         def abstract create_player(): Player
-        def abstract create_play_list(): PlayList
+        def abstract create_playlist(): Playlist
 
     class Instance: Object implements Crucible
         construct(args: array of string) raises GLib.Error
@@ -89,10 +89,10 @@ namespace Khovsgol.Server
             player.crucible = self
             return player
             
-        def create_play_list(): PlayList
-            var play_list = new PlayList()
-            play_list.crucible = self
-            return play_list
+        def create_playlist(): Playlist
+            var playlist = new Playlist()
+            playlist.crucible = self
+            return playlist
         
         def start()
             _server.start()

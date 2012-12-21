@@ -6,24 +6,24 @@ uses
 
 namespace Khovsgol.Client.GTK
     
-    interface PlayListStyle: Style
-        def abstract fill(node: PlayListNode)
-        def abstract gather_positions(node: PlayListNode, ref positions: Json.Array)
-        def abstract gather_paths(node: PlayListNode, ref positions: Json.Array)
-        def abstract get_first_position(node: PlayListNode): int
+    interface PlaylistStyle: Style
+        def abstract fill(node: PlaylistNode)
+        def abstract gather_positions(node: PlaylistNode, ref positions: Json.Array)
+        def abstract gather_paths(node: PlaylistNode, ref positions: Json.Array)
+        def abstract get_first_position(node: PlaylistNode): int
     
     /*
      * Uses header rows for all subsequent tracks of the same album,
      * allowing for a clutter-free view for users who tend to listen
      * to whole albums.
      */
-    class GroupByAlbums: GLib.Object implements Style, PlayListStyle
+    class GroupByAlbums: GLib.Object implements Style, PlaylistStyle
         const private ALBUM_POSITION: int = -2
 
         prop readonly name: string = "group_by_albums"
         prop readonly label: string = "Group by albums"
         
-        def fill(node: PlayListNode)
+        def fill(node: PlaylistNode)
             var subdue_lossy = node.instance.configuration.subdue_lossy
             var show_duration = node.instance.configuration.show_duration
             current_album_path: string? = null
@@ -79,7 +79,7 @@ namespace Khovsgol.Client.GTK
                 var title = track.title
                 if title is not null
                     var path = track.path
-                    var position = track.position_in_play_list
+                    var position = track.position_in_playlist
                     var duration = track.duration
                     var file_type = track.file_type
                     
@@ -107,7 +107,7 @@ namespace Khovsgol.Client.GTK
                     if (current_album_paths is not null) and (path is not null)
                         current_album_paths.add_string_element(path)
                         
-        def gather_positions(node: PlayListNode, ref positions: Json.Array)
+        def gather_positions(node: PlaylistNode, ref positions: Json.Array)
             var position = node.position
             if position == ALBUM_POSITION
                 var album = node.as_object
@@ -119,11 +119,11 @@ namespace Khovsgol.Client.GTK
             else if position > 0
                 var track = node.as_object
                 if track is not null
-                    var track_position = new Track.from_json(track).position_in_play_list
+                    var track_position = new Track.from_json(track).position_in_playlist
                     if track_position != int.MIN
                         positions.add_int_element(track_position)
 
-        def gather_paths(node: PlayListNode, ref positions: Json.Array)
+        def gather_paths(node: PlaylistNode, ref positions: Json.Array)
             var position = node.position
             if position == ALBUM_POSITION
                 var album = node.as_object
@@ -139,7 +139,7 @@ namespace Khovsgol.Client.GTK
                     if path is not null
                         positions.add_string_element(path)
 
-        def get_first_position(node: PlayListNode): int
+        def get_first_position(node: PlaylistNode): int
             var position = node.position
             if position == ALBUM_POSITION
                 var album = node.as_object
@@ -151,54 +151,54 @@ namespace Khovsgol.Client.GTK
             else if position > 0
                 var track = node.as_object
                 if track is not null
-                    return new Track.from_json(track).position_in_play_list
+                    return new Track.from_json(track).position_in_playlist
             
             return int.MIN
     
     /*
      * Base for styles which have one track per line.
      */
-    class abstract CommonPlayListStyle: GLib.Object implements Style, PlayListStyle
+    class abstract CommonPlaylistStyle: GLib.Object implements Style, PlaylistStyle
         prop abstract readonly name: string
         prop abstract readonly label: string
         
-        def abstract fill(node: PlayListNode)
+        def abstract fill(node: PlaylistNode)
 
-        def gather_positions(node: PlayListNode, ref positions: Json.Array)
+        def gather_positions(node: PlaylistNode, ref positions: Json.Array)
             var track = node.as_object
             if track is not null
-                var position = new Track.from_json(track).position_in_play_list
+                var position = new Track.from_json(track).position_in_playlist
                 if position != int.MIN
                     positions.add_int_element(position)
 
-        def gather_paths(node: PlayListNode, ref positions: Json.Array)
+        def gather_paths(node: PlaylistNode, ref positions: Json.Array)
             var track = node.as_object
             if track is not null
                 var path = new Track.from_json(track).path
                 if path is not null
                     positions.add_string_element(path)
 
-        def get_first_position(node: PlayListNode): int
+        def get_first_position(node: PlaylistNode): int
             var track = node.as_object
             if track is not null
-                return new Track.from_json(track).position_in_play_list
+                return new Track.from_json(track).position_in_playlist
             else
                 return int.MIN
     
     /*
      * One line per track with minimal information.
      */
-    class Compact: CommonPlayListStyle
+    class Compact: CommonPlaylistStyle
         prop override readonly name: string = "compact"
         prop override readonly label: string = "Compact"
         
-        def override fill(node: PlayListNode)
+        def override fill(node: PlaylistNode)
             var subdue_lossy = node.instance.configuration.subdue_lossy
             var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
                 if title is not null
-                    var position = track.position_in_play_list
+                    var position = track.position_in_playlist
                     var duration = track.duration
                     var artist = track.artist
                     var file_type = track.file_type
@@ -221,17 +221,17 @@ namespace Khovsgol.Client.GTK
     /*
      * Three lines per track with extended information.
      */
-    class Extended: CommonPlayListStyle
+    class Extended: CommonPlaylistStyle
         prop override readonly name: string = "extended"
         prop override readonly label: string = "Extended"
         
-        def override fill(node: PlayListNode)
+        def override fill(node: PlaylistNode)
             var subdue_lossy = node.instance.configuration.subdue_lossy
             var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
                 if title is not null
-                    var position_in_play_list = track.position_in_play_list
+                    var position_in_playlist = track.position_in_playlist
                     var position_in_album = track.position_in_album
                     var duration = track.duration
                     var artist = track.artist
@@ -250,15 +250,15 @@ namespace Khovsgol.Client.GTK
 
                     markup1: string
                     if (artist is not null) and (album is not null) and (position_in_album != int.MIN)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">%s in %s</span>".printf(position_in_play_list, title, artist, format_ordinal(position_in_album), album)
+                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">%s in %s</span>".printf(position_in_playlist, title, artist, format_ordinal(position_in_album), album)
                     else if (artist is not null) and (album is not null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">In %s</span>".printf(position_in_play_list, title, artist, album)
+                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">In %s</span>".printf(position_in_playlist, title, artist, album)
                     else if (artist is not null) and (album is null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>".printf(position_in_play_list, title, artist)
+                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>".printf(position_in_playlist, title, artist)
                     else if (artist is null) and (album is not null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position_in_play_list, title, album)
+                        markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position_in_playlist, title, album)
                     else
-                        markup1 = "%d\t%s".printf(position_in_play_list, title)
+                        markup1 = "%d\t%s".printf(position_in_playlist, title)
                     var markup2 = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
                     
-                    node.append_object(track.to_json(), position_in_play_list, track.title, markup1, markup2)
+                    node.append_object(track.to_json(), position_in_playlist, track.title, markup1, markup2)

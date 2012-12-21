@@ -73,12 +73,12 @@ namespace Khovsgol.Client.GTK
 
             var keyboard_focus_label = new Label.with_mnemonic("Initial _keyboard focus when Khövsgöl is started:")
             keyboard_focus_label.set_alignment(0, 0)
-            var activate_play_list = new RadioButton.with_label(null, "Playlist")
-            ((Label) activate_play_list.get_child()).wrap = true
-            var activate_library = new RadioButton.with_label_from_widget(activate_play_list, "Library")
+            var activate_playlist = new RadioButton.with_label(null, "Playlist")
+            ((Label) activate_playlist.get_child()).wrap = true
+            var activate_library = new RadioButton.with_label_from_widget(activate_playlist, "Library")
             ((Label) activate_library.get_child()).wrap = true
             set_boolean_configuration(activate_library, _instance.configuration, "focus_on_library")
-            keyboard_focus_label.mnemonic_widget = activate_play_list
+            keyboard_focus_label.mnemonic_widget = activate_playlist
 
             var ui_box = new Box(Orientation.VERTICAL, 10)
             ui_box.pack_start(about_label, false)
@@ -87,7 +87,7 @@ namespace Khovsgol.Client.GTK
             ui_box.pack_start(subdue_lossy, false)
             ui_box.pack_start(expand_on_click, false)
             ui_box.pack_start(keyboard_focus_label, false)
-            ui_box.pack_start(activate_play_list, false)
+            ui_box.pack_start(activate_playlist, false)
             ui_box.pack_start(activate_library, false)
 
             var ui_page = new Alignment(0, 0, 1, 1)
