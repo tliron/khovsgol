@@ -167,7 +167,7 @@ namespace Khovsgol.Server._Sqlite
             _write_db.assert_done(_delete_track1.step())
 
             // Delete track pointers
-            // TODO: move positions in custom compilation?
+            // TODO: move positions in playlist?
             if _delete_track2 is null
                 _write_db.prepare(out _delete_track2, "DELETE FROM track_pointer WHERE path=?")
             else

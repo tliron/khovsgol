@@ -13,7 +13,7 @@ namespace Khovsgol.Client.GTK
     /*
      * Classic view of artists with their albums ordered by date.
      * Separate sections are added to the bottom for compilations
-     * and custom compilation.
+     * and playlists.
      */
     class ArtistsAndTheirAlbums: GLib.Object implements Style, LibraryStyle
         prop readonly name: string = "artists_albums"
@@ -151,7 +151,7 @@ namespace Khovsgol.Client.GTK
                 else
                     // Compilations
                     var args = new Client.API.GetAlbumsArgs()
-                    args.album_type = node.as_string == "custom" ? AlbumType.SAVED_PLAYLIST : AlbumType.COMPILATION
+                    args.album_type = node.as_string == "playlist" ? AlbumType.SAVED_PLAYLIST : AlbumType.COMPILATION
                     args.sort.add("date")
                     args.sort.add("title_sort")
                     fill_albums_by(node.instance.api.get_albums(args), node, subdue_lossy)
@@ -215,7 +215,7 @@ namespace Khovsgol.Client.GTK
                 else
                     // All paths by compilation type, one album at a time
                     var args = new Client.API.GetAlbumsArgs()
-                    args.album_type = node.as_string == "custom" ? 2 : 1
+                    args.album_type = node.as_string == "playlist" ? 2 : 1
                     args.sort.add("date")
                     args.sort.add("title_sort")
                     gather_from_albums(node.instance.api.get_albums(args), node, ref paths)

@@ -238,7 +238,7 @@ namespace Khovsgol.Client.GTK
                 selection_data.@set(target, 8, array_to(data).data)
                 
             else
-                // Track paths, likely dragged to a custom compilation in the library pane
+                // Track paths, likely dragged to a playlist in the library pane
                 var data = get_selected_paths()
                 selection_data.@set(target, 8, array_to(data).data)
         

@@ -17,7 +17,7 @@ namespace Khovsgol.Client.GTK
             
             _popup_none = create_popup_menu()
             _popup = create_popup_menu(true)
-            _popup_custom = create_popup_menu(true, true)
+            _popup_playlist = create_popup_menu(true, true)
         
             // Top
             
@@ -321,7 +321,7 @@ namespace Khovsgol.Client.GTK
         _style_box: StyleComboBox
         _popup_none: Gtk.Menu
         _popup: Gtk.Menu
-        _popup_custom: Gtk.Menu
+        _popup_playlist: Gtk.Menu
         _expand_on_click: bool
         
         const MINIMUM_FILTER_LENGTH: int = 1
