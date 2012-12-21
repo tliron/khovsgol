@@ -241,7 +241,7 @@ namespace Khovsgol.Server
         def post_album(conversation: Conversation) raises GLib.Error
             var album_path = conversation.variables["path"]
             if not album_path.has_prefix("*")
-                // Must have playlist magic prefix
+                // Must have saved playlist magic prefix
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
             var album = _crucible.libraries.get_album(album_path)
@@ -318,7 +318,7 @@ namespace Khovsgol.Server
         def put_album(conversation: Conversation) raises GLib.Error
             var album_path = conversation.variables["path"]
             if not album_path.has_prefix("*")
-                // Must have playlist magic prefix
+                // Must have saved playlist magic prefix
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
             var entity = conversation.request_json_object
@@ -326,7 +326,7 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
                 
-            // Create a new playlist
+            // Create a new saved playlist
             var title = get_string_member_or_null(entity, "title")
             var library = get_string_member_or_null(entity, "library")
             if (title is not null) and (library is not null)
@@ -363,7 +363,7 @@ namespace Khovsgol.Server
         def delete_album(conversation: Conversation) raises GLib.Error
             var path = conversation.variables["path"]
             if not path.has_prefix("*")
-                // Must have playlist magic prefix
+                // Must have saved playlist magic prefix
                 conversation.status_code = StatusCode.BAD_REQUEST
                 return
             var album = _crucible.libraries.get_album(path)

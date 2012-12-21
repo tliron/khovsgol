@@ -8,10 +8,11 @@ namespace Khovsgol.Client.GTK
 
     class Instance: Object implements Client.Instance
         construct(application: Application, args: array of string) raises GLib.Error
+            _arguments = new Arguments(args)
             _configuration = new Configuration()
             _server_configuration = new Server.Configuration()
 
-            initialize_logging()
+            initialize_logging(_arguments.console)
             
             player = Environment.get_user_name()
 
@@ -101,6 +102,7 @@ namespace Khovsgol.Client.GTK
                     return file
             return null
         
+        _arguments: Arguments
         _player: string
         _plugins: list of Plugin = new list of Plugin
         _browser: Browser?
@@ -118,10 +120,14 @@ namespace Khovsgol.Client.GTK
         
     _logger: Logging.Logger
         
-    def private static initialize_logging() raises GLib.Error
+    def private static initialize_logging(console: bool) raises GLib.Error
         _logger = Logging.get_logger("khovsgol.client")
-        
-        var appender = new Logging.FileAppender()
-        appender.deepest_level = LogLevelFlags.LEVEL_MESSAGE
-        appender.set_path("%s/.khovsgol/log/client.log".printf(Environment.get_home_dir()))
-        Logging.get_logger().appender = appender
+
+        if not console
+            var appender = new Logging.FileAppender()
+            appender.deepest_level = LogLevelFlags.LEVEL_MESSAGE
+            appender.set_path("%s/.khovsgol/log/client.log".printf(Environment.get_home_dir()))
+            Logging.get_logger().appender = appender
+        else
+            var appender = new Logging.StreamAppender()
+            Logging.get_logger().appender = appender

@@ -1,31 +1,3 @@
-#
-# A few special targets:
-#
-# <component>.ccode:
-#  Outputs the C code for a component into the "c/<component>" directory.
-#
-# dependencies.quantal:
-#  Installs build dependencies for Ubuntu 12.10.
-#
-# dependencies.precise:
-#  Installs build dependencies for Ubuntu 12.04.
-#
-# install.user:
-# uninstall.user:
-#  Installs a ".desktop" file for the current user to run Khovsgol directly from
-#  the build directory. DO NOT USE SUDO FOR THIS!
-#
-# dsc:
-#  Creates Debian source packages for Ubuntu.
-#  Make sure to set DEBSIGN_KEYID in order to sign the packages
-#
-# deb:
-#  Creates Debian binary packages for Ubuntu.
-#  Make sure to set DEBSIGN_KEYID in order to sign the packages
-#
-# dsc.pbuilder, deb.pbuilder:
-#  Same as dsc and deb for the pbuilder environment.
-#
 
 SRC=src
 BIN=bin
@@ -52,4 +24,4 @@ uninstall.user:
 
 include components.mk
 include dependencies.mk
-include deb.mk
+include debianized.mk
