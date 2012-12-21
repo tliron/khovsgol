@@ -140,7 +140,7 @@ namespace Khovsgol.Server
         _albums: list of Album = new list of Album
         _albums_json: Json.Array?
 
-        def private update_stored_version(): int64 raises GLib.Error
+        def private update_stored_version(invalidate: bool = true): int64 raises GLib.Error
             // Our version is actually a timestamp stored in the album's date field as an int64
             var version = get_monotonic_time()
             var album = new Album()
@@ -148,6 +148,8 @@ namespace Khovsgol.Server
             album.date = version
             album.album_type = AlbumType.PLAYLIST
             _crucible.libraries.save_album(album)
+            if invalidate
+                _version = int64.MIN
             return version
 
         def private get_stored_version(): int64 raises GLib.Error
@@ -159,7 +161,7 @@ namespace Khovsgol.Server
                 version: int64
                 _crucible.libraries.write_begin()
                 try
-                    version = update_stored_version()
+                    version = update_stored_version(false)
                 except e: GLib.Error
                     _crucible.libraries.write_rollback()
                     raise e
@@ -170,13 +172,11 @@ namespace Khovsgol.Server
          * If the stored version is newer, refresh our track list.
          */
         def private validate() raises GLib.Error
-            var libraries = _crucible.libraries
-            
             var stored_version = get_stored_version()
-            if (_version == int64.MIN) or (stored_version > _version)
+            if (_version == int64.MIN) or (stored_version >= _version)
+                var libraries = _crucible.libraries
                 var tracks = new list of Track
                 var albums = new list of Album
-
                 last_album_path: string? = null
 
                 var args = new IterateForAlbumArgs()

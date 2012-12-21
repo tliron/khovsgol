@@ -23,7 +23,7 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=40
+current_page=89
 FILE_NAME_0=8745;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fcli%2Finstance.gs;0;4
 FILE_NAME_1=37715;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fapi.gs;0;4
 FILE_NAME_2=12148;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Ffilesystem%2Fdirectory.gs;0;4
@@ -33,7 +33,7 @@ FILE_NAME_5=16214;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fser
 FILE_NAME_6=1785;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Farguments.gs;0;4
 FILE_NAME_7=3868;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fconfiguration.gs;0;4
 FILE_NAME_8=0;Vala;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Ferrors.vala;0;4
-FILE_NAME_9=4925;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Finstance.gs;0;4
+FILE_NAME_9=4764;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Finstance.gs;0;4
 FILE_NAME_10=29;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fconsole%2Fconsole.gs;0;4
 FILE_NAME_11=1679;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fdaemonize%2Fdaemonize.gs;0;4
 FILE_NAME_12=0;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Flib%2Fdaemonize%2Futilities.gs;0;4
@@ -64,7 +64,7 @@ FILE_NAME_36=11284;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fse
 FILE_NAME_37=338;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fdirectory.gs;0;4
 FILE_NAME_38=8146;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fplayer.gs;0;4
 FILE_NAME_39=1285;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Futilities.gs;0;4
-FILE_NAME_40=3497;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Finstance.gs;0;4
+FILE_NAME_40=3475;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Finstance.gs;0;4
 FILE_NAME_41=9011;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary.gs;0;4
 FILE_NAME_42=4201;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Fmain.gs;0;4
 FILE_NAME_43=14875;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Futilities.gs;0;4
@@ -111,8 +111,9 @@ FILE_NAME_83=145;None;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fdebian%2Fkh
 FILE_NAME_84=0;None;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2FLICENSE;0;4
 FILE_NAME_85=1480;Make;0;16;1;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fdebianized.mk;0;4
 FILE_NAME_86=57;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fversion.gs;0;4
-FILE_NAME_87=268;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Farguments.gs;0;4
-FILE_NAME_88=1969;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fcli%2Farguments.gs;0;4
+FILE_NAME_87=319;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Farguments.gs;0;4
+FILE_NAME_88=273;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fcli%2Farguments.gs;0;4
+FILE_NAME_89=7319;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Fplaylist.gs;0;4
 
 [VTE]
 last_dir=/Depot/Projects/Khövsgöl3
@@ -123,7 +124,7 @@ EX_00_LB=_Execute
 EX_00_CM=bin/khovsgol
 EX_00_WD=%p
 GenieFT_01_LB=_Build
-GenieFT_01_CM=make khovsgol
+GenieFT_01_CM=make khovsgold
 GenieFT_01_WD=%p
 GenieFT_00_LB=_Compile
 GenieFT_00_CM=valac -c "%f"
