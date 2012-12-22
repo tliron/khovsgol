@@ -136,22 +136,25 @@ namespace Khovsgol.Client.GTK
         def private on_autostart_with_session()
             var destination = File.new_for_path("%s/.config/autostart/khovsgold.desktop".printf(Environment.get_home_dir()))
             if _autostart_with_session.active
-                var file = _instance.get_resource("khovsgold.desktop")
-                if file is not null
-                    try
-                        file.copy(destination, FileCopyFlags.OVERWRITE)
-                        FileUtils.chmod(destination.get_path(), 0764) // octal literal
-                    except e: GLib.Error
-                        _logger.exception(e)
-                else
-                    var key_file = new KeyFile()
-                    try
-                        key_file.load_from_file(destination.get_path(), KeyFileFlags.KEEP_COMMENTS)
-                        key_file.set_boolean("Desktop Entry", "X-GNOME-Autostart-enabled", true)
-                        var data = key_file.to_data()
-                        FileUtils.set_data(destination.get_path(), data.data)
-                    except e: GLib.Error
-                        _logger.exception(e)
+                var exec = _instance.dir.get_child("khovsgold")
+                if exec.query_exists()
+                    if not destination.query_exists()
+                        var file = _instance.get_resource("khovsgold.desktop")
+                        try
+                            file.copy(destination, FileCopyFlags.OVERWRITE)
+                            FileUtils.chmod(destination.get_path(), 0764) // octal literal
+                        except e: GLib.Error
+                            _logger.exception(e)
+                    if destination.query_exists()
+                        var key_file = new KeyFile()
+                        try
+                            key_file.load_from_file(destination.get_path(), KeyFileFlags.KEEP_COMMENTS)
+                            key_file.set_string("Desktop Entry", "Exec", "%s --start".printf(exec.get_path()))
+                            key_file.set_boolean("Desktop Entry", "X-GNOME-Autostart-enabled", true)
+                            var data = key_file.to_data()
+                            FileUtils.set_data(destination.get_path(), data.data)
+                        except e: GLib.Error
+                            _logger.exception(e)
             else
                 if destination.query_exists()
                     var key_file = new KeyFile()
