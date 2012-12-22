@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Khövsgöl Server
+Comment=Music player and library/playlist manager
+Type=Application
+Categories=AudioVideo;Audio;Player;GTK;
+Icon=khovsgol
+Exec=/usr/bin/khovsgold --start
+Terminal=false
+X-GNOME-Autostart-enabled=true

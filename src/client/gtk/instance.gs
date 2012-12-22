@@ -11,7 +11,7 @@ namespace Khovsgol.Client.GTK
             _arguments = new Arguments(args)
             _configuration = new Configuration()
             _server_configuration = new Server.Configuration()
-
+            
             initialize_logging(_arguments.console)
             
             player = Environment.get_user_name()
@@ -94,12 +94,20 @@ namespace Khovsgol.Client.GTK
                 _logger.exception(e)
         
         def get_resource(name: string): File?
-            // TODO: try standard location first
+            var file = File.new_for_path("/usr/share/khovsgol").get_child(name)
+            if file.query_exists()
+                return file
+
+            file = File.new_for_path("/usr/share/icons/gnome/scalable/apps").get_child(name)
+            if file.query_exists()
+                return file
+
             var base_dir = _dir.get_parent()
             if base_dir is not null
-                var file = base_dir.get_child("resources").get_child(name)
+                file = base_dir.get_child("resources").get_child(name)
                 if file.query_exists()
                     return file
+
             return null
         
         _arguments: Arguments

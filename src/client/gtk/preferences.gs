@@ -27,9 +27,10 @@ namespace Khovsgol.Client.GTK
             var stop_with_client_alignment = new Alignment(0, 0, 1, 1)
             stop_with_client_alignment.set_padding(0, 0, 20, 0)
             stop_with_client_alignment.add(stop_with_client)
-            var with_session = new RadioButton.with_label_from_widget(with_client, "Start my Khövsgöl server when I login to the computer")
-            ((Label) with_session.get_child()).wrap = true
-            with_session.sensitive = false // TODO
+            _autostart_with_session = new RadioButton.with_label_from_widget(with_client, "Start my Khövsgöl server when I login to the computer")
+            ((Label) _autostart_with_session.get_child()).wrap = true
+            _autostart_with_session.active = autostarts_with_session()
+            _autostart_with_session.clicked.connect(on_autostart_with_session)
             var disable_auto = new RadioButton.with_label_from_widget(with_client, "Don\'t auto-start my Khövsgöl server")
             ((Label) disable_auto.get_child()).wrap = true
             set_boolean_configuration(disable_auto, _instance.configuration, "server_autostart", true)
@@ -45,7 +46,7 @@ namespace Khovsgol.Client.GTK
             server_box.pack_start(my_server_label, false)
             server_box.pack_start(with_client, false)
             server_box.pack_start(stop_with_client_alignment, false)
-            server_box.pack_start(with_session, false)
+            server_box.pack_start(_autostart_with_session, false)
             server_box.pack_start(disable_auto, false)
             server_box.pack_start(advertise, false)
 
@@ -120,6 +121,47 @@ namespace Khovsgol.Client.GTK
                 return true
             else
                 return false
+
+        def autostarts_with_session(): bool
+            var destination = File.new_for_path("%s/.config/autostart/khovsgold.desktop".printf(Environment.get_home_dir()))
+            if destination.query_exists()
+                var key_file = new KeyFile()
+                try
+                    key_file.load_from_file(destination.get_path(), KeyFileFlags.KEEP_COMMENTS)
+                    return key_file.get_boolean("Desktop Entry", "X-GNOME-Autostart-enabled")
+                except e: GLib.Error
+                    _logger.exception(e)
+            return false
+        
+        def private on_autostart_with_session()
+            var destination = File.new_for_path("%s/.config/autostart/khovsgold.desktop".printf(Environment.get_home_dir()))
+            if _autostart_with_session.active
+                var file = _instance.get_resource("khovsgold.desktop")
+                if file is not null
+                    try
+                        file.copy(destination, FileCopyFlags.OVERWRITE)
+                        FileUtils.chmod(destination.get_path(), 0764) // octal literal
+                    except e: GLib.Error
+                        _logger.exception(e)
+                else
+                    var key_file = new KeyFile()
+                    try
+                        key_file.load_from_file(destination.get_path(), KeyFileFlags.KEEP_COMMENTS)
+                        key_file.set_boolean("Desktop Entry", "X-GNOME-Autostart-enabled", true)
+                        var data = key_file.to_data()
+                        FileUtils.set_data(destination.get_path(), data.data)
+                    except e: GLib.Error
+                        _logger.exception(e)
+            else
+                if destination.query_exists()
+                    var key_file = new KeyFile()
+                    try
+                        key_file.load_from_file(destination.get_path(), KeyFileFlags.KEEP_COMMENTS)
+                        key_file.set_boolean("Desktop Entry", "X-GNOME-Autostart-enabled", false)
+                        var data = key_file.to_data()
+                        FileUtils.set_data(destination.get_path(), data.data)
+                    except e: GLib.Error
+                        _logger.exception(e)
         
         def private set_boolean_configuration(button: CheckButton, configuration: Khovsgol.Configuration, property: string, reverse: bool = false)
             var value = Value(typeof(bool))
@@ -135,8 +177,9 @@ namespace Khovsgol.Client.GTK
         
         _instance: Instance
         _ownerships: list of Object = new list of Object
+        _autostart_with_session: RadioButton
         
-        class SensitivityDependsOn: Object
+        class private SensitivityDependsOn: Object
             construct(button: CheckButton, depends: CheckButton)
                 _button = button
                 _depends = depends
@@ -150,7 +193,7 @@ namespace Khovsgol.Client.GTK
             _button: CheckButton
             _depends: CheckButton
 
-        class SetBooleanConfiguration: Object
+        class private SetBooleanConfiguration: Object
             construct(button: CheckButton, configuration: Khovsgol.Configuration, property: string, reverse: bool)
                 _button = button
                 _configuration = configuration
@@ -163,7 +206,6 @@ namespace Khovsgol.Client.GTK
                 if _reverse
                     active = not active
                 _logger.messagef("Set property: %s = %s", _property, active ? "true" : "false")
-                //print "Set property: %s = %s", _property, active ? "true" : "false"
                 var value = Value(typeof(bool))
                 _configuration.get_property(_property, ref value)
                 if active != (bool) value
