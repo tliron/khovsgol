@@ -411,3 +411,49 @@ namespace Khovsgol.Client.GTK
 
         def private on_drag_begin(context: Gdk.DragContext)
             _selectable = true
+
+    /*
+     * The FreeDesktop autostart specification.
+     * 
+     * See: http://standards.freedesktop.org/autostart-spec/autostart-spec-latest.html
+     */
+    class Autostart
+        construct(name: string, template: File?)
+            _path = "%s/.config/autostart/%s.desktop".printf(Environment.get_home_dir(), name)
+            _file = File.new_for_path(_path)
+            _template = template
+        
+        def is_active(): bool raises GLib.Error
+            if _file.query_exists()
+                var key_file = new KeyFile()
+                key_file.load_from_file(_path, KeyFileFlags.KEEP_COMMENTS)
+                return key_file.get_boolean("Desktop Entry", "X-GNOME-Autostart-enabled")
+            return false
+        
+        def set_active(value: bool, exec: string? = null) raises GLib.Error
+            if value
+                if (_template is not null) and not _file.query_exists()
+                    // Copy from template
+                    _template.copy(_file, FileCopyFlags.OVERWRITE)
+                    FileUtils.chmod(_path, 0764) // octal literal
+                
+                // Enable
+                var key_file = new KeyFile()
+                key_file.load_from_file(_path, KeyFileFlags.KEEP_COMMENTS)
+                key_file.set_boolean("Desktop Entry", "X-GNOME-Autostart-enabled", true)
+                if exec is not null
+                    key_file.set_string("Desktop Entry", "Exec", exec)
+                var data = key_file.to_data()
+                FileUtils.set_data(_path, data.data)
+            else
+                // No need to disable if file does not exist
+                if _file.query_exists()
+                    var key_file = new KeyFile()
+                    key_file.load_from_file(_path, KeyFileFlags.KEEP_COMMENTS)
+                    key_file.set_boolean("Desktop Entry", "X-GNOME-Autostart-enabled", false)
+                    var data = key_file.to_data()
+                    FileUtils.set_data(_path, data.data)
+        
+        _path: string
+        _file: File
+        _template: File?

@@ -22,7 +22,7 @@ namespace Khovsgol.Client
      */
     class API: GLib.Object
         construct()
-            _client = new Nap._Soup.Client()
+            _client = new _Soup.Client()
             _client.timeout = 5
 
         prop watching_player: string?
@@ -75,7 +75,16 @@ namespace Khovsgol.Client
                 _watching_lock.unlock()
 
         def update()
-            get_player(watching_player)
+            //get_player(watching_player)
+            try
+                var conversation = _client.create_conversation()
+                conversation.method = Method.GET
+                conversation.path = "/player/{player}/"
+                conversation.variables["player"] = watching_player
+                conversation.committed.connect(on_committed)
+                conversation.commit(true)
+            except e: GLib.Error
+                on_error(e)
         
         def reset_watch()
             _watching_lock.lock()
@@ -114,7 +123,7 @@ namespace Khovsgol.Client
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/"
-                conversation.write_commit()
+                conversation.commit()
                 return new JsonObjects(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
@@ -156,7 +165,7 @@ namespace Khovsgol.Client
                         conversation.query["type"] = args.album_type.to_string()
                 if not args.sort.is_empty
                     conversation.query["sort"] = join(",", args.sort)
-                conversation.write_commit()
+                conversation.commit()
                 return new JsonTracks(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
@@ -188,7 +197,7 @@ namespace Khovsgol.Client
                         conversation.query["type"] = args.album_type.to_string()
                     if not args.sort.is_empty
                         conversation.query["sort"] = join(",", args.sort)
-                conversation.write_commit()
+                conversation.commit()
                 return new JsonAlbums(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
@@ -212,7 +221,7 @@ namespace Khovsgol.Client
                     conversation.query["album"] = "true"
                 if sort is not null
                     conversation.query["sort"] = sort
-                conversation.write_commit()
+                conversation.commit()
                 return new JsonArtists(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
@@ -228,7 +237,7 @@ namespace Khovsgol.Client
                 conversation.path = "/libraries/dates/"
                 if by_album
                     conversation.query["album"] = "true"
-                conversation.write_commit()
+                conversation.commit()
                 return new JsonInts(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
@@ -256,7 +265,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.GET
                 conversation.path = "/libraries/track/{path}/"
                 conversation.variables["path"] = path
-                conversation.write_commit()
+                conversation.commit()
                 var obj = conversation.response_json_object
                 if obj is not null
                     return new Track.from_json(obj)
@@ -285,7 +294,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.GET
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
-                conversation.write_commit()
+                conversation.commit()
                 var obj = conversation.response_json_object
                 if obj is not null
                     return new Album.from_json(obj)
@@ -317,7 +326,7 @@ namespace Khovsgol.Client
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -345,7 +354,7 @@ namespace Khovsgol.Client
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -366,7 +375,7 @@ namespace Khovsgol.Client
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -389,7 +398,7 @@ namespace Khovsgol.Client
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -401,7 +410,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.DELETE
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
-                conversation.write_commit()
+                conversation.commit()
             except e: GLib.Error
                 on_error(e)
 
@@ -417,7 +426,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.GET
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -438,7 +447,7 @@ namespace Khovsgol.Client
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -459,7 +468,7 @@ namespace Khovsgol.Client
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -481,7 +490,7 @@ namespace Khovsgol.Client
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -496,7 +505,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.PUT
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -508,7 +517,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.DELETE
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
-                conversation.write_commit()
+                conversation.commit()
             except e: GLib.Error
                 on_error(e)
 
@@ -525,7 +534,7 @@ namespace Khovsgol.Client
                 conversation.path = "/library/{library}/directory/{path}/"
                 conversation.variables["library"] = name
                 conversation.variables["path"] = path
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -548,7 +557,7 @@ namespace Khovsgol.Client
                 conversation.variables["library"] = name
                 conversation.variables["path"] = path
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -564,7 +573,7 @@ namespace Khovsgol.Client
                 conversation.path = "/library/{library}/directory/{path}/"
                 conversation.variables["library"] = name
                 conversation.variables["path"] = path
-                conversation.write_commit()
+                conversation.commit()
                 return conversation.response_json_object
             except e: GLib.Error
                 on_error(e)
@@ -577,7 +586,7 @@ namespace Khovsgol.Client
                 conversation.path = "/library/{library}/directory/{path}/"
                 conversation.variables["library"] = name
                 conversation.variables["path"] = path
-                conversation.write_commit()
+                conversation.commit()
             except e: GLib.Error
                 on_error(e)
 
@@ -589,7 +598,7 @@ namespace Khovsgol.Client
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/players/"
-                conversation.write_commit()
+                conversation.commit()
                 return new JsonObjects(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
@@ -615,7 +624,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.GET
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
-                conversation.write_commit()
+                conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
                     watch(player_object)
@@ -641,7 +650,7 @@ namespace Khovsgol.Client
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
                     watch(player_object)
@@ -667,7 +676,7 @@ namespace Khovsgol.Client
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
                     watch(player_object)
@@ -693,7 +702,7 @@ namespace Khovsgol.Client
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
                     watch(player_object)
@@ -721,7 +730,7 @@ namespace Khovsgol.Client
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
                     watch(player_object)
@@ -749,7 +758,7 @@ namespace Khovsgol.Client
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
                     watch(player_object)
@@ -777,7 +786,7 @@ namespace Khovsgol.Client
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
                     watch(player_object)
@@ -805,7 +814,7 @@ namespace Khovsgol.Client
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var player_object = conversation.response_json_object
                 if player_object is not null
                     watch(player_object)
@@ -851,7 +860,7 @@ namespace Khovsgol.Client
                 conversation.variables["player"] = player
                 if full
                     conversation.query["fullrepresentation"] = "true"
-                conversation.write_commit()
+                conversation.commit()
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
@@ -880,7 +889,7 @@ namespace Khovsgol.Client
                 if full
                     conversation.query["fullrepresentation"] = "true"
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
@@ -916,7 +925,7 @@ namespace Khovsgol.Client
                 if full
                     conversation.query["fullrepresentation"] = "true"
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
@@ -952,7 +961,7 @@ namespace Khovsgol.Client
                 if full
                     conversation.query["fullrepresentation"] = "true"
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
@@ -981,7 +990,7 @@ namespace Khovsgol.Client
                 if full
                     conversation.query["fullrepresentation"] = "true"
                 conversation.request_json_object = payload
-                conversation.write_commit()
+                conversation.commit()
                 var entity = conversation.response_json_object
                 if entity is not null
                     if full
@@ -1041,6 +1050,11 @@ namespace Khovsgol.Client
 
         init
             _logger = Logging.get_logger("khovsgol.client.api")
+        
+        def private on_committed(conversation: Conversation)
+            var player_object = conversation.response_json_object
+                if player_object is not null
+                    watch(player_object)
         
         def private on_error(e: GLib.Error)
             // TODO: special handling for network errors

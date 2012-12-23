@@ -37,6 +37,7 @@ namespace Nap
             owned get
         prop abstract request_json_array: Json.Array?
             owned get
+        prop abstract readonly request_form: dict of string, string
         
         prop abstract status_code: uint
         prop abstract response_media_type: string?
@@ -47,7 +48,9 @@ namespace Nap
         prop abstract response_json_array: Json.Array?
             owned get
         
-        def abstract write_commit()
+        event committed(conversation: Conversation)
+        
+        def abstract commit(asynchronous: bool = false)
         def abstract pause()
         def abstract unpause()
 
@@ -81,6 +84,8 @@ namespace Nap
                 return _request_json_array
             set
                 _request_json_array = value
+
+        prop readonly request_form: dict of string, string = new dict of string, string
         
         prop status_code: uint
         prop response_media_type: string?
@@ -103,7 +108,7 @@ namespace Nap
             set
                 _response_array = value
             
-        def write_commit()
+        def commit(asynchronous: bool = false)
             pass
             
         def pause()

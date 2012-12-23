@@ -242,7 +242,7 @@ namespace JsonUtil
             else
                 raise new Error.PARSING("Invalid JSON")
         except e: GLib.Error
-            raise new Error.PARSING(e.message)
+            raise new Error.PARSING("%s", e.message)
 
     def from_array(json: string): Json.Array raises Error
         var parser = new Parser()
@@ -256,4 +256,4 @@ namespace JsonUtil
             else
                 raise new Error.PARSING("Invalid JSON")
         except e: GLib.Error
-            raise new Error.PARSING(e.message)
+            raise new Error.PARSING("%s", e.message)

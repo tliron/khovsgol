@@ -75,7 +75,7 @@ namespace Khovsgol.Client.Plugins
                         
                     try
                         _notifications.notify("Khövsgöl", track.position_in_playlist, icon, "Khövsgöl", markup, _actions, _hints, 3000)
-                        _logger.info("Notified new track")
+                        _logger.infof("Notified new track: %s", track.path)
                     except e: IOError
                         _logger.exception(e)
         

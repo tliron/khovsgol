@@ -58,6 +58,8 @@ namespace Nap._Soup
                     return null
             set
                 pass
+
+        prop readonly request_form: dict of string, string = new dict of string, string
         
         prop status_code: uint = StatusCode.OK
         prop response_media_type: string?
@@ -96,7 +98,7 @@ namespace Nap._Soup
                     if _response_media_type is null
                         _response_media_type = "application/json"
         
-        def write_commit()
+        def commit(asynchronous: bool = false)
             _soup_message.set_status(_status_code)
             
             if _response_text is not null
@@ -104,6 +106,7 @@ namespace Nap._Soup
                     _response_media_type = "text/plain"
                 _soup_message.set_response(_response_media_type, Soup.MemoryUse.COPY, _response_text.data)
             
+            committed(self)
             log()
                 
         def pause()
@@ -182,6 +185,8 @@ namespace Nap._Soup
                     if _request_media_type is null
                         _request_media_type = "application/json"
         
+        prop readonly request_form: dict of string, string = new dict of string, string
+        
         prop status_code: uint
         prop response_media_type: string?
         
@@ -219,7 +224,7 @@ namespace Nap._Soup
             set
                 pass
         
-        def write_commit()
+        def commit(asynchronous: bool = false)
             if _base_url is null
                 return
         
@@ -229,7 +234,8 @@ namespace Nap._Soup
                 p = Template.renderd(_path, _variables)
             
             var uri = new StringBuilder(_base_url)
-            uri.append(p)
+            if p is not null
+                uri.append(p)
 
             // Add query to URI
             if not _query.is_empty
@@ -245,15 +251,26 @@ namespace Nap._Soup
             
             var uri_str = uri.str
             _soup_message = new Soup.Message(_method, uri_str)
+            
+            if (_request_text is null) and not _request_form.is_empty
+                var hash_table = new HashTable of string, string(str_hash, str_equal)
+                for var key in _request_form.keys
+                    hash_table.@set(key, _request_form[key])
+                _request_text = Soup.Form.encode_hash(hash_table)
+                _request_media_type = "application/x-www-form-urlencoded"
+                
             if _request_text is not null
                 _soup_message.set_request(_request_media_type, Soup.MemoryUse.COPY, _request_text.data)
-            var timer = new Timer()
-            _status_code = _soup_session.send_message(_soup_message)
-
-            if _logger.can(LogLevelFlags.LEVEL_DEBUG)
+                
+            if asynchronous
+                ref()
+                _soup_session.queue_message(_soup_message, on_message_handled)
+            else
+                var timer = new Timer()
+                _status_code = _soup_session.send_message(_soup_message)
                 timer.stop()
-                var seconds = timer.elapsed()
-                _logger.debugf("%s (%f)", uri_str, seconds)
+                _logger.debugf("%s (%.2f ms)", uri_str, timer.elapsed() * 1000.0)
+                committed(self)
 
         def pause()
             pass
@@ -267,6 +284,12 @@ namespace Nap._Soup
         _request_text: string?
         _request_json_object: Json.Object?
         _request_json_array: Json.Array?
+        
+        def private on_message_handled(session: Soup.Session, message: Soup.Message)
+            _status_code = message.status_code
+            _logger.debugf("%s", message.uri.to_string(false))
+            committed(self)
+            unref()
 
         _logger: static Logging.Logger
 
@@ -284,7 +307,7 @@ namespace Nap._Soup
             _port = port
             _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
             if _soup_server is null
-                raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %u, is the port already in use?".printf(port))
+                raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %u, is the port already in use?", port)
             
             _soup_server.add_handler(null, _handle)
             
@@ -323,7 +346,7 @@ namespace Nap._Soup
                     except e: GLib.Error
                         if _error_handler is not null
                             _error_handler(conversation, e)
-                    conversation.write_commit()
+                    conversation.commit()
 
         _soup_server: Soup.Server
         _handler: unowned Handler?

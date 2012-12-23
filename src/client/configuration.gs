@@ -119,6 +119,45 @@ namespace Khovsgol.Client
             set
                 _key_file.set_boolean("ui", "focus-on-library", value)
         
+        prop last_fm: bool
+            get
+                try
+                    return _key_file.get_boolean("last.fm", "enabled")
+                except e: KeyFileError
+                    return false
+            set
+                _key_file.set_boolean("last.fm", "enabled", value)
+
+        prop last_fm_username: string?
+            owned get
+                try
+                    return _key_file.get_string("last.fm", "username")
+                except e: KeyFileError
+                    return null
+            set
+                if value is not null
+                    _key_file.set_string("last.fm", "username", value)
+                else
+                    try
+                        _key_file.remove_key("last.fm", "username")
+                    except e: KeyFileError
+                        pass
+
+        prop last_fm_password: string?
+            owned get
+                try
+                    return _key_file.get_string("last.fm", "password")
+                except e: KeyFileError
+                    return null
+            set
+                if value is not null
+                    _key_file.set_string("last.fm", "password", value)
+                else
+                    try
+                        _key_file.remove_key("last.fm", "password")
+                    except e: KeyFileError
+                        pass
+
         prop server_autostart: bool
             get
                 try

@@ -9,6 +9,9 @@ namespace Khovsgol.Client.GTK
         construct(instance: Instance)
             _instance = instance
             
+            var template = _instance.get_resource("khovsgold.desktop")
+            _autostart = new Autostart("khovsgold", template.query_exists() ? template : null)
+            
             // Server
             
             var about_label = new Label("The program that you are using right now is just a user interface, a \"client.\" The music libraries and music players are actually running in a \"server,\" a separate program that runs in the background.\n\nBy default Khövsgöl connects to your own server, running on your computer. But you can easily connect to other servers on your network, to play music from and browse their libraries.\n\nYou can configure your own server here, and even disable it entirely so that you run only as a client for other servers in the network.")
@@ -121,50 +124,27 @@ namespace Khovsgol.Client.GTK
                 return true
             else
                 return false
-
+        
         def autostarts_with_session(): bool
-            var destination = File.new_for_path("%s/.config/autostart/khovsgold.desktop".printf(Environment.get_home_dir()))
-            if destination.query_exists()
-                var key_file = new KeyFile()
-                try
-                    key_file.load_from_file(destination.get_path(), KeyFileFlags.KEEP_COMMENTS)
-                    return key_file.get_boolean("Desktop Entry", "X-GNOME-Autostart-enabled")
-                except e: GLib.Error
-                    _logger.exception(e)
+            try
+                return _autostart.is_active()
+            except e: GLib.Error
+                _logger.exception(e)
             return false
         
         def private on_autostart_with_session()
-            var destination = File.new_for_path("%s/.config/autostart/khovsgold.desktop".printf(Environment.get_home_dir()))
             if _autostart_with_session.active
                 var exec = _instance.dir.get_child("khovsgold")
                 if exec.query_exists()
-                    if not destination.query_exists()
-                        var file = _instance.get_resource("khovsgold.desktop")
-                        try
-                            file.copy(destination, FileCopyFlags.OVERWRITE)
-                            FileUtils.chmod(destination.get_path(), 0764) // octal literal
-                        except e: GLib.Error
-                            _logger.exception(e)
-                    if destination.query_exists()
-                        var key_file = new KeyFile()
-                        try
-                            key_file.load_from_file(destination.get_path(), KeyFileFlags.KEEP_COMMENTS)
-                            key_file.set_string("Desktop Entry", "Exec", "%s --start".printf(exec.get_path()))
-                            key_file.set_boolean("Desktop Entry", "X-GNOME-Autostart-enabled", true)
-                            var data = key_file.to_data()
-                            FileUtils.set_data(destination.get_path(), data.data)
-                        except e: GLib.Error
-                            _logger.exception(e)
-            else
-                if destination.query_exists()
-                    var key_file = new KeyFile()
                     try
-                        key_file.load_from_file(destination.get_path(), KeyFileFlags.KEEP_COMMENTS)
-                        key_file.set_boolean("Desktop Entry", "X-GNOME-Autostart-enabled", false)
-                        var data = key_file.to_data()
-                        FileUtils.set_data(destination.get_path(), data.data)
+                        _autostart.set_active(true, "%s --start".printf(exec.get_path()))
                     except e: GLib.Error
                         _logger.exception(e)
+            else
+                try
+                    _autostart.set_active(false)
+                except e: GLib.Error
+                    _logger.exception(e)
         
         def private set_boolean_configuration(button: CheckButton, configuration: Khovsgol.Configuration, property: string, reverse: bool = false)
             var value = Value(typeof(bool))
@@ -180,6 +160,7 @@ namespace Khovsgol.Client.GTK
         
         _instance: Instance
         _ownerships: list of Object = new list of Object
+        _autostart: Autostart
         _autostart_with_session: RadioButton
         
         class private SensitivityDependsOn: Object

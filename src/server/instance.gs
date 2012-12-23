@@ -56,7 +56,7 @@ namespace Khovsgol.Server
                 try
                     _server.thread_pool = new Nap.ThreadPool(_configuration.threads)
                 except e: ThreadError
-                    raise new Error.NETWORK(e.message)
+                    raise new Error.NETWORK("%s", e.message)
 
         prop readonly configuration: Configuration
         prop readonly libraries: Libraries
