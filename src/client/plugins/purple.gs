@@ -28,7 +28,6 @@ namespace Khovsgol.Client.Plugins
                     _tune_status_type_id = _purple.purple_primitive_get_id_from_type(StatusTypePrimitive.TUNE)
                     _instance.api.track_change.connect(on_track_changed)
                     set_state(PluginState.STARTED)
-                    _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
                     _purple = null
@@ -41,7 +40,6 @@ namespace Khovsgol.Client.Plugins
                 on_track_changed(null, null)
                 _purple = null
                 set_state(PluginState.STOPPED)
-                _logger.message("Stopped")
 
         _state: int = PluginState.STOPPED
         _purple: PurpleObject?
@@ -49,6 +47,7 @@ namespace Khovsgol.Client.Plugins
 
         def private set_state(state: PluginState)
             AtomicInt.@set(ref _state, state)
+            _logger.message(get_name_from_plugin_state(state))
 
         def private on_track_changed(track: Track?, old_track: Track?)
             if _purple is null

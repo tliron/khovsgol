@@ -46,7 +46,6 @@ namespace Khovsgol.Client.Plugins
                     
                     _server.show()
                     set_state(PluginState.STARTED)
-                    _logger.message("Started")
                 else
                     set_state(PluginState.STOPPED)
 
@@ -56,13 +55,13 @@ namespace Khovsgol.Client.Plugins
                 _server.server_display.disconnect(on_display)
                 _server = null
                 set_state(PluginState.STOPPED)
-                _logger.message("Stopped")
             
         _state: int = PluginState.STOPPED
         _server: Indicate.Server?
         
         def private set_state(state: PluginState)
             AtomicInt.@set(ref _state, state)
+            _logger.message(get_name_from_plugin_state(state))
 
         def private on_display(timestamp: uint)
             _instance.show()

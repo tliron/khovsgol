@@ -33,7 +33,6 @@ namespace Khovsgol.Client.Plugins
                     _instance.api.track_change.connect(on_track_changed)
                     _instance.api.error.connect(on_error)
                     set_state(PluginState.STARTED)
-                    _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
                     set_state(PluginState.STOPPED)
@@ -45,13 +44,13 @@ namespace Khovsgol.Client.Plugins
                 _instance.api.error.disconnect(on_error)
                 _notifications = null
                 set_state(PluginState.STOPPED)
-                _logger.message("Stopped")
         
         _state: int = PluginState.STOPPED
         _notifications: Notifications?
         
         def private set_state(state: PluginState)
             AtomicInt.@set(ref _state, state)
+            _logger.message(get_name_from_plugin_state(state))
 
         def private on_track_changed(track: Track?, old_track: Track?)
             if track is not null

@@ -21,6 +21,18 @@ namespace Khovsgol.Client
         STARTED = 2
         STOPPING = 3
 
+    def get_name_from_plugin_state(state: PluginState): string?
+        if state == PluginState.STOPPED
+            return "stopped"
+        else if state == PluginState.STARTING
+            return "starting"
+        else if state == PluginState.STARTED
+            return "started"
+        else if state == PluginState.STOPPING
+            return "stopping"
+        else
+            return null
+
     /*
      * Basic interface for plugins.
      */

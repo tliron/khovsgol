@@ -25,7 +25,6 @@ namespace Khovsgol.Client.Plugins
                     _media_keys.grab_media_player_keys("Khövsgöl", 0)
                     _media_keys.media_player_key_pressed.connect(on_key_pressed)
                     set_state(PluginState.STARTED)
-                    _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
                     _media_keys = null
@@ -41,13 +40,13 @@ namespace Khovsgol.Client.Plugins
                     _logger.exception(e)
                 _media_keys = null
                 set_state(PluginState.STOPPED)
-                _logger.message("Stopped")
         
         _state: int = PluginState.STOPPED
         _media_keys: MediaKeysWrapper
 
         def private set_state(state: PluginState)
             AtomicInt.@set(ref _state, state)
+            _logger.message(get_name_from_plugin_state(state))
 
         def private on_key_pressed(application: string, key: string)
             _logger.infof("Pressed: %s", key)

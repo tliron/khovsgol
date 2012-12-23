@@ -43,7 +43,6 @@ namespace Khovsgol.Client.Plugins
                 // The suffix does not matter (DesktopEntry is used for the name).
                 if _connector.start("org.mpris.MediaPlayer2.khovsgol")
                     set_state(PluginState.STARTED)
-                    _logger.message("Started")
                 else
                     _logger.warning("Could not own name on DBus")
                     _connector.connect.disconnect(on_connected)
@@ -98,6 +97,7 @@ namespace Khovsgol.Client.Plugins
         
         def private set_state(state: PluginState)
             AtomicInt.@set(ref _state, state)
+            _logger.message(get_name_from_plugin_state(state))
 
         def private on_connected(connection: DBusConnection)
             // Register a MediaPlayer2 object with several interfaces

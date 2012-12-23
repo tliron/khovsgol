@@ -45,7 +45,6 @@ namespace Khovsgol.Client.Plugins
                         return
                         
                     _session.connection.connect(on_connection)
-                    _logger.message("Connecting")
                     _session.@connect(username, password)
                 except e: GLib.Error
                     _logger.exception(e)
@@ -57,7 +56,6 @@ namespace Khovsgol.Client.Plugins
                 _instance.api.track_change.disconnect(on_track_changed)
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
                 set_state(PluginState.STOPPED)
-                _logger.message("Stopped")
         
         _state: int = PluginState.STOPPED
         _first_start: bool = true
@@ -67,6 +65,7 @@ namespace Khovsgol.Client.Plugins
 
         def private set_state(state: PluginState)
             AtomicInt.@set(ref _state, state)
+            _logger.message(get_name_from_plugin_state(state))
 
         def private on_connection(success: bool)
             if success
@@ -74,7 +73,6 @@ namespace Khovsgol.Client.Plugins
                 _instance.api.track_change.connect(on_track_changed)
                 _instance.api.position_in_track_change.connect(on_position_in_track_changed)
                 _instance.api.reset_watch()
-                _logger.message("Started")
             else
                 _logger.warning("Could not connect")
                 _instance.api.error(new IOError.FAILED("Could not connect to Last.fm"))

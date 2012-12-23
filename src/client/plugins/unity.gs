@@ -33,7 +33,6 @@ namespace Khovsgol.Client.Plugins
                     _launcher_entry.quicklist = create_menu()
                     _instance.api.position_in_track_change.connect(on_position_in_track_changed)
                     set_state(PluginState.STARTED)
-                    _logger.message("Started")
                 else
                     _logger.warning("Could not connect to Launcher")
                     _launcher_entry = null
@@ -45,13 +44,13 @@ namespace Khovsgol.Client.Plugins
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
                 _launcher_entry = null
                 set_state(PluginState.STOPPED)
-                _logger.message("Stopped")
         
         _state: int = PluginState.STOPPED
         _launcher_entry: Unity.LauncherEntry?
         
         def private set_state(state: PluginState)
             AtomicInt.@set(ref _state, state)
+            _logger.message(get_name_from_plugin_state(state))
 
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             if _launcher_entry is not null
