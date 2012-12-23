@@ -163,6 +163,15 @@ namespace Khovsgol.Client.GTK
 
         def private on_unrealized()
             Source.remove(_update_id)
+            save()
+
+        def private save()
+            var username = _last_fm_username.entry.text
+            var password = _last_fm_password.entry.text
+            if (username != _instance.configuration.last_fm_username) or (password != _instance.configuration.last_fm_password)
+                _instance.configuration.last_fm_username = username
+                _instance.configuration.last_fm_password = password
+                _instance.configuration.save()
 
         def private on_key_pressed(e: Gdk.EventKey): bool
             var keyval = e.keyval
@@ -175,6 +184,7 @@ namespace Khovsgol.Client.GTK
         def private on_last_fm_start()
             var plugin = _instance.get_plugin("last.fm")
             if plugin is not null
+                save()
                 plugin.start()
         
         def private on_last_fm_stop()

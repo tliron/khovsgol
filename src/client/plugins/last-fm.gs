@@ -43,9 +43,10 @@ namespace Khovsgol.Client.Plugins
                 _instance.api.track_change.connect(on_track_changed)
                 _instance.api.position_in_track_change.connect(on_position_in_track_changed)
                 _instance.api.reset_watch()
-                _logger.messagef("Started for \"%s\"", "emblemparade")
+                _logger.message("Started")
             else
-                _logger.warningf("Could not authenticate \"%s\"", "emblemparade")
+                _logger.warning("Could not connect")
+                _instance.api.error(new IOError.FAILED("Could not connect to Last.fm"))
 
         def private on_track_changed(track: Track?, old_track: Track?)
             _timestamp = get_real_time()
