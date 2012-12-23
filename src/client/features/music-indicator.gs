@@ -3,29 +3,30 @@
 uses
     Indicate
 
-namespace Khovsgol.Client.Plugins
+namespace Khovsgol.Client.Features
 
     /*
-     * Music indicator plugin.
+     * Music indicator feature.
      * 
-     * This is needed only in Ubuntu 11.10 and earlier. Ubuntu 12.04
+     * This is needed *only* in Ubuntu 11.10 and earlier. Ubuntu 12.04
      * and later no longer need this.
      * 
      * Registers us with music application indicator. Add the
-     * MPRIS2 plugin for full integration with the indicator's menu.
+     * MPRIS2 feature for full integration with the indicator's menu.
      * 
      * Adds a "/com/canonical/indicate" DBus object to our bus.
      */
-    class MusicIndicatorPlugin: Object implements Plugin
+    class MusicIndicatorFeature: Object implements Feature
         prop readonly name: string = "music-indicator"
+        prop readonly label: string = "Sound indicator integration (Ubuntu 11.10 and earlier)"
         prop instance: Instance
-        prop readonly state: PluginState
+        prop readonly state: FeatureState
             get
-                return (PluginState) AtomicInt.@get(ref _state)
+                return (FeatureState) AtomicInt.@get(ref _state)
         
         def start()
-            if state == PluginState.STOPPED
-                set_state(PluginState.STARTING)
+            if state == FeatureState.STOPPED
+                set_state(FeatureState.STARTING)
 
                 _server = Indicate.Server.ref_default()
                 if _server is not null
@@ -45,23 +46,23 @@ namespace Khovsgol.Client.Plugins
                     _server.server_display.connect(on_display)
                     
                     _server.show()
-                    set_state(PluginState.STARTED)
+                    set_state(FeatureState.STARTED)
                 else
-                    set_state(PluginState.STOPPED)
+                    set_state(FeatureState.STOPPED)
 
         def stop()
-            if state == PluginState.STARTED
-                set_state(PluginState.STOPPING)
+            if state == FeatureState.STARTED
+                set_state(FeatureState.STOPPING)
                 _server.server_display.disconnect(on_display)
                 _server = null
-                set_state(PluginState.STOPPED)
+                set_state(FeatureState.STOPPED)
             
-        _state: int = PluginState.STOPPED
+        _state: int = FeatureState.STOPPED
         _server: Indicate.Server?
         
-        def private set_state(state: PluginState)
+        def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
-            _logger.message(get_name_from_plugin_state(state))
+            _logger.message(get_name_from_feature_state(state))
 
         def private on_display(timestamp: uint)
             _instance.show()
@@ -69,4 +70,4 @@ namespace Khovsgol.Client.Plugins
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.music-indicator")
+            _logger = Logging.get_logger("khovsgol.music-indicator")

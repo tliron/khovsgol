@@ -15,31 +15,32 @@ namespace Khovsgol.Client
         def abstract stop()
         def abstract show()
     
-    enum PluginState
+    enum FeatureState
         STOPPED = 0
         STARTING = 1
         STARTED = 2
         STOPPING = 3
 
-    def get_name_from_plugin_state(state: PluginState): string?
-        if state == PluginState.STOPPED
+    def get_name_from_feature_state(state: FeatureState): string?
+        if state == FeatureState.STOPPED
             return "stopped"
-        else if state == PluginState.STARTING
+        else if state == FeatureState.STARTING
             return "starting"
-        else if state == PluginState.STARTED
+        else if state == FeatureState.STARTED
             return "started"
-        else if state == PluginState.STOPPING
+        else if state == FeatureState.STOPPING
             return "stopping"
         else
             return null
 
     /*
-     * Basic interface for plugins.
+     * Basic interface for features.
      */
-    interface Plugin: GLib.Object
+    interface Feature: GLib.Object
         prop abstract readonly name: string
+        prop abstract readonly label: string
         prop abstract instance: Instance
-        prop abstract readonly state: PluginState
+        prop abstract readonly state: FeatureState
 
         def abstract start()
         def abstract stop()

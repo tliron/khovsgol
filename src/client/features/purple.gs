@@ -1,9 +1,9 @@
 [indent=4]
 
-namespace Khovsgol.Client.Plugins
+namespace Khovsgol.Client.Features
 
     /*
-     * Purple plugin.
+     * Purple feature.
      * 
      * Sets the instant messaging status for Pidgin and Finch.
      *
@@ -12,42 +12,43 @@ namespace Khovsgol.Client.Plugins
      * 
      *   http://code.google.com/p/pidgin-musictracker/source/browse/trunk/src/musictracker.c
      */
-    class PurplePlugin: Object implements Plugin
+    class PurpleFeature: Object implements Feature
         prop readonly name: string = "purple"
+        prop readonly label: string = "Update Pidgin status"
         prop instance: Instance
-        prop readonly state: PluginState
+        prop readonly state: FeatureState
             get
-                return (PluginState) AtomicInt.@get(ref _state)
+                return (FeatureState) AtomicInt.@get(ref _state)
         
         def start()
-            if state == PluginState.STOPPED
-                set_state(PluginState.STARTING)
+            if state == FeatureState.STOPPED
+                set_state(FeatureState.STARTING)
 
                 try
                     _purple = Bus.get_proxy_sync(BusType.SESSION, "im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
                     _tune_status_type_id = _purple.purple_primitive_get_id_from_type(StatusTypePrimitive.TUNE)
                     _instance.api.track_change.connect(on_track_changed)
-                    set_state(PluginState.STARTED)
+                    set_state(FeatureState.STARTED)
                 except e: IOError
                     _logger.exception(e)
                     _purple = null
-                    set_state(PluginState.STOPPED)
+                    set_state(FeatureState.STOPPED)
         
         def stop()
-            if state == PluginState.STARTED
-                set_state(PluginState.STOPPING)
+            if state == FeatureState.STARTED
+                set_state(FeatureState.STOPPING)
                 _instance.api.track_change.disconnect(on_track_changed)
                 on_track_changed(null, null)
                 _purple = null
-                set_state(PluginState.STOPPED)
+                set_state(FeatureState.STOPPED)
 
-        _state: int = PluginState.STOPPED
+        _state: int = FeatureState.STOPPED
         _purple: PurpleObject?
         _tune_status_type_id: string
 
-        def private set_state(state: PluginState)
+        def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
-            _logger.message(get_name_from_plugin_state(state))
+            _logger.message(get_name_from_feature_state(state))
 
         def private on_track_changed(track: Track?, old_track: Track?)
             if _purple is null
@@ -156,7 +157,7 @@ namespace Khovsgol.Client.Plugins
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.purple")
+            _logger = Logging.get_logger("khovsgol.purple")
     
     enum StatusTypePrimitive
         NONE = 0

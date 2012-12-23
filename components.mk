@@ -21,7 +21,7 @@ find-sources=$(shell find "$(SRC)/$1" \( -name '*.gs' -o -name '*.vala' \))
 # AppIndicator: apt-get install libappindicator-dev   valac --pkg=appindicator-0.1
 # Avahi:        apt-get install libavahi-gobject-dev  valac --pkg=avahi-gobject
 #
-# gstreamer1.0-pulseaudio, gstreamer1.0-plugins-base
+# gstreamer1.0-pulseaudio, gstreamer1.0-features-base
 #
 
 #
@@ -120,7 +120,7 @@ khovsgolc.ccode:
 
 KHOVSGOL_SOURCES=\
 	$(call find-sources,client/gtk) \
-	$(call find-sources,client/plugins) \
+	$(call find-sources,client/features) \
 	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs $(SRC)/server/configuration.gs \
 	$(SRC)/version.gs $(SRC)/models.gs $(SRC)/iterators.gs \
 	$(call find-sources,lib/logging) \

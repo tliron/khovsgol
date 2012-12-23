@@ -3,24 +3,25 @@
 uses
     JsonUtil
 
-namespace Khovsgol.Client.Plugins
+namespace Khovsgol.Client.Features
 
     /*
-     * FreeDesktop Notifications plugin.
+     * FreeDesktop Notifications feature.
      * 
      * Sends a desktop notification every time the current track
      * changes.
      */
-    class NotificationsPlugin: Object implements Plugin
+    class NotificationsFeature: Object implements Feature
         prop readonly name: string = "notification"
+        prop readonly label: string = "Desktop notifications"
         prop instance: Instance
-        prop readonly state: PluginState
+        prop readonly state: FeatureState
             get
-                return (PluginState) AtomicInt.@get(ref _state)
+                return (FeatureState) AtomicInt.@get(ref _state)
         
         def start()
-            if state == PluginState.STOPPED
-                set_state(PluginState.STARTING)
+            if state == FeatureState.STOPPED
+                set_state(FeatureState.STARTING)
 
                 var file = _instance.get_resource("khovsgol.svg")
                 if file is not null
@@ -32,25 +33,25 @@ namespace Khovsgol.Client.Plugins
                     _notifications = Bus.get_proxy_sync(BusType.SESSION, "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
                     _instance.api.track_change.connect(on_track_changed)
                     _instance.api.error.connect(on_error)
-                    set_state(PluginState.STARTED)
+                    set_state(FeatureState.STARTED)
                 except e: IOError
                     _logger.exception(e)
-                    set_state(PluginState.STOPPED)
+                    set_state(FeatureState.STOPPED)
         
         def stop()
-            if state == PluginState.STARTED
-                set_state(PluginState.STOPPING)
+            if state == FeatureState.STARTED
+                set_state(FeatureState.STOPPING)
                 _instance.api.track_change.disconnect(on_track_changed)
                 _instance.api.error.disconnect(on_error)
                 _notifications = null
-                set_state(PluginState.STOPPED)
+                set_state(FeatureState.STOPPED)
         
-        _state: int = PluginState.STOPPED
+        _state: int = FeatureState.STOPPED
         _notifications: Notifications?
         
-        def private set_state(state: PluginState)
+        def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
-            _logger.message(get_name_from_plugin_state(state))
+            _logger.message(get_name_from_feature_state(state))
 
         def private on_track_changed(track: Track?, old_track: Track?)
             if track is not null
@@ -112,7 +113,7 @@ namespace Khovsgol.Client.Plugins
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.notifications")
+            _logger = Logging.get_logger("khovsgol.notifications")
 
     /*
     [DBus(name="org.freedesktop.Notifications")]

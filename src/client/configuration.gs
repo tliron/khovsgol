@@ -134,15 +134,6 @@ namespace Khovsgol.Client
                     except e: KeyFileError
                         pass
 
-        prop scrobbling_autostart: bool
-            get
-                try
-                    return _key_file.get_boolean("scrobbling", "autostart")
-                except e: KeyFileError
-                    return false
-            set
-                _key_file.set_boolean("scrobbling", "autostart", value)
-
         prop scrobbling_username: string?
             owned get
                 try
@@ -190,6 +181,15 @@ namespace Khovsgol.Client
                     return false
             set
                 _key_file.set_boolean("server", "autostop", value)
+                
+        def is_feature_active(name: string): bool
+            try
+                return _key_file.get_boolean("features", name)
+            except e: KeyFileError
+                return name != "music-indicator"
+
+        def set_feature_active(name: string, value: bool)
+            _key_file.set_boolean("features", name, value)
 
         /*
          * Saves the configuration.

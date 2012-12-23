@@ -19,12 +19,12 @@ namespace Khovsgol.Client.GTK
             var my_server_label = new Label.with_mnemonic("A_uto-start my Khövsgöl server:")
             my_server_label.set_alignment(0, 0)
             var with_client = new RadioButton.with_label(null, "Start my Khövsgöl server when I start Khövsgöl")
-            set_boolean_configuration(with_client, _instance.configuration, "server_autostart")
+            connect_to_boolean_configuration(with_client, _instance.configuration, "server_autostart")
             ((Label) with_client.get_child()).wrap = true
             var stop_with_client = new CheckButton.with_mnemonic("St_op my Khövsgöl server when I quit Khövsgöl")
             ((Label) stop_with_client.get_child()).wrap = true
-            set_boolean_configuration(stop_with_client, _instance.configuration, "server_autostop")
-            sensitivity_depends_on(stop_with_client, with_client)
+            connect_to_boolean_configuration(stop_with_client, _instance.configuration, "server_autostop")
+            connect_sensitivity(stop_with_client, with_client)
             var stop_with_client_alignment = new Alignment(0, 0, 1, 1)
             stop_with_client_alignment.set_padding(0, 0, 20, 0)
             stop_with_client_alignment.add(stop_with_client)
@@ -34,12 +34,12 @@ namespace Khovsgol.Client.GTK
             _autostart_with_session.clicked.connect(on_autostart_with_session)
             var disable_auto = new RadioButton.with_label_from_widget(with_client, "Don\'t auto-start my Khövsgöl server")
             ((Label) disable_auto.get_child()).wrap = true
-            set_boolean_configuration(disable_auto, _instance.configuration, "server_autostart", true)
+            connect_to_boolean_configuration(disable_auto, _instance.configuration, "server_autostart", true)
             my_server_label.mnemonic_widget = with_client
 
             var advertise = new CheckButton.with_mnemonic("A_dvertise my Khövsgöl server in the local network (when it's on)")
             ((Label) advertise.get_child()).wrap = true
-            set_boolean_configuration(advertise, _instance.server_configuration, "advertise")
+            connect_to_boolean_configuration(advertise, _instance.server_configuration, "advertise")
 
             var box = new Box(Orientation.VERTICAL, 10)
             box.pack_start(about, false)

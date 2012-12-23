@@ -13,15 +13,15 @@ namespace Khovsgol.Client.GTK
 
             var show_duration = new CheckButton.with_mnemonic("Show track _durations")
             ((Label) show_duration.get_child()).wrap = true
-            set_boolean_configuration(show_duration, instance.configuration, "show_duration")
+            connect_to_boolean_configuration(show_duration, instance.configuration, "show_duration")
 
             var subdue_lossy = new CheckButton.with_mnemonic("Show tracks and albums with _lossy compression in subdued colors")
             ((Label) subdue_lossy.get_child()).wrap = true
-            set_boolean_configuration(subdue_lossy, instance.configuration, "subdue_lossy")
+            connect_to_boolean_configuration(subdue_lossy, instance.configuration, "subdue_lossy")
 
             var expand_on_click = new CheckButton.with_mnemonic("Expand items in the library browser when you _click them")
             ((Label) expand_on_click.get_child()).wrap = true
-            set_boolean_configuration(expand_on_click, instance.configuration, "expand_on_click")
+            connect_to_boolean_configuration(expand_on_click, instance.configuration, "expand_on_click")
 
             var keyboard_focus_label = new Label.with_mnemonic("Initial _keyboard focus when Khövsgöl is started:")
             keyboard_focus_label.set_alignment(0, 0)
@@ -29,7 +29,7 @@ namespace Khovsgol.Client.GTK
             ((Label) activate_playlist.get_child()).wrap = true
             var activate_library = new RadioButton.with_label_from_widget(activate_playlist, "Library")
             ((Label) activate_library.get_child()).wrap = true
-            set_boolean_configuration(activate_library, instance.configuration, "focus_on_library")
+            connect_to_boolean_configuration(activate_library, instance.configuration, "focus_on_library")
             keyboard_focus_label.mnemonic_widget = activate_playlist
 
             var box = new Box(Orientation.VERTICAL, 10)

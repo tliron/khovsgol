@@ -1,56 +1,57 @@
 [indent=4]
 
-// See: https://wiki.ubuntu.com/Unity/LauncherAPI
-
 uses
     Unity
     Dbusmenu
 
-namespace Khovsgol.Client.Plugins
+namespace Khovsgol.Client.Features
 
     /*
-     * Unity plugin.
-     * 
+     * Unity feature.
+     *
      * Adds a quicklist menu to the Launcher entry and a progress bar
      * while a track is playing.
-     * 
+     *
      * Adds a "/com/canonical/unity/launcherentry/<num>" DBus object to
      * our bus.
+     *
+     * See: https://wiki.ubuntu.com/Unity/LauncherAPI
      */
-    class UnityPlugin: Object implements Plugin
+    class UnityFeature: Object implements Feature
         prop readonly name: string = "unity"
+        prop readonly label: string = "Unity Launcher extras"
         prop instance: Instance
-        prop readonly state: PluginState
+        prop readonly state: FeatureState
             get
-                return (PluginState) AtomicInt.@get(ref _state)
+                return (FeatureState) AtomicInt.@get(ref _state)
         
         def start()
-            if state == PluginState.STOPPED
-                set_state(PluginState.STARTING)
+            if state == FeatureState.STOPPED
+                set_state(FeatureState.STARTING)
 
                 _launcher_entry = LauncherEntry.get_for_desktop_id("khovsgol.desktop")
                 if _launcher_entry is not null
                     _launcher_entry.quicklist = create_menu()
                     _instance.api.position_in_track_change.connect(on_position_in_track_changed)
-                    set_state(PluginState.STARTED)
+                    set_state(FeatureState.STARTED)
                 else
                     _logger.warning("Could not connect to Launcher")
                     _launcher_entry = null
-                    set_state(PluginState.STOPPED)
+                    set_state(FeatureState.STOPPED)
         
         def stop()
-            if state == PluginState.STARTED
-                set_state(PluginState.STOPPING)
+            if state == FeatureState.STARTED
+                set_state(FeatureState.STOPPING)
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
                 _launcher_entry = null
-                set_state(PluginState.STOPPED)
+                set_state(FeatureState.STOPPED)
         
-        _state: int = PluginState.STOPPED
+        _state: int = FeatureState.STOPPED
         _launcher_entry: Unity.LauncherEntry?
         
-        def private set_state(state: PluginState)
+        def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
-            _logger.message(get_name_from_plugin_state(state))
+            _logger.message(get_name_from_feature_state(state))
 
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             if _launcher_entry is not null
@@ -107,4 +108,4 @@ namespace Khovsgol.Client.Plugins
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.unity")
+            _logger = Logging.get_logger("khovsgol.unity")

@@ -3,37 +3,33 @@
 uses
     Scrobbling
 
-namespace Khovsgol.Client.Plugins
+namespace Khovsgol.Client.Features
 
     // These are for Khövsgöl only, please DO NOT use them in other applications!
     const LAST_FM_API_KEY: string = "1ef211ea88ffba1e15a5d63c1cc623d8"
     const LAST_FM_API_SECRET: string = "42bf0581d4fdce799edd93794becb20d"
 
     /*
-     * Scrobbling plugin.
+     * Scrobbling feature.
      */
-    class ScrobblingPlugin: Object implements Plugin
+    class ScrobblingFeature: Object implements Feature
         prop readonly name: string = "scrobbling"
+        prop readonly label: string = "Scrobble to online service"
         prop instance: Instance
-        prop readonly state: PluginState
+        prop readonly state: FeatureState
             get
-                return (PluginState) AtomicInt.@get(ref _state)
+                return (FeatureState) AtomicInt.@get(ref _state)
         
         def start()
-            if state == PluginState.STOPPED
-                set_state(PluginState.STARTING)
-
-                if _first_start and not _instance.configuration.scrobbling_autostart
-                    _first_start = false
-                    return
-                _first_start = false
+            if state == FeatureState.STOPPED
+                set_state(FeatureState.STARTING)
                 
                 var service = _instance.configuration.scrobbling_service
                 var username = _instance.configuration.scrobbling_username
                 var password = _instance.configuration.scrobbling_password
 
                 if (username is null) or (password is null)
-                    set_state(PluginState.STOPPED)
+                    set_state(FeatureState.STOPPED)
                     return
 
                 try
@@ -41,35 +37,35 @@ namespace Khovsgol.Client.Plugins
                         _session = new Session(LAST_FM_API, LAST_FM_AUTH_API, LAST_FM_API_KEY, LAST_FM_API_SECRET)
                     else
                         _logger.warningf("Unsupported service: %s", service)
-                        set_state(PluginState.STOPPED)
+                        set_state(FeatureState.STOPPED)
                         return
                         
                     _session.connection.connect(on_connection)
                     _session.@connect(username, password)
                 except e: GLib.Error
                     _logger.exception(e)
-                    set_state(PluginState.STOPPED)
+                    set_state(FeatureState.STOPPED)
         
         def stop()
-            if state == PluginState.STARTED
-                set_state(PluginState.STOPPING)
+            if state == FeatureState.STARTED
+                set_state(FeatureState.STOPPING)
                 _instance.api.track_change.disconnect(on_track_changed)
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
-                set_state(PluginState.STOPPED)
+                _session = null
+                set_state(FeatureState.STOPPED)
         
-        _state: int = PluginState.STOPPED
-        _first_start: bool = true
+        _state: int = FeatureState.STOPPED
         _session: Session?
         _track: Track
         _timestamp: int64
 
-        def private set_state(state: PluginState)
+        def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
-            _logger.message(get_name_from_plugin_state(state))
+            _logger.message(get_name_from_feature_state(state))
 
         def private on_connection(success: bool)
             if success
-                set_state(PluginState.STARTED)
+                set_state(FeatureState.STARTED)
                 _instance.api.track_change.connect(on_track_changed)
                 _instance.api.position_in_track_change.connect(on_position_in_track_changed)
                 _instance.api.reset_watch()
@@ -104,4 +100,4 @@ namespace Khovsgol.Client.Plugins
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.scrobbling")
+            _logger = Logging.get_logger("khovsgol.scrobbling")

@@ -4,10 +4,10 @@ uses
     JsonUtil
     DBusUtil
 
-namespace Khovsgol.Client.Plugins
+namespace Khovsgol.Client.Features
 
     /*
-     * MPRIS2 plugin.
+     * MPRIS2 feature.
      * 
      * Allows controlling of the client over DBus using the MPRIS2
      * protocol, often used for for integration with desktop
@@ -23,16 +23,17 @@ namespace Khovsgol.Client.Plugins
      * See:
      *  http://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata
      */
-    class Mpris2Plugin: Object implements Plugin
+    class Mpris2Feature: Object implements Feature
         prop readonly name: string = "mpris2"
+        prop readonly label: string = "Sound indicator integration"
         prop instance: Instance
-        prop readonly state: PluginState
+        prop readonly state: FeatureState
             get
-                return (PluginState) AtomicInt.@get(ref _state)
+                return (FeatureState) AtomicInt.@get(ref _state)
         
         def start()
-            if state == PluginState.STOPPED
-                set_state(PluginState.STARTING)
+            if state == FeatureState.STOPPED
+                set_state(FeatureState.STARTING)
                 
                 _object = new Mpris2(_instance)
                 _player = new Mpris2Player(_instance, _connector)
@@ -41,25 +42,18 @@ namespace Khovsgol.Client.Plugins
                 
                 // Our bus name must start with "org.mpris.MediaPlayer2." for clients to auto-discover us.
                 // The suffix does not matter (DesktopEntry is used for the name).
-                if _connector.start("org.mpris.MediaPlayer2.khovsgol")
-                    set_state(PluginState.STARTED)
-                else
+                if not _connector.start("org.mpris.MediaPlayer2.khovsgol")
                     _logger.warning("Could not own name on DBus")
                     _connector.connect.disconnect(on_connected)
                     _connector.disconnecting.disconnect(on_disconnecting)
                     _object = null
                     _player = null
-                    set_state(PluginState.STOPPED)
+                    set_state(FeatureState.STOPPED)
         
         def stop()
-            if state == PluginState.STARTED
-                set_state(PluginState.STOPPING)
-                _connector.connect.disconnect(on_connected)
-                _connector.disconnecting.disconnect(on_disconnecting)
+            if state == FeatureState.STARTED
+                set_state(FeatureState.STOPPING)
                 _connector.stop()
-                _object = null
-                _player = null
-                set_state(PluginState.STOPPED)
         
         def remove_from_sound_indicator()
             // The sound indicator must be restarted for new settings to take effect.
@@ -88,16 +82,16 @@ namespace Khovsgol.Client.Plugins
                     _logger.message("Removed from sound indicator")
                     return
         
-        _state: int = PluginState.STOPPED
+        _state: int = FeatureState.STOPPED
         _connector: Connector = new Connector()
         _object: Mpris2?
         _object_id: uint
         _player: Mpris2Player?
         _player_id: uint
         
-        def private set_state(state: PluginState)
+        def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
-            _logger.message(get_name_from_plugin_state(state))
+            _logger.message(get_name_from_feature_state(state))
 
         def private on_connected(connection: DBusConnection)
             // Register a MediaPlayer2 object with several interfaces
@@ -106,7 +100,7 @@ namespace Khovsgol.Client.Plugins
                 _player_id = connection.register_object("/org/mpris/MediaPlayer2", _player)
             except e: IOError
                 _logger.exception(e)
-            _logger.message("Started")
+            set_state(FeatureState.STARTED)
         
         def private on_disconnecting(connection: DBusConnection)
             _connector.connect.disconnect(on_connected)
@@ -119,12 +113,12 @@ namespace Khovsgol.Client.Plugins
                 _player_id = 0
             _object = null
             _player = null
-            _logger.message("Stopped")
+            set_state(FeatureState.STOPPED)
         
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.mpris2")
+            _logger = Logging.get_logger("khovsgol.mpris2")
 
         [DBus(name="org.mpris.MediaPlayer2")]
         class Mpris2: Object
@@ -159,7 +153,7 @@ namespace Khovsgol.Client.Plugins
                     // will be found in "~/.local/share/icons/" or "/usr/share/icons/". Note that
                     // full paths to icons in the desktop file will *not* work!
                     //
-                    // 3) If the MusicIndicatorPlugin is used (Ubuntu 11.10 and earlier),
+                    // 3) If the MusicIndicatorFeature is used (Ubuntu 11.10 and earlier),
                     // this name must be identical to the "music.<name>" type registered there.
                     return "khovsgol"
 

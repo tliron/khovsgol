@@ -19,13 +19,13 @@ namespace Khovsgol.Client.GTK
             _dir = File.new_for_path(args[0]).get_parent()
             _window = new MainWindow(self)
             
-            add_plugin(new Plugins.NotificationsPlugin())
-            add_plugin(new Plugins.MediaPlayerKeysPlugin())
-            add_plugin(new Plugins.Mpris2Plugin())
-            add_plugin(new Plugins.UnityPlugin())
-            add_plugin(new Plugins.PurplePlugin())
-            add_plugin(new Plugins.ScrobblingPlugin())
-            //add_plugin(new Plugins.MusicIndicatorPlugin())
+            add_feature(new Features.NotificationsFeature())
+            add_feature(new Features.MediaPlayerKeysFeature())
+            add_feature(new Features.Mpris2Feature())
+            add_feature(new Features.MusicIndicatorFeature())
+            add_feature(new Features.UnityFeature())
+            add_feature(new Features.PurpleFeature())
+            add_feature(new Features.ScrobblingFeature())
             
         prop readonly configuration: Configuration
         prop readonly server_configuration: Server.Configuration
@@ -42,12 +42,15 @@ namespace Khovsgol.Client.GTK
                 if _player != value
                     _api.watching_player = _player = value
         
-        def add_plugin(plugin: Plugin)
-            plugin.instance = self
-            _plugins[plugin.name] = plugin
+        def add_feature(feature: Feature)
+            feature.instance = self
+            _features[feature.name] = feature
             
-        def get_plugin(name: string): Plugin?
-            return _plugins[name]
+        def get_feature(name: string): Feature?
+            return _features[name]
+        
+        def get_features(): Gee.Iterable of Feature
+            return _features.values
     
         def start()
             _started = true
@@ -55,8 +58,9 @@ namespace Khovsgol.Client.GTK
             if _configuration.server_autostart
                 start_server()
                 
-            for var plugin in _plugins.values
-                plugin.start()
+            for var feature in _features.values
+                if _configuration.is_feature_active(feature.name)
+                    feature.start()
                 
             _api.start_watch_thread()
             
@@ -67,8 +71,8 @@ namespace Khovsgol.Client.GTK
         def stop()
             _api.stop_watch_thread(true)
             
-            for var plugin in _plugins.values
-                plugin.stop()
+            for var feature in _features.values
+                feature.stop()
                 
             if _configuration.server_autostop
                 stop_server()
@@ -115,7 +119,7 @@ namespace Khovsgol.Client.GTK
         
         _arguments: Arguments
         _player: string
-        _plugins: dict of string, Plugin = new dict of string, Plugin
+        _features: dict of string, Feature = new dict of string, Feature
         _browser: Browser?
         
         def private connect_to_first_local_service()

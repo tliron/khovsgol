@@ -1,52 +1,53 @@
 [indent=4]
 
-namespace Khovsgol.Client.Plugins
+namespace Khovsgol.Client.Features
 
     /*
-     * GNOME Media Player Keys plugin.
+     * GNOME Media Player Keys feature.
      * 
      * Grabs the media player keys for us and forwards commands to
      * the current player.
      * 
      * Supports a fallback for the GNOME 2.20 interface.
      */
-    class MediaPlayerKeysPlugin: Object implements Plugin
+    class MediaPlayerKeysFeature: Object implements Feature
         prop readonly name: string = "media-player-keys"
+        prop readonly label: string = "Respond to media player keys"
         prop instance: Instance
-        prop readonly state: PluginState
+        prop readonly state: FeatureState
             get
-                return (PluginState) AtomicInt.@get(ref _state)
+                return (FeatureState) AtomicInt.@get(ref _state)
         
         def start()
-            if state == PluginState.STOPPED
-                set_state(PluginState.STARTING)
+            if state == FeatureState.STOPPED
+                set_state(FeatureState.STARTING)
                 try
                     _media_keys = new MediaKeysWrapper()
                     _media_keys.grab_media_player_keys("Khövsgöl", 0)
                     _media_keys.media_player_key_pressed.connect(on_key_pressed)
-                    set_state(PluginState.STARTED)
+                    set_state(FeatureState.STARTED)
                 except e: IOError
                     _logger.exception(e)
                     _media_keys = null
-                    set_state(PluginState.STOPPED)
+                    set_state(FeatureState.STOPPED)
     
         def stop()
-            if state == PluginState.STARTED
-                set_state(PluginState.STOPPING)
+            if state == FeatureState.STARTED
+                set_state(FeatureState.STOPPING)
                 _media_keys.media_player_key_pressed.disconnect(on_key_pressed)
                 try
                     _media_keys.release_media_player_keys("Khövsgöl")
                 except e: IOError
                     _logger.exception(e)
                 _media_keys = null
-                set_state(PluginState.STOPPED)
+                set_state(FeatureState.STOPPED)
         
-        _state: int = PluginState.STOPPED
+        _state: int = FeatureState.STOPPED
         _media_keys: MediaKeysWrapper
 
-        def private set_state(state: PluginState)
+        def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
-            _logger.message(get_name_from_plugin_state(state))
+            _logger.message(get_name_from_feature_state(state))
 
         def private on_key_pressed(application: string, key: string)
             _logger.infof("Pressed: %s", key)
@@ -65,7 +66,7 @@ namespace Khovsgol.Client.Plugins
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.media-player-keys")
+            _logger = Logging.get_logger("khovsgol.media-player-keys")
 
         /*
          * Wrapper that fallbacks to legacy interface.

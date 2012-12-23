@@ -14,10 +14,6 @@ namespace Khovsgol.Client.GTK
             var about = new Label("Note that the Khövsgöl user interface must be running for scrobbling to happen.")
             about.set_alignment(0, 0)
             about.wrap = true
-
-            var autostart = new CheckButton.with_mnemonic("S_tart scrobbling when I start Khövsgöl")
-            ((Label) autostart.get_child()).wrap = true
-            set_boolean_configuration(autostart, _instance.configuration, "scrobbling_autostart")
             
             var service = _instance.configuration.scrobbling_service
 
@@ -44,16 +40,15 @@ namespace Khovsgol.Client.GTK
                 _password.entry.text = _instance.configuration.scrobbling_password
             
             _start = new Button.with_mnemonic("Tu_rn on scrobbling")
+            _start.sensitive = false
             _start.clicked.connect(on_start)
             _stop = new Button.with_mnemonic("Turn o_ff scrobbling")
-            _stop.clicked.connect(on_stop)
-            _start.sensitive = false
             _stop.sensitive = false
+            _stop.clicked.connect(on_stop)
 
             var box = new Box(Orientation.VERTICAL, 10)
             box.pack_start(about, false)
             box.pack_start(new Separator(Orientation.HORIZONTAL), false)
-            box.pack_start(autostart, false)
             box.pack_start(service_label, false)
             box.pack_start(last_fm, false)
             box.pack_start(libre_fm, false)
@@ -70,7 +65,7 @@ namespace Khovsgol.Client.GTK
 
         def private on_unrealized()
             Source.remove(_update_id)
-            save()
+            save(_instance.configuration.is_feature_active("scrobbling"))
 
         def private on_last_fm()
             _instance.configuration.scrobbling_service = "last.fm"
@@ -81,32 +76,34 @@ namespace Khovsgol.Client.GTK
             _instance.configuration.save()
 
         def private on_start()
-            var plugin = _instance.get_plugin("scrobbling")
-            if plugin is not null
+            var feature = _instance.get_feature("scrobbling")
+            if feature is not null
                 _start.sensitive = false
-                save()
-                plugin.start()
+                save(true)
+                feature.start()
         
         def private on_stop()
-            var plugin = _instance.get_plugin("scrobbling")
-            if plugin is not null
-                plugin.stop()
+            var feature = _instance.get_feature("scrobbling")
+            if feature is not null
+                save(false)
+                feature.stop()
         
-        def private save()
+        def private save(active: bool)
             var username = _username.entry.text
             var password = _password.entry.text
-            if (username != _instance.configuration.scrobbling_username) or (password != _instance.configuration.scrobbling_password)
+            if (username != _instance.configuration.scrobbling_username) or (password != _instance.configuration.scrobbling_password) or (active != _instance.configuration.is_feature_active("scrobbling"))
                 _instance.configuration.scrobbling_username = username
                 _instance.configuration.scrobbling_password = password
+                _instance.configuration.set_feature_active("scrobbling", active)
                 _instance.configuration.save()
 
         _update_id: uint
         def private update(): bool
-            var plugin = _instance.get_plugin("scrobbling")
-            if plugin is not null
-                var state = plugin.state
-                _start.sensitive = state == PluginState.STOPPED
-                _stop.sensitive = state == PluginState.STARTED
+            var feature = _instance.get_feature("scrobbling")
+            if feature is not null
+                var state = feature.state
+                _start.sensitive = state == FeatureState.STOPPED
+                _stop.sensitive = state == FeatureState.STARTED
             else
                 _start.sensitive = false
                 _start.sensitive = false

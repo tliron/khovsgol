@@ -8,12 +8,10 @@ namespace Khovsgol.Client.GTK
     class Preferences: Window
         construct(instance: Instance)
             var main_box = new Notebook()
-            var label = new Label.with_mnemonic("_Server")
-            main_box.append_page(new ServerPage(instance), label)
-            label = new Label.with_mnemonic("User _interface")
-            main_box.append_page(new UiPage(instance), label)
-            label = new Label.with_mnemonic("Scro_bbling")
-            main_box.append_page(new ScrobblingPage(instance), label)
+            main_box.append_page(new ServerPage(instance), new Label.with_mnemonic("_Server"))
+            main_box.append_page(new UiPage(instance), new Label.with_mnemonic("User _interface"))
+            main_box.append_page(new FeaturesPage(instance), new Label.with_mnemonic("_Extra features"))
+            main_box.append_page(new ScrobblingPage(instance), new Label.with_mnemonic("Scro_bbling"))
 
             add(main_box)
 
@@ -35,17 +33,18 @@ namespace Khovsgol.Client.GTK
                 return false
 
     class PreferencesPage: Alignment
-        def set_boolean_configuration(button: CheckButton, configuration: Khovsgol.Configuration, property: string, reverse: bool = false)
+        def connect_sensitivity(button: CheckButton, depends: CheckButton)
+            _ownerships.add(new SensitivityDependsOn(button, depends))
+        
+        def connect_to_boolean_configuration(button: CheckButton, configuration: Khovsgol.Configuration, property: string, reverse: bool = false)
             var value = Value(typeof(bool))
             configuration.get_property(property, ref value)
             var bool_value = (bool) value
             if reverse
                 bool_value = not bool_value
-            button.active = bool_value
+            if bool_value
+                button.active = true
             _ownerships.add(new SetBooleanConfiguration(button, configuration, property, reverse))
-        
-        def sensitivity_depends_on(button: CheckButton, depends: CheckButton)
-            _ownerships.add(new SensitivityDependsOn(button, depends))
         
         _ownerships: list of Object = new list of Object
 
