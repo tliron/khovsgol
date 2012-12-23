@@ -24,7 +24,9 @@ namespace Khovsgol.Client.Plugins
      *  http://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata
      */
     class Mpris2Plugin: Object implements Plugin
+        prop readonly name: string = "mpris2"
         prop instance: Instance
+        prop readonly started: bool
         
         def start()
             _object = new Mpris2(_instance)
@@ -34,15 +36,22 @@ namespace Khovsgol.Client.Plugins
             
             // Our bus name must start with "org.mpris.MediaPlayer2." for clients to auto-discover us.
             // The suffix does not matter (DesktopEntry is used for the name).
-            if not _connector.start("org.mpris.MediaPlayer2.khovsgol")
+            if _connector.start("org.mpris.MediaPlayer2.khovsgol")
+                _started = true
+                _logger.message("Started")
+            else
                 _logger.warning("Could not own name on DBus")
         
         def stop()
-            if not _connector.stop()
-                _connector.connect.disconnect(on_connected)
-                _connector.disconnecting.disconnect(on_disconnecting)
-                _object = null
-                _player = null
+            if _started
+                if _connector.stop()
+                    _connector.connect.disconnect(on_connected)
+                    _connector.disconnecting.disconnect(on_disconnecting)
+                    _object = null
+                    _player = null
+                    _started = false
+                else
+                    _logger.warning("Could not stop")
         
         def remove_from_sound_indicator()
             // The sound indicator must be restarted for new settings to take effect.

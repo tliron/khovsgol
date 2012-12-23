@@ -75,7 +75,6 @@ namespace Khovsgol.Client
                 _watching_lock.unlock()
 
         def update()
-            //get_player(watching_player)
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET

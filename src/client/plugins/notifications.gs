@@ -12,7 +12,9 @@ namespace Khovsgol.Client.Plugins
      * changes.
      */
     class NotificationsPlugin: Object implements Plugin
+        prop readonly name: string = "notification"
         prop instance: Instance
+        prop readonly started: bool
         
         def start()
             var file = _instance.get_resource("khovsgol.svg")
@@ -26,15 +28,17 @@ namespace Khovsgol.Client.Plugins
                     _notifications = Bus.get_proxy_sync(BusType.SESSION, "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
                     _instance.api.track_change.connect(on_track_changed)
                     _instance.api.error.connect(on_error)
+                    _started = true
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
         
         def stop()
-            if _notifications is not null
+            if _started
                 _instance.api.track_change.disconnect(on_track_changed)
                 _instance.api.error.disconnect(on_error)
                 _notifications = null
+                _started = false
                 _logger.message("Stopped")
         
         _notifications: Notifications?

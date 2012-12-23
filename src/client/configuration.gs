@@ -119,14 +119,14 @@ namespace Khovsgol.Client
             set
                 _key_file.set_boolean("ui", "focus-on-library", value)
         
-        prop last_fm: bool
+        prop last_fm_autostart: bool
             get
                 try
-                    return _key_file.get_boolean("last.fm", "enabled")
+                    return _key_file.get_boolean("last.fm", "autostart")
                 except e: KeyFileError
                     return false
             set
-                _key_file.set_boolean("last.fm", "enabled", value)
+                _key_file.set_boolean("last.fm", "autostart", value)
 
         prop last_fm_username: string?
             owned get

@@ -13,7 +13,9 @@ namespace Khovsgol.Client.Plugins
      *   http://code.google.com/p/pidgin-musictracker/source/browse/trunk/src/musictracker.c
      */
     class PurplePlugin: Object implements Plugin
+        prop readonly name: string = "purple"
         prop instance: Instance
+        prop readonly started: bool
         
         def start()
             if _purple is null
@@ -21,15 +23,17 @@ namespace Khovsgol.Client.Plugins
                     _purple = Bus.get_proxy_sync(BusType.SESSION, "im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
                     _tune_status_type_id = _purple.purple_primitive_get_id_from_type(StatusTypePrimitive.TUNE)
                     _instance.api.track_change.connect(on_track_changed)
+                    _started = true
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
         
         def stop()
-            _instance.api.track_change.disconnect(on_track_changed)
-            on_track_changed(null, null)
-            if _purple is not null
+            if _started
+                _instance.api.track_change.disconnect(on_track_changed)
+                on_track_changed(null, null)
                 _purple = null
+                _started = false
                 _logger.message("Stopped")
 
         _purple: PurpleObject?

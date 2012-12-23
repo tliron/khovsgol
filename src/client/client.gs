@@ -19,7 +19,9 @@ namespace Khovsgol.Client
      * Basic interface for plugins.
      */
     interface Plugin: GLib.Object
+        prop abstract readonly name: string
         prop abstract instance: Instance
+        prop abstract readonly started: bool
 
         def abstract start()
         def abstract stop()

@@ -361,8 +361,13 @@ namespace Nap._Soup
      * An HTTP client using Soup.
      */
     class Client: Object implements Nap.Client
-        construct()
-            _soup_session = new Soup.SessionSync.with_options(Soup.SESSION_USER_AGENT, "Nap")
+        construct(context: MainContext? = null)
+            if context is not null
+                // Note: we are using a SessionSync even for asynchronous calls; thsose will happen in another thread. 
+                // See note at: http://developer.gnome.org/libsoup/stable/libsoup-client-howto.html
+                _soup_session = new Soup.SessionSync.with_options(Soup.SESSION_USER_AGENT, "Nap", Soup.SERVER_ASYNC_CONTEXT, context)
+            else
+                _soup_session = new Soup.SessionSync.with_options(Soup.SESSION_USER_AGENT, "Nap")
             
         prop timeout: uint
             get

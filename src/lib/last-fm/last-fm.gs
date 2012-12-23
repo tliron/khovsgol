@@ -7,7 +7,9 @@ uses
 namespace LastFm
 
     /*
-     * Implementation of Last.fm authentication and scrobbling REST APIs.
+     * Implementation of Last.fm REST APIs for authentication and scrobbling.
+     * 
+     * All requests are asynchronous.
      * 
      * See: http://www.last.fm/api/rest
      */
@@ -15,7 +17,7 @@ namespace LastFm
         construct(api_key: string, api_secret: string) raises GLib.Error
             _api_key = api_key
             _api_secret = api_secret
-
+            
             _client = new _Soup.Client()
             _client.base_url = "http://ws.audioscrobbler.com/2.0/"
 
@@ -27,21 +29,6 @@ namespace LastFm
         def new @connect(username: string, password: string) raises GLib.Error
             auth_getMobileSession(username, password)
         
-        def private on_committed(conversation: Conversation)
-            try
-                verify(conversation)
-                var session = get_object_member_or_null(conversation.response_json_object, "session")
-                if session is not null
-                    var key = get_string_member_or_null(session, "key")
-                    if key is not null
-                        _session_key = key
-                        connection(true)
-                        return
-                _logger.warning("Service did not return a session key")
-            except e: Error
-                _logger.exception(e)
-            connection(false)
-        
         /*
          * See: http://www.last.fm/api/mobileauth
          */
@@ -50,8 +37,8 @@ namespace LastFm
             conversation.request_form["method"] = "auth.getMobileSession"
             conversation.request_form["username"] = username
             conversation.request_form["password"] = password
-            conversation.committed.connect(on_committed)
-            commit(conversation, true)
+            conversation.committed.connect(on_get_session_committed)
+            commit(conversation)
 
         /*
          * See: http://www.last.fm/api/show/track.updateNowPlaying
@@ -67,6 +54,7 @@ namespace LastFm
                 conversation.request_form["trackNumber"] = track_number.to_string()
             if duration != int.MIN
                 conversation.request_form["duration"] = duration.to_string()
+            conversation.committed.connect(on_committed)
             commit(conversation)
 
         def track_scrobble_now(track: string, artist: string, album: string? = null, track_number: int = int.MIN, duration: int = int.MIN) raises GLib.Error
@@ -87,6 +75,7 @@ namespace LastFm
                 conversation.request_form["trackNumber"] = track_number.to_string()
             if duration != int.MIN
                 conversation.request_form["duration"] = duration.to_string()
+            conversation.committed.connect(on_committed)
             commit(conversation)
         
         _api_key: string
@@ -95,7 +84,7 @@ namespace LastFm
         _client: Nap.Client
         _auth_client: Nap.Client
 
-        def private commit(conversation: Conversation, asynchronous: bool = false) raises Error
+        def private commit(conversation: Conversation) raises Error
             conversation.method = Method.POST
             
             conversation.request_form["api_key"] = _api_key
@@ -118,9 +107,28 @@ namespace LastFm
             // Note: format is *not* included in the signature
             conversation.request_form["format"] = "json"
             
-            conversation.commit(asynchronous)
-            if not asynchronous
+            conversation.commit(true)
+        
+        def private on_committed(conversation: Conversation)
+            try
                 verify(conversation)
+            except e: Error
+                _logger.exception(e)
+        
+        def private on_get_session_committed(conversation: Conversation)
+            try
+                verify(conversation)
+                var session = get_object_member_or_null(conversation.response_json_object, "session")
+                if session is not null
+                    var key = get_string_member_or_null(session, "key")
+                    if key is not null
+                        _session_key = key
+                        connection(true)
+                        return
+                _logger.warning("Service did not return a session key")
+            except e: Error
+                _logger.exception(e)
+            connection(false)
         
         def private static verify(conversation: Conversation) raises Error
             if conversation.status_code == StatusCode.OK

@@ -44,7 +44,10 @@ namespace Khovsgol.Client.GTK
         
         def add_plugin(plugin: Plugin)
             plugin.instance = self
-            _plugins.add(plugin)
+            _plugins[plugin.name] = plugin
+            
+        def get_plugin(name: string): Plugin?
+            return _plugins[name]
     
         def start()
             _started = true
@@ -52,7 +55,7 @@ namespace Khovsgol.Client.GTK
             if _configuration.server_autostart
                 start_server()
                 
-            for var plugin in _plugins
+            for var plugin in _plugins.values
                 plugin.start()
                 
             _api.start_watch_thread()
@@ -64,7 +67,7 @@ namespace Khovsgol.Client.GTK
         def stop()
             _api.stop_watch_thread(true)
             
-            for var plugin in _plugins
+            for var plugin in _plugins.values
                 plugin.stop()
                 
             if _configuration.server_autostop
@@ -112,7 +115,7 @@ namespace Khovsgol.Client.GTK
         
         _arguments: Arguments
         _player: string
-        _plugins: list of Plugin = new list of Plugin
+        _plugins: dict of string, Plugin = new dict of string, Plugin
         _browser: Browser?
         
         def private connect_to_first_local_service()

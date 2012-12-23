@@ -11,7 +11,9 @@ namespace Khovsgol.Client.Plugins
      * Supports a fallback for the GNOME 2.20 interface.
      */
     class MediaPlayerKeysPlugin: Object implements Plugin
+        prop readonly name: string = "media-player-keys"
         prop instance: Instance
+        prop readonly started: bool
         
         def start()
             if _media_keys is null
@@ -24,16 +26,18 @@ namespace Khovsgol.Client.Plugins
                 try
                     _media_keys.grab_media_player_keys("Khövsgöl", 0)
                     _media_keys.media_player_key_pressed.connect(on_key_pressed)
+                    _started = true
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
         
         def stop()
-            if _media_keys is not null
+            if _started
                 try
                     _media_keys.media_player_key_pressed.disconnect(on_key_pressed)
                     _media_keys.release_media_player_keys("Khövsgöl")
                     _media_keys = null
+                    _started = false
                     _logger.message("Stopped")
                 except e: IOError
                     _logger.exception(e)

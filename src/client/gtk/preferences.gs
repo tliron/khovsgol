@@ -8,6 +8,8 @@ namespace Khovsgol.Client.GTK
     class Preferences: Window
         construct(instance: Instance)
             _instance = instance
+
+            unrealize.connect(on_unrealized)
             
             var template = _instance.get_resource("khovsgold.desktop")
             _autostart = new Autostart("khovsgold", template.query_exists() ? template : null)
@@ -97,6 +99,43 @@ namespace Khovsgol.Client.GTK
             var ui_page = new Alignment(0, 0, 1, 1)
             ui_page.set_padding(10, 10, 10, 10)
             ui_page.add(ui_box)
+            
+            // Last.fm
+
+            about_label = new Label("Note that the Khövsgöl user interface must be running for scrobbling to happen.")
+            about_label.set_alignment(0, 0)
+            about_label.wrap = true
+
+            var last_fm_autostart = new CheckButton.with_mnemonic("S_tart scrobbling when I start Khövsgöl")
+            ((Label) last_fm_autostart.get_child()).wrap = true
+            set_boolean_configuration(last_fm_autostart, _instance.configuration, "last_fm_autostart")
+
+            _last_fm_username = new EntryBox("User_name")
+            if _instance.configuration.last_fm_username is not null
+                _last_fm_username.entry.text = _instance.configuration.last_fm_username
+            _last_fm_password = new EntryBox("_Password")
+            _last_fm_password.entry.visibility = false
+            if _instance.configuration.last_fm_password is not null
+                _last_fm_password.entry.text = _instance.configuration.last_fm_password
+            
+            _last_fm_start = new Button.with_mnemonic("St_art scrobbling now")
+            _last_fm_start.clicked.connect(on_last_fm_start)
+            _last_fm_stop = new Button.with_mnemonic("Sto_p scrobbling now")
+            _last_fm_stop.clicked.connect(on_last_fm_stop)
+            _last_fm_start.sensitive = false
+            _last_fm_stop.sensitive = false
+
+            var last_fm_box = new Box(Orientation.VERTICAL, 10)
+            last_fm_box.pack_start(about_label, false)
+            last_fm_box.pack_start(last_fm_autostart, false)
+            last_fm_box.pack_start(_last_fm_username, false)
+            last_fm_box.pack_start(_last_fm_password, false)
+            last_fm_box.pack_start(_last_fm_start, false)
+            last_fm_box.pack_start(_last_fm_stop, false)
+
+            var last_fm_page = new Alignment(0, 0, 1, 1)
+            last_fm_page.set_padding(10, 10, 10, 10)
+            last_fm_page.add(last_fm_box)
 
             // Assemble
 
@@ -105,6 +144,8 @@ namespace Khovsgol.Client.GTK
             main_box.append_page(server_page, label)
             label = new Label.with_mnemonic("User _interface")
             main_box.append_page(ui_page, label)
+            label = new Label.with_mnemonic("_Last.fm")
+            main_box.append_page(last_fm_page, label)
 
             add(main_box)
 
@@ -117,6 +158,12 @@ namespace Khovsgol.Client.GTK
 
             key_press_event.connect(on_key_pressed)
 
+            update()
+            _update_id = Timeout.add_seconds(1, update)
+
+        def private on_unrealized()
+            Source.remove(_update_id)
+
         def private on_key_pressed(e: Gdk.EventKey): bool
             var keyval = e.keyval
             if keyval == Gdk.Key.Escape
@@ -124,6 +171,27 @@ namespace Khovsgol.Client.GTK
                 return true
             else
                 return false
+
+        def private on_last_fm_start()
+            var plugin = _instance.get_plugin("last.fm")
+            if plugin is not null
+                plugin.start()
+        
+        def private on_last_fm_stop()
+            var plugin = _instance.get_plugin("last.fm")
+            if plugin is not null
+                plugin.stop()
+        
+        _update_id: uint
+        def private update(): bool
+            var plugin = _instance.get_plugin("last.fm")
+            if plugin is not null
+                _last_fm_start.sensitive = not plugin.started
+                _last_fm_stop.sensitive = plugin.started
+            else
+                _last_fm_start.sensitive = false
+                _last_fm_start.sensitive = false
+            return true
         
         def autostarts_with_session(): bool
             try
@@ -162,6 +230,10 @@ namespace Khovsgol.Client.GTK
         _ownerships: list of Object = new list of Object
         _autostart: Autostart
         _autostart_with_session: RadioButton
+        _last_fm_username: EntryBox
+        _last_fm_password: EntryBox
+        _last_fm_start: Button
+        _last_fm_stop: Button
         
         class private SensitivityDependsOn: Object
             construct(button: CheckButton, depends: CheckButton)

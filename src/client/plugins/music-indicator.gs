@@ -17,7 +17,9 @@ namespace Khovsgol.Client.Plugins
      * Adds a "/com/canonical/indicate" DBus object to our bus.
      */
     class MusicIndicatorPlugin: Object implements Plugin
+        prop readonly name: string = "music-indicator"
         prop instance: Instance
+        prop readonly started: bool
         
         def start()
             _server = Indicate.Server.ref_default()
@@ -38,12 +40,14 @@ namespace Khovsgol.Client.Plugins
                 _server.server_display.connect(on_display)
                 
                 _server.show()
+                _started = true
                 _logger.message("Started")
         
         def stop()
-            if _server is not null
+            if _started
                 _server.server_display.disconnect(on_display)
                 _server = null
+                _started = false
                 _logger.message("Stopped")
             
         _server: Indicate.Server?

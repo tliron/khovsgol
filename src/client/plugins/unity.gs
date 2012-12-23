@@ -18,7 +18,9 @@ namespace Khovsgol.Client.Plugins
      * our bus.
      */
     class UnityPlugin: Object implements Plugin
+        prop readonly name: string = "unity"
         prop instance: Instance
+        prop readonly started: bool
         
         def start()
             if _launcher_entry is null
@@ -26,14 +28,16 @@ namespace Khovsgol.Client.Plugins
                 if _launcher_entry is not null
                     _launcher_entry.quicklist = create_menu()
                     _instance.api.position_in_track_change.connect(on_position_in_track_changed)
+                    _started = true
                     _logger.message("Started")
                 else
                     _logger.warning("Could not connect to Launcher")
         
         def stop()
-            if _launcher_entry is not null
+            if _started
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
                 _launcher_entry = null
+                _started = false
                 _logger.message("Stopped")
         
         _launcher_entry: Unity.LauncherEntry?
