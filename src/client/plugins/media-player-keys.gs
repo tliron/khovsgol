@@ -13,36 +13,41 @@ namespace Khovsgol.Client.Plugins
     class MediaPlayerKeysPlugin: Object implements Plugin
         prop readonly name: string = "media-player-keys"
         prop instance: Instance
-        prop readonly started: bool
+        prop readonly state: PluginState
+            get
+                return (PluginState) AtomicInt.@get(ref _state)
         
         def start()
-            if _media_keys is null
+            if state == PluginState.STOPPED
+                set_state(PluginState.STARTING)
                 try
                     _media_keys = new MediaKeysWrapper()
-                except e: IOError
-                    _logger.exception(e)
-        
-            if _media_keys is not null
-                try
                     _media_keys.grab_media_player_keys("Khövsgöl", 0)
                     _media_keys.media_player_key_pressed.connect(on_key_pressed)
-                    _started = true
+                    set_state(PluginState.STARTED)
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
-        
-        def stop()
-            if _started
-                try
-                    _media_keys.media_player_key_pressed.disconnect(on_key_pressed)
-                    _media_keys.release_media_player_keys("Khövsgöl")
                     _media_keys = null
-                    _started = false
-                    _logger.message("Stopped")
+                    set_state(PluginState.STOPPED)
+    
+        def stop()
+            if state == PluginState.STARTED
+                set_state(PluginState.STOPPING)
+                _media_keys.media_player_key_pressed.disconnect(on_key_pressed)
+                try
+                    _media_keys.release_media_player_keys("Khövsgöl")
                 except e: IOError
                     _logger.exception(e)
+                _media_keys = null
+                set_state(PluginState.STOPPED)
+                _logger.message("Stopped")
         
+        _state: int = PluginState.STOPPED
         _media_keys: MediaKeysWrapper
+
+        def private set_state(state: PluginState)
+            AtomicInt.@set(ref _state, state)
 
         def private on_key_pressed(application: string, key: string)
             _logger.infof("Pressed: %s", key)

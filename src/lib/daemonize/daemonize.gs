@@ -6,7 +6,7 @@ namespace Daemonize
      * Will return false after the daemon receives a HUP (Hang Up) signal.
      */
     def has_terminal(): bool
-        return AtomicInt.get(ref _has_terminal) == 1
+        return AtomicInt.@get(ref _has_terminal) == 1
 
     /*
      * When "start" and "stop" are false: show the status of the process
@@ -196,7 +196,7 @@ namespace Daemonize
                     // Hang up!
                     // This means that we no longer have a terminal.
                     // (Some daemons respond to HUP by reloading their configuration files, a rather quirky interpretation!)
-                    AtomicInt.set(ref _has_terminal, 0)
+                    AtomicInt.@set(ref _has_terminal, 0)
                     
                  break
                  

@@ -119,42 +119,57 @@ namespace Khovsgol.Client
             set
                 _key_file.set_boolean("ui", "focus-on-library", value)
         
-        prop last_fm_autostart: bool
-            get
-                try
-                    return _key_file.get_boolean("last.fm", "autostart")
-                except e: KeyFileError
-                    return false
-            set
-                _key_file.set_boolean("last.fm", "autostart", value)
-
-        prop last_fm_username: string?
+        prop scrobbling_service: string?
             owned get
                 try
-                    return _key_file.get_string("last.fm", "username")
+                    return _key_file.get_string("scrobbling", "service")
                 except e: KeyFileError
-                    return null
+                    return "last.fm"
             set
-                if value is not null
-                    _key_file.set_string("last.fm", "username", value)
+                if (value is not null) and (value.length > 0)
+                    _key_file.set_string("scrobbling", "service", value)
                 else
                     try
-                        _key_file.remove_key("last.fm", "username")
+                        _key_file.remove_key("scrobbling", "service")
                     except e: KeyFileError
                         pass
 
-        prop last_fm_password: string?
+        prop scrobbling_autostart: bool
+            get
+                try
+                    return _key_file.get_boolean("scrobbling", "autostart")
+                except e: KeyFileError
+                    return false
+            set
+                _key_file.set_boolean("scrobbling", "autostart", value)
+
+        prop scrobbling_username: string?
             owned get
                 try
-                    return _key_file.get_string("last.fm", "password")
+                    return _key_file.get_string("scrobbling", "username")
                 except e: KeyFileError
                     return null
             set
-                if value is not null
-                    _key_file.set_string("last.fm", "password", value)
+                if (value is not null) and (value.length > 0)
+                    _key_file.set_string("scrobbling", "username", value)
                 else
                     try
-                        _key_file.remove_key("last.fm", "password")
+                        _key_file.remove_key("scrobbling", "username")
+                    except e: KeyFileError
+                        pass
+
+        prop scrobbling_password: string?
+            owned get
+                try
+                    return _key_file.get_string("scrobbling", "password")
+                except e: KeyFileError
+                    return null
+            set
+                if (value is not null) and (value.length > 0)
+                    _key_file.set_string("scrobbling", "password", value)
+                else
+                    try
+                        _key_file.remove_key("scrobbling", "password")
                     except e: KeyFileError
                         pass
 

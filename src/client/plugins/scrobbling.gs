@@ -1,45 +1,76 @@
 [indent=4]
 
 uses
-    LastFm
+    Scrobbling
 
 namespace Khovsgol.Client.Plugins
 
-    /*
-     * Last.fm Scrobbling plugin.
-     */
-    class LastFmPlugin: Object implements Plugin
-        construct() raises GLib.Error
-            _session = new Session("1ef211ea88ffba1e15a5d63c1cc623d8", "42bf0581d4fdce799edd93794becb20d")
-            _session.connection.connect(on_connection)
+    // These are for Khövsgöl only, please DO NOT use them in other applications!
+    const LAST_FM_API_KEY: string = "1ef211ea88ffba1e15a5d63c1cc623d8"
+    const LAST_FM_API_SECRET: string = "42bf0581d4fdce799edd93794becb20d"
 
-        prop readonly name: string = "last.fm"
+    /*
+     * Scrobbling plugin.
+     */
+    class ScrobblingPlugin: Object implements Plugin
+        prop readonly name: string = "scrobbling"
         prop instance: Instance
-        prop readonly started: bool
+        prop readonly state: PluginState
+            get
+                return (PluginState) AtomicInt.@get(ref _state)
         
-        def new @connect()
-            var username = _instance.configuration.last_fm_username
-            var password = _instance.configuration.last_fm_password
-            if (username is not null) and (password is not null)
+        def start()
+            if state == PluginState.STOPPED
+                set_state(PluginState.STARTING)
+
+                if _first_start and not _instance.configuration.scrobbling_autostart
+                    _first_start = false
+                    return
+                _first_start = false
+                
+                var service = _instance.configuration.scrobbling_service
+                var username = _instance.configuration.scrobbling_username
+                var password = _instance.configuration.scrobbling_password
+
+                if (username is null) or (password is null)
+                    set_state(PluginState.STOPPED)
+                    return
+
                 try
+                    if service == "last.fm"
+                        _session = new Session(LAST_FM_API, LAST_FM_AUTH_API, LAST_FM_API_KEY, LAST_FM_API_SECRET)
+                    else
+                        _logger.warningf("Unsupported service: %s", service)
+                        set_state(PluginState.STOPPED)
+                        return
+                        
+                    _session.connection.connect(on_connection)
+                    _logger.message("Connecting")
                     _session.@connect(username, password)
                 except e: GLib.Error
                     _logger.exception(e)
-
-        def start()
-            if _instance.configuration.last_fm_autostart
-                @connect()
+                    set_state(PluginState.STOPPED)
         
         def stop()
-            if _started
+            if state == PluginState.STARTED
+                set_state(PluginState.STOPPING)
                 _instance.api.track_change.disconnect(on_track_changed)
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
-                _started = false
+                set_state(PluginState.STOPPED)
                 _logger.message("Stopped")
         
+        _state: int = PluginState.STOPPED
+        _first_start: bool = true
+        _session: Session?
+        _track: Track
+        _timestamp: int64
+
+        def private set_state(state: PluginState)
+            AtomicInt.@set(ref _state, state)
+
         def private on_connection(success: bool)
             if success
-                _started = true
+                set_state(PluginState.STARTED)
                 _instance.api.track_change.connect(on_track_changed)
                 _instance.api.position_in_track_change.connect(on_position_in_track_changed)
                 _instance.api.reset_watch()
@@ -72,11 +103,7 @@ namespace Khovsgol.Client.Plugins
                 except e: GLib.Error
                     _logger.exception(e)
 
-        _session: Session?
-        _track: Track
-        _timestamp: int64
-
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.client.last-fm")
+            _logger = Logging.get_logger("khovsgol.client.scrobbling")

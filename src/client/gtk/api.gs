@@ -34,9 +34,9 @@ namespace Khovsgol.Client.GTK
         
         prop static in_gdk: bool
             get
-                return AtomicInt.get(ref _in_gdk) == 1
+                return AtomicInt.@get(ref _in_gdk) == 1
             set
-                AtomicInt.set(ref _in_gdk, value ? 1 : 0)
+                AtomicInt.@set(ref _in_gdk, value ? 1 : 0)
 
         _in_gdk: static int = 0
 

@@ -19,39 +19,51 @@ namespace Khovsgol.Client.Plugins
     class MusicIndicatorPlugin: Object implements Plugin
         prop readonly name: string = "music-indicator"
         prop instance: Instance
-        prop readonly started: bool
+        prop readonly state: PluginState
+            get
+                return (PluginState) AtomicInt.@get(ref _state)
         
         def start()
-            _server = Indicate.Server.ref_default()
-            if _server is not null
-                // The type "music.<name>" specifies that we are a sub-indicator
-                // under the music indicator.
-                _server.type = "music.khovsgol"
+            if state == PluginState.STOPPED
+                set_state(PluginState.STARTING)
 
-                // The desktop file must be a full path
-                var desktop_file = File.new_for_path("%s/.local/share/applications/khovsgol.desktop".printf(Environment.get_home_dir()))
-                if desktop_file.query_exists()
-                    _server.desktop = desktop_file.get_path()
-                else
-                    desktop_file = File.new_for_path("/usr/share/applications/khovsgol.desktop")
+                _server = Indicate.Server.ref_default()
+                if _server is not null
+                    // The type "music.<name>" specifies that we are a sub-indicator
+                    // under the music indicator.
+                    _server.type = "music.khovsgol"
+
+                    // The desktop file must be a full path
+                    var desktop_file = File.new_for_path("%s/.local/share/applications/khovsgol.desktop".printf(Environment.get_home_dir()))
                     if desktop_file.query_exists()
                         _server.desktop = desktop_file.get_path()
-                
-                _server.server_display.connect(on_display)
-                
-                _server.show()
-                _started = true
-                _logger.message("Started")
-        
+                    else
+                        desktop_file = File.new_for_path("/usr/share/applications/khovsgol.desktop")
+                        if desktop_file.query_exists()
+                            _server.desktop = desktop_file.get_path()
+                    
+                    _server.server_display.connect(on_display)
+                    
+                    _server.show()
+                    set_state(PluginState.STARTED)
+                    _logger.message("Started")
+                else
+                    set_state(PluginState.STOPPED)
+
         def stop()
-            if _started
+            if state == PluginState.STARTED
+                set_state(PluginState.STOPPING)
                 _server.server_display.disconnect(on_display)
                 _server = null
-                _started = false
+                set_state(PluginState.STOPPED)
                 _logger.message("Stopped")
             
+        _state: int = PluginState.STOPPED
         _server: Indicate.Server?
         
+        def private set_state(state: PluginState)
+            AtomicInt.@set(ref _state, state)
+
         def private on_display(timestamp: uint)
             _instance.show()
 

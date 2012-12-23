@@ -5,15 +5,15 @@ namespace Khovsgol.Server.Filesystem
     class Directory: Khovsgol.Server.Directory
         prop override readonly is_scanning: bool
             get
-                return AtomicInt.get(ref _is_scanning) == 1
+                return AtomicInt.@get(ref _is_scanning) == 1
 
         def override scan()
-            AtomicInt.set(ref _is_scan_stopping, 0)
-            AtomicInt.set(ref _is_scanning, 1)
+            AtomicInt.@set(ref _is_scan_stopping, 0)
+            AtomicInt.@set(ref _is_scanning, 1)
             _scan_thread = new Thread of bool("DirectoryScan:%s".printf(path), do_scan)
         
         def override abort(block: bool = false)
-            AtomicInt.set(ref _is_scan_stopping, 1)
+            AtomicInt.@set(ref _is_scan_stopping, 1)
             if block
                 _scan_thread.join()
 
@@ -48,7 +48,7 @@ namespace Khovsgol.Server.Filesystem
                 var files_to_delete = new list of File
                 for var album_path in libraries.iterate_album_paths(path)
                     // Should we stop scanning?
-                    if AtomicInt.get(ref _is_scan_stopping) == 1
+                    if AtomicInt.@get(ref _is_scan_stopping) == 1
                         _logger.messagef("Scanning aborted: %s", path)
                         break
 
@@ -62,7 +62,7 @@ namespace Khovsgol.Server.Filesystem
                     libraries.write_begin()
                     for var file in files_to_delete
                         // Should we stop scanning?
-                        if AtomicInt.get(ref _is_scan_stopping) == 1
+                        if AtomicInt.@get(ref _is_scan_stopping) == 1
                             _logger.messagef("Scanning aborted: %s", path)
                             break
 
@@ -79,7 +79,7 @@ namespace Khovsgol.Server.Filesystem
                 current_album_path: string? = null
                 for var track_path in libraries.iterate_track_paths(path)
                     // Should we stop scanning?
-                    if AtomicInt.get(ref _is_scan_stopping) == 1
+                    if AtomicInt.@get(ref _is_scan_stopping) == 1
                         _logger.messagef("Scanning aborted: %s", path)
                         break
 
@@ -103,7 +103,7 @@ namespace Khovsgol.Server.Filesystem
                     libraries.write_begin()
                     for var file in files_to_delete
                         // Should we stop scanning?
-                        if AtomicInt.get(ref _is_scan_stopping) == 1
+                        if AtomicInt.@get(ref _is_scan_stopping) == 1
                             _logger.messagef("Scanning aborted: %s", path)
                             break
 
@@ -118,7 +118,7 @@ namespace Khovsgol.Server.Filesystem
                         var track_path = file.get_path()
                     
                         // Should we stop scanning?
-                        if AtomicInt.get(ref _is_scan_stopping) == 1
+                        if AtomicInt.@get(ref _is_scan_stopping) == 1
                             _logger.messagef("Scanning aborted: %s", path)
                             break
 
@@ -167,7 +167,7 @@ namespace Khovsgol.Server.Filesystem
                 // Traverse tree
                 while true
                     // Should we stop scanning?
-                    if AtomicInt.get(ref _is_scan_stopping) == 1
+                    if AtomicInt.@get(ref _is_scan_stopping) == 1
                         _logger.messagef("Scanning aborted: %s", path)
                         break
 
@@ -276,8 +276,8 @@ namespace Khovsgol.Server.Filesystem
             _logger.messagef("Scanning ended: %s (%s)", path, format_duration(seconds))
 
             // We've stopped scanning
-            AtomicInt.set(ref _is_scanning, 0)
-            AtomicInt.set(ref _is_scan_stopping, 0)
+            AtomicInt.@set(ref _is_scanning, 0)
+            AtomicInt.@set(ref _is_scan_stopping, 0)
             return true
 
         def create_track(file_path: string, sortables: Sortables): Track?
@@ -310,7 +310,7 @@ namespace Khovsgol.Server.Filesystem
                 libraries.write_begin()
                 for var node in batch
                     // Should we stop scanning?
-                    if AtomicInt.get(ref _is_scan_stopping) == 1
+                    if AtomicInt.@get(ref _is_scan_stopping) == 1
                         _logger.messagef("Scanning aborted: %s", path)
                         break
 
@@ -345,7 +345,7 @@ namespace Khovsgol.Server.Filesystem
                 libraries.write_begin()
                 for var timestamp in timestamps
                     // Should we stop scanning?
-                    if AtomicInt.get(ref _is_scan_stopping) == 1
+                    if AtomicInt.@get(ref _is_scan_stopping) == 1
                         _logger.messagef("Scanning aborted: %s", path)
                         break
 

@@ -43,7 +43,7 @@ namespace Khovsgol.Client
 
         prop readonly is_watching: bool
             get
-                return AtomicInt.get(ref _is_watching) == 1
+                return AtomicInt.@get(ref _is_watching) == 1
 
         event connection_change(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
         event volume_change(volume: double, old_volume: double)
@@ -104,13 +104,13 @@ namespace Khovsgol.Client
                 _watching_lock.unlock()
             
         def start_watch_thread(): bool
-            AtomicInt.set(ref _is_poll_stopping, 0)
-            AtomicInt.set(ref _is_watching, 1)
+            AtomicInt.@set(ref _is_poll_stopping, 0)
+            AtomicInt.@set(ref _is_watching, 1)
             _poll_thread = new Thread of bool("PollPlayer", poll)
             return false
         
         def stop_watch_thread(block: bool = false)
-            AtomicInt.set(ref _is_poll_stopping, 1)
+            AtomicInt.@set(ref _is_poll_stopping, 1)
             if block
                 _poll_thread.join()
         
@@ -1145,10 +1145,10 @@ namespace Khovsgol.Client
                 Thread.usleep(_poll_interval)
 
                 // Should we stop polling?
-                if AtomicInt.get(ref _is_poll_stopping) == 1
+                if AtomicInt.@get(ref _is_poll_stopping) == 1
                     break
             
             // We've stopped polling
-            AtomicInt.set(ref _is_watching, 0)
-            AtomicInt.set(ref _is_poll_stopping, 0)
+            AtomicInt.@set(ref _is_watching, 0)
+            AtomicInt.@set(ref _is_poll_stopping, 0)
             return true

@@ -20,27 +20,38 @@ namespace Khovsgol.Client.Plugins
     class UnityPlugin: Object implements Plugin
         prop readonly name: string = "unity"
         prop instance: Instance
-        prop readonly started: bool
+        prop readonly state: PluginState
+            get
+                return (PluginState) AtomicInt.@get(ref _state)
         
         def start()
-            if _launcher_entry is null
+            if state == PluginState.STOPPED
+                set_state(PluginState.STARTING)
+
                 _launcher_entry = LauncherEntry.get_for_desktop_id("khovsgol.desktop")
                 if _launcher_entry is not null
                     _launcher_entry.quicklist = create_menu()
                     _instance.api.position_in_track_change.connect(on_position_in_track_changed)
-                    _started = true
+                    set_state(PluginState.STARTED)
                     _logger.message("Started")
                 else
                     _logger.warning("Could not connect to Launcher")
+                    _launcher_entry = null
+                    set_state(PluginState.STOPPED)
         
         def stop()
-            if _started
+            if state == PluginState.STARTED
+                set_state(PluginState.STOPPING)
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
                 _launcher_entry = null
-                _started = false
+                set_state(PluginState.STOPPED)
                 _logger.message("Stopped")
         
+        _state: int = PluginState.STOPPED
         _launcher_entry: Unity.LauncherEntry?
+        
+        def private set_state(state: PluginState)
+            AtomicInt.@set(ref _state, state)
 
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             if _launcher_entry is not null

@@ -26,32 +26,41 @@ namespace Khovsgol.Client.Plugins
     class Mpris2Plugin: Object implements Plugin
         prop readonly name: string = "mpris2"
         prop instance: Instance
-        prop readonly started: bool
+        prop readonly state: PluginState
+            get
+                return (PluginState) AtomicInt.@get(ref _state)
         
         def start()
-            _object = new Mpris2(_instance)
-            _player = new Mpris2Player(_instance, _connector)
-            _connector.connect.connect(on_connected)
-            _connector.disconnecting.connect(on_disconnecting)
-            
-            // Our bus name must start with "org.mpris.MediaPlayer2." for clients to auto-discover us.
-            // The suffix does not matter (DesktopEntry is used for the name).
-            if _connector.start("org.mpris.MediaPlayer2.khovsgol")
-                _started = true
-                _logger.message("Started")
-            else
-                _logger.warning("Could not own name on DBus")
-        
-        def stop()
-            if _started
-                if _connector.stop()
+            if state == PluginState.STOPPED
+                set_state(PluginState.STARTING)
+                
+                _object = new Mpris2(_instance)
+                _player = new Mpris2Player(_instance, _connector)
+                _connector.connect.connect(on_connected)
+                _connector.disconnecting.connect(on_disconnecting)
+                
+                // Our bus name must start with "org.mpris.MediaPlayer2." for clients to auto-discover us.
+                // The suffix does not matter (DesktopEntry is used for the name).
+                if _connector.start("org.mpris.MediaPlayer2.khovsgol")
+                    set_state(PluginState.STARTED)
+                    _logger.message("Started")
+                else
+                    _logger.warning("Could not own name on DBus")
                     _connector.connect.disconnect(on_connected)
                     _connector.disconnecting.disconnect(on_disconnecting)
                     _object = null
                     _player = null
-                    _started = false
-                else
-                    _logger.warning("Could not stop")
+                    set_state(PluginState.STOPPED)
+        
+        def stop()
+            if state == PluginState.STARTED
+                set_state(PluginState.STOPPING)
+                _connector.connect.disconnect(on_connected)
+                _connector.disconnecting.disconnect(on_disconnecting)
+                _connector.stop()
+                _object = null
+                _player = null
+                set_state(PluginState.STOPPED)
         
         def remove_from_sound_indicator()
             // The sound indicator must be restarted for new settings to take effect.
@@ -80,12 +89,16 @@ namespace Khovsgol.Client.Plugins
                     _logger.message("Removed from sound indicator")
                     return
         
+        _state: int = PluginState.STOPPED
         _connector: Connector = new Connector()
         _object: Mpris2?
         _object_id: uint
         _player: Mpris2Player?
         _player_id: uint
         
+        def private set_state(state: PluginState)
+            AtomicInt.@set(ref _state, state)
+
         def private on_connected(connection: DBusConnection)
             // Register a MediaPlayer2 object with several interfaces
             try

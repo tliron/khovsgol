@@ -4,7 +4,13 @@ uses
     Nap
     JsonUtil
 
-namespace LastFm
+namespace Scrobbling
+
+    const LAST_FM_API: string = "http://ws.audioscrobbler.com/2.0/"
+    const LAST_FM_AUTH_API: string = "https://ws.audioscrobbler.com/2.0/"
+    
+    const LIBRE_FM_API: string = "http://turtle.libre.fm/2.0/"
+    const LIBRE_FM_AUTH_API: string = "https://turtle.libre.fm/2.0/"
 
     /*
      * Implementation of Last.fm REST APIs for authentication and scrobbling.
@@ -14,15 +20,15 @@ namespace LastFm
      * See: http://www.last.fm/api/rest
      */
     class Session: Object
-        construct(api_key: string, api_secret: string) raises GLib.Error
+        construct(api_url: string, auth_api_url: string, api_key: string, api_secret: string) raises GLib.Error
             _api_key = api_key
             _api_secret = api_secret
             
             _client = new _Soup.Client()
-            _client.base_url = "http://ws.audioscrobbler.com/2.0/"
+            _client.base_url = api_url
 
             _auth_client = new _Soup.Client()
-            _auth_client.base_url = "https://ws.audioscrobbler.com/2.0/"
+            _auth_client.base_url = auth_api_url
         
         event connection(success: bool)
         
@@ -145,4 +151,4 @@ namespace LastFm
         _logger: static Logging.Logger
 
         init
-            _logger = Logging.get_logger("last-fm")
+            _logger = Logging.get_logger("scrobbling")

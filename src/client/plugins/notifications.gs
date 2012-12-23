@@ -14,35 +14,45 @@ namespace Khovsgol.Client.Plugins
     class NotificationsPlugin: Object implements Plugin
         prop readonly name: string = "notification"
         prop instance: Instance
-        prop readonly started: bool
+        prop readonly state: PluginState
+            get
+                return (PluginState) AtomicInt.@get(ref _state)
         
         def start()
-            var file = _instance.get_resource("khovsgol.svg")
-            if file is not null
-                _default_icon = file.get_path()
-            else
-                _default_icon = "stock_media-play"
+            if state == PluginState.STOPPED
+                set_state(PluginState.STARTING)
 
-            if _notifications is null
+                var file = _instance.get_resource("khovsgol.svg")
+                if file is not null
+                    _default_icon = file.get_path()
+                else
+                    _default_icon = "stock_media-play"
+
                 try
                     _notifications = Bus.get_proxy_sync(BusType.SESSION, "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
                     _instance.api.track_change.connect(on_track_changed)
                     _instance.api.error.connect(on_error)
-                    _started = true
+                    set_state(PluginState.STARTED)
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
+                    set_state(PluginState.STOPPED)
         
         def stop()
-            if _started
+            if state == PluginState.STARTED
+                set_state(PluginState.STOPPING)
                 _instance.api.track_change.disconnect(on_track_changed)
                 _instance.api.error.disconnect(on_error)
                 _notifications = null
-                _started = false
+                set_state(PluginState.STOPPED)
                 _logger.message("Stopped")
         
+        _state: int = PluginState.STOPPED
         _notifications: Notifications?
         
+        def private set_state(state: PluginState)
+            AtomicInt.@set(ref _state, state)
+
         def private on_track_changed(track: Track?, old_track: Track?)
             if track is not null
                 var path = track.path

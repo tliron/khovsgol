@@ -100,42 +100,61 @@ namespace Khovsgol.Client.GTK
             ui_page.set_padding(10, 10, 10, 10)
             ui_page.add(ui_box)
             
-            // Last.fm
+            // Scrobbling
 
             about_label = new Label("Note that the Khövsgöl user interface must be running for scrobbling to happen.")
             about_label.set_alignment(0, 0)
             about_label.wrap = true
 
-            var last_fm_autostart = new CheckButton.with_mnemonic("S_tart scrobbling when I start Khövsgöl")
-            ((Label) last_fm_autostart.get_child()).wrap = true
-            set_boolean_configuration(last_fm_autostart, _instance.configuration, "last_fm_autostart")
-
-            _last_fm_username = new EntryBox("User_name")
-            if _instance.configuration.last_fm_username is not null
-                _last_fm_username.entry.text = _instance.configuration.last_fm_username
-            _last_fm_password = new EntryBox("_Password")
-            _last_fm_password.entry.visibility = false
-            if _instance.configuration.last_fm_password is not null
-                _last_fm_password.entry.text = _instance.configuration.last_fm_password
+            var scrobbling_autostart = new CheckButton.with_mnemonic("S_tart scrobbling when I start Khövsgöl")
+            ((Label) scrobbling_autostart.get_child()).wrap = true
+            set_boolean_configuration(scrobbling_autostart, _instance.configuration, "scrobbling_autostart")
             
-            _last_fm_start = new Button.with_mnemonic("St_art scrobbling now")
-            _last_fm_start.clicked.connect(on_last_fm_start)
-            _last_fm_stop = new Button.with_mnemonic("Sto_p scrobbling now")
-            _last_fm_stop.clicked.connect(on_last_fm_stop)
-            _last_fm_start.sensitive = false
-            _last_fm_stop.sensitive = false
+            var service = _instance.configuration.scrobbling_service
 
-            var last_fm_box = new Box(Orientation.VERTICAL, 10)
-            last_fm_box.pack_start(about_label, false)
-            last_fm_box.pack_start(last_fm_autostart, false)
-            last_fm_box.pack_start(_last_fm_username, false)
-            last_fm_box.pack_start(_last_fm_password, false)
-            last_fm_box.pack_start(_last_fm_start, false)
-            last_fm_box.pack_start(_last_fm_stop, false)
+            var service_label = new Label.with_mnemonic("Scrobbling ser_vice:")
+            service_label.set_alignment(0, 0)
+            var last_fm = new RadioButton.with_label(null, "Last.fm")
+            ((Label) last_fm.get_child()).wrap = true
+            if service == "last.fm"
+                last_fm.active = true
+            last_fm.clicked.connect(on_last_fm)
+            var libre_fm = new RadioButton.with_label_from_widget(last_fm, "Libre.fm")
+            ((Label) libre_fm.get_child()).wrap = true
+            if service == "libre.fm"
+                libre_fm.active = true
+            libre_fm.clicked.connect(on_libre_fm)
 
-            var last_fm_page = new Alignment(0, 0, 1, 1)
-            last_fm_page.set_padding(10, 10, 10, 10)
-            last_fm_page.add(last_fm_box)
+            _scrobbling_username = new EntryBox("User_name")
+            if _instance.configuration.scrobbling_username is not null
+                _scrobbling_username.entry.text = _instance.configuration.scrobbling_username
+            _scrobbling_password = new EntryBox("_Password")
+            _scrobbling_password.entry.visibility = false
+            if _instance.configuration.scrobbling_password is not null
+                _scrobbling_password.entry.text = _instance.configuration.scrobbling_password
+            
+            _scrobbling_start = new Button.with_mnemonic("St_art scrobbling now")
+            _scrobbling_start.clicked.connect(on_scrobbling_start)
+            _scrobbling_stop = new Button.with_mnemonic("Sto_p scrobbling now")
+            _scrobbling_stop.clicked.connect(on_scrobbling_stop)
+            _scrobbling_start.sensitive = false
+            _scrobbling_stop.sensitive = false
+
+            var scrobbling_box = new Box(Orientation.VERTICAL, 10)
+            scrobbling_box.pack_start(about_label, false)
+            scrobbling_box.pack_start(new Separator(Orientation.HORIZONTAL), false)
+            scrobbling_box.pack_start(scrobbling_autostart, false)
+            scrobbling_box.pack_start(service_label, false)
+            scrobbling_box.pack_start(last_fm, false)
+            scrobbling_box.pack_start(libre_fm, false)
+            scrobbling_box.pack_start(_scrobbling_username, false)
+            scrobbling_box.pack_start(_scrobbling_password, false)
+            scrobbling_box.pack_start(_scrobbling_start, false)
+            scrobbling_box.pack_start(_scrobbling_stop, false)
+
+            var scrobbling_page = new Alignment(0, 0, 1, 1)
+            scrobbling_page.set_padding(10, 10, 10, 10)
+            scrobbling_page.add(scrobbling_box)
 
             // Assemble
 
@@ -144,8 +163,8 @@ namespace Khovsgol.Client.GTK
             main_box.append_page(server_page, label)
             label = new Label.with_mnemonic("User _interface")
             main_box.append_page(ui_page, label)
-            label = new Label.with_mnemonic("_Last.fm")
-            main_box.append_page(last_fm_page, label)
+            label = new Label.with_mnemonic("Scro_bbling")
+            main_box.append_page(scrobbling_page, label)
 
             add(main_box)
 
@@ -166,11 +185,11 @@ namespace Khovsgol.Client.GTK
             save()
 
         def private save()
-            var username = _last_fm_username.entry.text
-            var password = _last_fm_password.entry.text
-            if (username != _instance.configuration.last_fm_username) or (password != _instance.configuration.last_fm_password)
-                _instance.configuration.last_fm_username = username
-                _instance.configuration.last_fm_password = password
+            var username = _scrobbling_username.entry.text
+            var password = _scrobbling_password.entry.text
+            if (username != _instance.configuration.scrobbling_username) or (password != _instance.configuration.scrobbling_password)
+                _instance.configuration.scrobbling_username = username
+                _instance.configuration.scrobbling_password = password
                 _instance.configuration.save()
 
         def private on_key_pressed(e: Gdk.EventKey): bool
@@ -181,27 +200,37 @@ namespace Khovsgol.Client.GTK
             else
                 return false
 
-        def private on_last_fm_start()
-            var plugin = _instance.get_plugin("last.fm")
+        def private on_scrobbling_start()
+            var plugin = _instance.get_plugin("scrobbling")
             if plugin is not null
+                _scrobbling_start.sensitive = false
                 save()
                 plugin.start()
         
-        def private on_last_fm_stop()
-            var plugin = _instance.get_plugin("last.fm")
+        def private on_scrobbling_stop()
+            var plugin = _instance.get_plugin("scrobbling")
             if plugin is not null
                 plugin.stop()
         
         _update_id: uint
         def private update(): bool
-            var plugin = _instance.get_plugin("last.fm")
+            var plugin = _instance.get_plugin("scrobbling")
             if plugin is not null
-                _last_fm_start.sensitive = not plugin.started
-                _last_fm_stop.sensitive = plugin.started
+                var state = plugin.state
+                _scrobbling_start.sensitive = state == PluginState.STOPPED
+                _scrobbling_stop.sensitive = state == PluginState.STARTED
             else
-                _last_fm_start.sensitive = false
-                _last_fm_start.sensitive = false
+                _scrobbling_start.sensitive = false
+                _scrobbling_start.sensitive = false
             return true
+        
+        def on_last_fm()
+            _instance.configuration.scrobbling_service = "last.fm"
+            _instance.configuration.save()
+
+        def on_libre_fm()
+            _instance.configuration.scrobbling_service = "libre.fm"
+            _instance.configuration.save()
         
         def autostarts_with_session(): bool
             try
@@ -240,10 +269,10 @@ namespace Khovsgol.Client.GTK
         _ownerships: list of Object = new list of Object
         _autostart: Autostart
         _autostart_with_session: RadioButton
-        _last_fm_username: EntryBox
-        _last_fm_password: EntryBox
-        _last_fm_start: Button
-        _last_fm_stop: Button
+        _scrobbling_username: EntryBox
+        _scrobbling_password: EntryBox
+        _scrobbling_start: Button
+        _scrobbling_stop: Button
         
         class private SensitivityDependsOn: Object
             construct(button: CheckButton, depends: CheckButton)

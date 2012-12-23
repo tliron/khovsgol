@@ -130,7 +130,7 @@ KHOVSGOL_SOURCES=\
 	$(call find-sources,lib/dbus) \
 	$(call find-sources,lib/gtk) \
 	$(call find-sources,lib/avahi) \
-	$(call find-sources,lib/last-fm)
+	$(call find-sources,lib/scrobbling)
 
 KHOVSGOL_PACKAGES=\
 	--pkg=libsoup-2.4 \

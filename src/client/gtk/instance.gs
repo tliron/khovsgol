@@ -24,7 +24,7 @@ namespace Khovsgol.Client.GTK
             add_plugin(new Plugins.Mpris2Plugin())
             add_plugin(new Plugins.UnityPlugin())
             add_plugin(new Plugins.PurplePlugin())
-            add_plugin(new Plugins.LastFmPlugin())
+            add_plugin(new Plugins.ScrobblingPlugin())
             //add_plugin(new Plugins.MusicIndicatorPlugin())
             
         prop readonly configuration: Configuration

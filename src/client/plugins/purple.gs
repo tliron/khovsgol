@@ -15,29 +15,40 @@ namespace Khovsgol.Client.Plugins
     class PurplePlugin: Object implements Plugin
         prop readonly name: string = "purple"
         prop instance: Instance
-        prop readonly started: bool
+        prop readonly state: PluginState
+            get
+                return (PluginState) AtomicInt.@get(ref _state)
         
         def start()
-            if _purple is null
+            if state == PluginState.STOPPED
+                set_state(PluginState.STARTING)
+
                 try
                     _purple = Bus.get_proxy_sync(BusType.SESSION, "im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
                     _tune_status_type_id = _purple.purple_primitive_get_id_from_type(StatusTypePrimitive.TUNE)
                     _instance.api.track_change.connect(on_track_changed)
-                    _started = true
+                    set_state(PluginState.STARTED)
                     _logger.message("Started")
                 except e: IOError
                     _logger.exception(e)
+                    _purple = null
+                    set_state(PluginState.STOPPED)
         
         def stop()
-            if _started
+            if state == PluginState.STARTED
+                set_state(PluginState.STOPPING)
                 _instance.api.track_change.disconnect(on_track_changed)
                 on_track_changed(null, null)
                 _purple = null
-                _started = false
+                set_state(PluginState.STOPPED)
                 _logger.message("Stopped")
 
+        _state: int = PluginState.STOPPED
         _purple: PurpleObject?
         _tune_status_type_id: string
+
+        def private set_state(state: PluginState)
+            AtomicInt.@set(ref _state, state)
 
         def private on_track_changed(track: Track?, old_track: Track?)
             if _purple is null
