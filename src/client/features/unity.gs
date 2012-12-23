@@ -19,7 +19,7 @@ namespace Khovsgol.Client.Features
      */
     class UnityFeature: Object implements Feature
         prop readonly name: string = "unity"
-        prop readonly label: string = "Unity Launcher extras"
+        prop readonly label: string = "Unity Launcher integration"
         prop instance: Instance
         prop readonly state: FeatureState
             get
@@ -43,6 +43,8 @@ namespace Khovsgol.Client.Features
             if state == FeatureState.STARTED
                 set_state(FeatureState.STOPPING)
                 _instance.api.position_in_track_change.disconnect(on_position_in_track_changed)
+                _launcher_entry.progress_visible = false
+                _launcher_entry.quicklist = null // doesn't actually clear quicklist...
                 _launcher_entry = null
                 set_state(FeatureState.STOPPED)
         
