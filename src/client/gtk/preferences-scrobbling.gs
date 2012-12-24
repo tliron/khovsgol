@@ -19,13 +19,11 @@ namespace Khovsgol.Client.GTK
 
             var service_label = new Label.with_mnemonic("Scrobbling ser_vice:")
             service_label.set_alignment(0, 0)
-            var last_fm = new RadioButton.with_label(null, "Last.fm")
-            ((Label) last_fm.get_child()).wrap = true
+            var last_fm = new WrappedRadioButton("Last.fm")
             if service == "last.fm"
                 last_fm.active = true
             last_fm.clicked.connect(on_last_fm)
-            var libre_fm = new RadioButton.with_label_from_widget(last_fm, "Libre.fm")
-            ((Label) libre_fm.get_child()).wrap = true
+            var libre_fm = new WrappedRadioButton("Libre.fm", last_fm)
             if service == "libre.fm"
                 libre_fm.active = true
             libre_fm.clicked.connect(on_libre_fm)

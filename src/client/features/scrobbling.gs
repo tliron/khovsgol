@@ -15,10 +15,12 @@ namespace Khovsgol.Client.Features
     class ScrobblingFeature: Object implements Feature
         prop readonly name: string = "scrobbling"
         prop readonly label: string = "Scrobble to online service"
-        prop instance: Instance
+        prop readonly persistent: bool = true
         prop readonly state: FeatureState
             get
                 return (FeatureState) AtomicInt.@get(ref _state)
+
+        prop instance: Instance
         
         def start()
             if state == FeatureState.STOPPED

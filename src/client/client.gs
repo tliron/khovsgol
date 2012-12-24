@@ -39,8 +39,10 @@ namespace Khovsgol.Client
     interface Feature: GLib.Object
         prop abstract readonly name: string
         prop abstract readonly label: string
-        prop abstract instance: Instance
+        prop abstract readonly persistent: bool
         prop abstract readonly state: FeatureState
+
+        prop abstract instance: Instance
 
         def abstract start()
         def abstract stop()

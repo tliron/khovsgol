@@ -10,18 +10,6 @@ namespace Nap
         Logging.get_logger("nap").warningf("%s (%s %s)", error.message, conversation.method, conversation.path)
 
     /*
-     * Keeps references for a list of objects.
-     */
-    class Ownerships
-        construct()
-            _list = new list of Object
-    
-        def add(ownership: Object): bool
-            return _list.add(ownership)
-    
-        _list: list of Object
-
-    /*
      * Renders an NCSA Common Log entry.
      */
     class NcsaCommonLogEntry

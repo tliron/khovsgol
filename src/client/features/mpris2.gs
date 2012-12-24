@@ -26,10 +26,12 @@ namespace Khovsgol.Client.Features
     class Mpris2Feature: Object implements Feature
         prop readonly name: string = "mpris2"
         prop readonly label: string = "Sound indicator integration"
-        prop instance: Instance
+        prop readonly persistent: bool = true
         prop readonly state: FeatureState
             get
                 return (FeatureState) AtomicInt.@get(ref _state)
+
+        prop instance: Instance
         
         def start()
             if state == FeatureState.STOPPED

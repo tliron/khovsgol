@@ -164,42 +164,6 @@ namespace Khovsgol.Client
                     except e: KeyFileError
                         pass
 
-        prop server_autostart: bool
-            get
-                try
-                    return _key_file.get_boolean("server", "autostart")
-                except e: KeyFileError
-                    return true
-            set
-                _key_file.set_boolean("server", "autostart", value)
-
-        prop server_autostop: bool
-            get
-                try
-                    return _key_file.get_boolean("server", "autostop")
-                except e: KeyFileError
-                    return false
-            set
-                _key_file.set_boolean("server", "autostop", value)
-                
-        prop receiver_autostart: bool
-            get
-                try
-                    return _key_file.get_boolean("receiver", "autostart")
-                except e: KeyFileError
-                    return true
-            set
-                _key_file.set_boolean("receiver", "autostart", value)
-
-        prop receiver_autostop: bool
-            get
-                try
-                    return _key_file.get_boolean("receiver", "autostop")
-                except e: KeyFileError
-                    return false
-            set
-                _key_file.set_boolean("receiver", "autostop", value)
-
         def is_feature_active(name: string): bool
             try
                 return _key_file.get_boolean("features", name)
@@ -208,6 +172,18 @@ namespace Khovsgol.Client
 
         def set_feature_active(name: string, value: bool)
             _key_file.set_boolean("features", name, value)
+
+        def is_feature_boolean(name: string, property: string): bool
+            try
+                return _key_file.get_boolean("feature." + name, property)
+            except e: KeyFileError
+                if property == "autostart"
+                    return true
+                else
+                    return false
+
+        def set_feature_boolean(name: string, property: string, value: bool)
+            _key_file.set_boolean("feature." + name, property, value)
 
         /*
          * Saves the configuration.

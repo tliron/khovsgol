@@ -67,7 +67,7 @@ namespace Nap
                 _ownerships.add(ownership)
                 ownership = args.arg()
         
-        prop readonly ownerships: Ownerships = new Ownerships()
+        prop readonly ownerships: list of Object = new list of Object
         
         def override get(conversation: Conversation) raises GLib.Error
             if _get is not null

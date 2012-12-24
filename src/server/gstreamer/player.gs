@@ -120,6 +120,10 @@ namespace Khovsgol.Server.GStreamer
         def private on_state_changed(source: Gst.Object, new_state: State, old_state: State, pending_state: State)
             _state = new_state // are we using this?
             if (new_state == State.PAUSED) and source.name.has_prefix("RemoteSink:")
+                // TODO: maybe STREAM_STATUS msg?
+                // STREAM_START?
+                // see: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html
+            
                 var info = source.name.substring(11)
                 var infos = info.split(":", 3)
                 if infos.length == 3
@@ -179,7 +183,7 @@ namespace Khovsgol.Server.GStreamer
             sink: dynamic Element = ElementFactory.make("udpsink", "RemoteSink:%s:%d:%d".printf(host, http_port, udp_port))
             sink.host = host
             sink.port = udp_port
-            sink.sync = true // does this help?
+            //sink.sync = false // this can cause CPU to spike
 
             var bin = new Bin(name)
             bin.add_many(queue, pay, sink)
@@ -204,13 +208,13 @@ namespace Khovsgol.Server.GStreamer
             var local_branch = create_local_branch("Local")
             var remote_branch = create_remote_branch("Remote", "localhost", 8081, 8082)
             
-            _pipeline.add_many(source, decode, convert, tee, local_branch)
+            _pipeline.add_many(source, decode, convert, tee, remote_branch)
             source.link(decode)
             _pipeline.ownerships.add(new LinkDecodeBinLater(decode, convert))
             convert.link(tee)
             
-            tee.get_request_pad("src_%u").link(local_branch.get_static_pad("sink"))
-            //tee.get_request_pad("src_%u").link(remote_branch.get_static_pad("sink"))
+            //tee.get_request_pad("src_%u").link(local_branch.get_static_pad("sink"))
+            tee.get_request_pad("src_%u").link(remote_branch.get_static_pad("sink"))
     
         _pipeline: GstUtil.Pipeline?
         _path: string?

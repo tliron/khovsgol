@@ -20,6 +20,7 @@ namespace Khovsgol.Client.GTK
             _window = new MainWindow(self)
             
             add_feature(new Features.ServerFeature())
+            add_feature(new Features.ReceiverFeature())
             add_feature(new Features.NotificationsFeature())
             add_feature(new Features.MediaPlayerKeysFeature())
             add_feature(new Features.Mpris2Feature())
@@ -56,17 +57,12 @@ namespace Khovsgol.Client.GTK
         def start()
             _started = true
         
-            // Note: special handling for "server" and "receiver" features
             for var feature in _features.values
-                if feature.name == "server"
-                    if _configuration.server_autostart
-                        feature.start()
-                else if feature.name == "receiver"
-                    if _configuration.receiver_autostart
-                        feature.start()
-                else
+                if feature.persistent
                     if _configuration.is_feature_active(feature.name)
                         feature.start()
+                else if _configuration.is_feature_boolean(feature.name, "autostart")
+                    feature.start()
                 
             _api.start_watch_thread()
             
@@ -77,15 +73,10 @@ namespace Khovsgol.Client.GTK
         def stop()
             _api.stop_watch_thread(true)
             
-            // Note: special handling for "server" and "receiver" features
             for var feature in _features.values
-                if feature.name == "server"
-                    if _configuration.server_autostop
-                        feature.stop()
-                if feature.name == "receiver"
-                    if _configuration.receiver_autostop
-                        feature.stop()
-                else
+                if feature.persistent
+                    feature.stop()
+                else if _configuration.is_feature_boolean(feature.name, "autostop")
                     feature.stop()
 
             Gtk.main_quit()

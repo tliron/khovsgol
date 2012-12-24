@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Khövsgöl Receiver
+Comment=Music player and library/playlist manager
+Type=Application
+Categories=AudioVideo;Audio;Player;GTK;
+Icon=khovsgol
+Terminal=false

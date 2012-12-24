@@ -19,10 +19,12 @@ namespace Khovsgol.Client.Features
     class MusicIndicatorFeature: Object implements Feature
         prop readonly name: string = "music-indicator"
         prop readonly label: string = "Sound indicator integration (Ubuntu 11.10 and earlier)"
-        prop instance: Instance
+        prop readonly persistent: bool = true
         prop readonly state: FeatureState
             get
                 return (FeatureState) AtomicInt.@get(ref _state)
+
+        prop instance: Instance
         
         def start()
             if state == FeatureState.STOPPED

@@ -39,13 +39,13 @@ namespace Khovsgol.Client.GTK
 
         _feature_buttons: list of FeatureButton = new list of FeatureButton
 
-        class private FeatureButton: CheckButton
+        class private FeatureButton: PreferencesPage.WrappedCheckButton
             construct(feature: Feature, instance: Instance)
+                super(feature.label)
+
                 _feature = feature
                 _instance = instance
 
-                label = _feature.label
-                ((Label) get_child()).wrap = true
                 update()
                 clicked.connect(on_clicked)
             
@@ -57,9 +57,8 @@ namespace Khovsgol.Client.GTK
             def private on_clicked()
                 var active = self.active
 
-                // Update configuration
-                // Note: special handling for "server" and "receiver" features
-                if (_feature.name != "server") and (_feature.name != "receiver")
+                // Update configuration for persistent features
+                if _feature.persistent
                     var configured_active = _instance.configuration.is_feature_active(_feature.name)
                     if active != configured_active
                         _instance.configuration.set_feature_active(_feature.name, active)

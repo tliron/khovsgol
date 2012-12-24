@@ -2,3 +2,4 @@ bin/khovsgol                 usr/bin
 resources/khovsgol.desktop   usr/share/applications
 resources/khovsgol.svg       usr/share/icons/gnome/scalable/apps
 resources/khovsgold.desktop  usr/share/khovsgol
+resources/khovsgolr.desktop  usr/share/khovsgol

@@ -11,25 +11,14 @@ namespace Khovsgol.Client.GTK
             about.set_alignment(0, 0)
             about.wrap = true
 
-            var show_duration = new CheckButton.with_mnemonic("Show track _durations")
-            ((Label) show_duration.get_child()).wrap = true
-            connect_to_boolean_configuration(show_duration, instance.configuration, "show_duration")
-
-            var subdue_lossy = new CheckButton.with_mnemonic("Show tracks and albums with _lossy compression in subdued colors")
-            ((Label) subdue_lossy.get_child()).wrap = true
-            connect_to_boolean_configuration(subdue_lossy, instance.configuration, "subdue_lossy")
-
-            var expand_on_click = new CheckButton.with_mnemonic("Expand items in the library browser when you _click them")
-            ((Label) expand_on_click.get_child()).wrap = true
-            connect_to_boolean_configuration(expand_on_click, instance.configuration, "expand_on_click")
+            var show_duration = new ConnectedCheckButton("Show track _durations", null, instance.configuration, null, "show_duration")
+            var subdue_lossy = new ConnectedCheckButton("Show tracks and albums with _lossy compression in subdued colors", null, instance.configuration, null, "subdue_lossy")
+            var expand_on_click = new ConnectedCheckButton("Expand items in the library browser when you _click them", null, instance.configuration, null, "expand_on_click")
 
             var keyboard_focus_label = new Label.with_mnemonic("Initial _keyboard focus when Khövsgöl is started:")
             keyboard_focus_label.set_alignment(0, 0)
-            var activate_playlist = new RadioButton.with_label(null, "Playlist")
-            ((Label) activate_playlist.get_child()).wrap = true
-            var activate_library = new RadioButton.with_label_from_widget(activate_playlist, "Library")
-            ((Label) activate_library.get_child()).wrap = true
-            connect_to_boolean_configuration(activate_library, instance.configuration, "focus_on_library")
+            var activate_playlist = new WrappedRadioButton("Playlist")
+            var activate_library = new ConnectedRadioButton("Library", activate_playlist, instance.configuration, null, "focus_on_library")
             keyboard_focus_label.mnemonic_widget = activate_playlist
 
             var box = new Box(Orientation.VERTICAL, 10)

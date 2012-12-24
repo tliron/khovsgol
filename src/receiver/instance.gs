@@ -52,14 +52,15 @@ namespace Khovsgol.Receiver
                         source.port = port
                         source.caps = Caps.from_string(caps)
                         
+                        var buffer = ElementFactory.make("rtpjitterbuffer", "Buffer")
                         var depay = ElementFactory.make("rtpL16depay", "Depay")
                         var convert = ElementFactory.make("audioconvert", "AudioConvert")
                         var resample = ElementFactory.make("audioresample", "AudioResample")
                         var volume = ElementFactory.make("volume", "Volume")
                         var sink = ElementFactory.make("pulsesink", "Sink")
                         
-                        _pipeline.add_many(source, depay, convert, resample, volume, sink)
-                        source.link_many(depay, convert, resample, volume, sink)
+                        _pipeline.add_many(source, buffer, depay, convert, resample, volume, sink)
+                        source.link_many(buffer, depay, convert, resample, volume, sink)
 
                         _pipeline.state = State.PLAYING
 

@@ -8,10 +8,12 @@ namespace Khovsgol.Client.Features
     class ServerFeature: Object implements Feature
         prop readonly name: string = "server"
         prop readonly label: string = "Local Khövsgöl server"
-        prop instance: Instance
+        prop readonly persistent: bool = false
         prop readonly state: FeatureState
             get
                 return (FeatureState) AtomicInt.@get(ref _state)
+
+        prop instance: Instance
         
         def start()
             if state == FeatureState.STOPPED

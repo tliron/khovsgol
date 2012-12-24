@@ -21,8 +21,8 @@ namespace Khovsgol.Client.GTK
             var manage_libraries = new ControlToolButton(Stock.CDROM, Gdk.Key.L, "Manage libraries\n<Alt>L", _accel_group)
             manage_libraries.clicked.connect(on_manage_libraries)
 
-            var manage_receiver = new ControlToolButton(Stock.JUMP_TO, Gdk.Key.R, "Manage receiver\n<Alt>R", _accel_group)
-            manage_receiver.clicked.connect(on_manage_receiver)
+            //var manage_receiver = new ControlToolButton(Stock.JUMP_TO, Gdk.Key.R, "Manage receiver\n<Alt>R", _accel_group)
+            //manage_receiver.clicked.connect(on_manage_receiver)
 
             var connect = new ControlToolButton(Stock.NETWORK, Gdk.Key.C, "Connector\n<Alt>C", _accel_group)
             connect.clicked.connect(on_connector)
@@ -86,7 +86,6 @@ namespace Khovsgol.Client.GTK
             add(quit)
             add(preferences)
             add(manage_libraries)
-            add(manage_receiver)
             add(new SeparatorToolItem())
             add(connect)
             add(info_label_item)
@@ -122,9 +121,6 @@ namespace Khovsgol.Client.GTK
 
         def private on_manage_libraries()
             new LibraryManager(_instance).show_all()
-
-        def private on_manage_receiver()
-            pass
 
         def private on_connector()
             new Connector(_instance).show_all()

@@ -15,10 +15,12 @@ namespace Khovsgol.Client.Features
     class PurpleFeature: Object implements Feature
         prop readonly name: string = "purple"
         prop readonly label: string = "Update Pidgin status"
-        prop instance: Instance
+        prop readonly persistent: bool = true
         prop readonly state: FeatureState
             get
                 return (FeatureState) AtomicInt.@get(ref _state)
+
+        prop instance: Instance
         
         def start()
             if state == FeatureState.STOPPED

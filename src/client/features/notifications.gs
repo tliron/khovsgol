@@ -14,10 +14,12 @@ namespace Khovsgol.Client.Features
     class NotificationsFeature: Object implements Feature
         prop readonly name: string = "notification"
         prop readonly label: string = "Desktop notifications"
-        prop instance: Instance
+        prop readonly persistent: bool = true
         prop readonly state: FeatureState
             get
                 return (FeatureState) AtomicInt.@get(ref _state)
+
+        prop instance: Instance
         
         def start()
             if state == FeatureState.STOPPED

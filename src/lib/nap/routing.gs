@@ -45,7 +45,7 @@ namespace Nap
         
         _trivial_routes: dict of string, TrivialRoute = new dict of string, TrivialRoute
         _template_routes: list of TemplateRoute = new list of TemplateRoute
-        _ownerships: Ownerships = new Ownerships
+        _ownerships: list of GLib.Object = new list of GLib.Object
 
         class static private TrivialRoute
             construct(handler: Handler)

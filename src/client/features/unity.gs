@@ -20,10 +20,12 @@ namespace Khovsgol.Client.Features
     class UnityFeature: Object implements Feature
         prop readonly name: string = "unity"
         prop readonly label: string = "Unity Launcher integration"
-        prop instance: Instance
+        prop readonly persistent: bool = true
         prop readonly state: FeatureState
             get
                 return (FeatureState) AtomicInt.@get(ref _state)
+
+        prop instance: Instance
         
         def start()
             if state == FeatureState.STOPPED
