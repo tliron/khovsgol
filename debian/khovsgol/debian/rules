@@ -9,4 +9,4 @@ include components.mk
 	echo $(PWD)
 	dh $@
 
-override_dh_auto_install: khovsgold khovsgolc khovsgol
+override_dh_auto_install: khovsgol khovsgold khovsgolr khovsgolc

@@ -28,7 +28,14 @@ namespace GstUtil
             var bus = get_bus()
             bus.add_signal_watch()
             bus.message.connect(on_message)
-            
+        
+        def kill()
+            // We are not allowed to die if the state is not null
+            if state != State.NULL
+                ref()
+                _dying = true
+                state = State.NULL
+
         prop readonly ownerships: list of GLib.Object = new list of GLib.Object
 
         prop state: State
@@ -60,7 +67,7 @@ namespace GstUtil
             set
                 seek_simple(Format.TIME, SeekFlags.FLUSH, value)
 
-        event state_change(new_state: State, old_state: State, pending_state: State)
+        event state_change(source: Gst.Object, new_state: State, old_state: State, pending_state: State)
         event eos()
         event tag(tag_list: TagList)
         event error(error: GLib.Error, text: string)
@@ -72,7 +79,11 @@ namespace GstUtil
                 old_state: State
                 pending_state: State
                 message.parse_state_changed(out new_state, out old_state, out pending_state)
-                state_changed(new_state, old_state, pending_state)
+                if _dying and (new_state == State.NULL)
+                    _dying = false
+                    unref()
+                    return
+                state_change(message.src, new_state, old_state, pending_state)
             else if type == MessageType.EOS
                 eos()
             else if type == MessageType.TAG
@@ -84,6 +95,8 @@ namespace GstUtil
                 text: string
                 message.parse_error(out e, out text)
                 error(e, text)
+
+        _dying: bool
 
     class LinkDecodeBinLater: GLib.Object
         construct(decodebin: dynamic Element, next: Element, once: bool = false)

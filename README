@@ -1,5 +1,5 @@
 
-This README last updated on Dec 21, 2012.
+This README last updated on Dec 24, 2012.
 
 ========
 Khövsgöl
@@ -57,6 +57,7 @@ You can also build individual components via these targets:
 
  "make khovsgol"
  "make khovsgold"
+ "make khovsgolr"
  "make khovsgolc"
 
 To see only the C code output by the Vala compiler, use these targets:
@@ -64,6 +65,7 @@ To see only the C code output by the Vala compiler, use these targets:
  "make all.ccode"
  "make khovsgol.ccode"
  "make khovsgold.ccode"
+ "make khovsgolr.ccode"
  "make khovsgolc.ccode"
    Outputs the C code for a component into the "c/<component>" directory.
 
@@ -140,7 +142,7 @@ Useful run options:
  "khovsgold --console"
    Outputs colorized log messages to the console.
 
- "GST_DEBUG=1 khovsgold"
+ "GST_DEBUG=2 khovsgold"
    Set a GStreamer debug level, which will output colorized log messages to
    the console.
 

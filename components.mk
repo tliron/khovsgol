@@ -88,6 +88,34 @@ khovsgold.ccode:
 	$(VALAC.C) --directory=c/khovsgold $(KHOVSGOLD_SOURCES) $(KHOVSGOLD_PACKAGES)
 
 #
+# khovsgolr
+#
+
+KHOVSGOLR_SOURCES=\
+	$(call find-sources,receiver) \
+	$(SRC)/version.gs \
+	$(call find-sources,lib/logging) \
+	$(call find-sources,lib/console) \
+	$(call find-sources,lib/nap) \
+	$(call find-sources,lib/json) \
+	$(call find-sources,lib/gstreamer) \
+	$(call find-sources,lib/daemonize)
+
+KHOVSGOLR_PACKAGES=\
+	--pkg=libsoup-2.4 \
+	--pkg=gee-1.0 \
+	--pkg=json-glib-1.0 \
+	--pkg=posix --Xcc=-D_GNU_SOURCE \
+	--pkg=libdaemon \
+	--pkg=gstreamer-audio-1.0
+
+khovsgolr:
+	$(VALAC) --output=khovsgolr $(KHOVSGOLR_SOURCES) $(KHOVSGOLR_PACKAGES)
+
+khovsgolr.ccode:
+	$(VALAC.C) --directory=c/khovsgolr $(KHOVSGOLR_SOURCES) $(KHOVSGOLR_PACKAGES)
+
+#
 # khovsgolc
 #
 

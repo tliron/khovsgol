@@ -4,9 +4,9 @@ BIN=bin
 RESOURCES=resources
 DEBIAN=debian/khovsgol
 
-all: khovsgold khovsgolc khovsgol
+all: khovsgol khovsgold khovsgolr khovsgolc
 
-all.ccode: khovsgold.ccode khovsgolc.ccode khovsgol.ccode
+all.ccode: khovsgol.ccode khovsgold.ccode khovsgolr.ccode khovsgolc.ccode
 
 clean: deb.clean
 	$(RM) -rf $(BIN)/*

@@ -18,7 +18,7 @@ namespace Khovsgol.Server.GStreamer
                         _pipeline.state = State.NULL
                     if _path != null
                         build()
-                        source: dynamic Element =_pipeline.get_by_name("FileSource")
+                        source: dynamic Element =_pipeline.get_by_name("Source")
                         if source is not null
                             source.location = _path
                             _pipeline.state = State.PLAYING
@@ -117,10 +117,32 @@ namespace Khovsgol.Server.GStreamer
                         return duration / 1000000000.0 // convert to seconds
                 return double.MIN
         
-        def private on_state_changed(new_state: State, old_state: State, pending_state: State)
-            // TODO: state of which element?
-            _state = new_state
-            pass
+        def private on_state_changed(source: Gst.Object, new_state: State, old_state: State, pending_state: State)
+            _state = new_state // are we using this?
+            if (new_state == State.PAUSED) and source.name.has_prefix("RemoteSink:")
+                var info = source.name.substring(11)
+                var infos = info.split(":", 3)
+                if infos.length == 3
+                    var host = infos[0]
+                    var http_port = int.parse(infos[1])
+                    var udp_port = int.parse(infos[2])
+
+                    var caps = ((Element) source).get_static_pad("sink").caps.to_string()
+                
+                    // Tell receiver to start playing
+                    var client = new Nap._Soup.Client()
+                    client.base_url = "http://%s:%d".printf(host, http_port)
+                    try
+                        var conversation = client.create_conversation()
+                        conversation.method = Nap.Method.POST
+                        conversation.path = "/receiver/"
+                        var payload = new Json.Object()
+                        payload.set_int_member("port", udp_port)
+                        payload.set_string_member("caps", caps)
+                        conversation.request_json_object = payload
+                        conversation.commit(true)
+                    except e: GLib.Error
+                        _logger.exception(e)
 
         def private on_eos()
             next()
@@ -138,31 +160,57 @@ namespace Khovsgol.Server.GStreamer
         
         def private on_error(error: GLib.Error, text: string)
             _logger.warning(text)
+            
+        def private create_local_branch(name: string): Bin
+            var queue = ElementFactory.make("queue", "Queue")
+            var resample = ElementFactory.make("audioresample", "AudioResample")
+            var volume = ElementFactory.make("volume", "Volume")
+            var sink = ElementFactory.make("pulsesink", "Sink")
+
+            var bin = new Bin(name)
+            bin.add_many(queue, resample, volume, sink)
+            queue.link_many(resample, volume, sink)
+            bin.add_pad(new GhostPad("sink", queue.get_static_pad("sink")))
+            return bin
+        
+        def private create_remote_branch(name: string, host: string, http_port: int, udp_port: int): Bin
+            var queue = ElementFactory.make("queue", "Queue")
+            var pay = ElementFactory.make("rtpL16pay", "Pay")
+            sink: dynamic Element = ElementFactory.make("udpsink", "RemoteSink:%s:%d:%d".printf(host, http_port, udp_port))
+            sink.host = host
+            sink.port = udp_port
+            sink.sync = true // does this help?
+
+            var bin = new Bin(name)
+            bin.add_many(queue, pay, sink)
+            queue.link_many(pay, sink)
+            bin.add_pad(new GhostPad("sink", queue.get_static_pad("sink")))
+            return bin
         
         def private build()
             if _pipeline is not null
                 return
         
-            _pipeline = new GstUtil.Pipeline(name)
+            _pipeline = new GstUtil.Pipeline("Player:" + name)
             _pipeline.state_change.connect(on_state_changed)
             _pipeline.eos.connect(on_eos)
             _pipeline.tag.connect(on_tag)
             _pipeline.error.connect(on_error)
 
-            source: Element = ElementFactory.make("filesrc", "FileSource")
-            decode: Element = ElementFactory.make("decodebin", "DecodeBin")
-
+            var source = ElementFactory.make("filesrc", "Source")
+            var decode = ElementFactory.make("decodebin", "DecodeBin")
             var convert = ElementFactory.make("audioconvert", "AudioConvert")
-            var resample = ElementFactory.make("audioresample", "AudioResample")
-            var volume = ElementFactory.make("volume", "Volume")
-            var sink = ElementFactory.make("pulsesink", "PulseSink")
-
-            _pipeline.add_many(source, decode, convert, resample, volume, sink)
-
-            // The link between the source and the decoder must happen dynamically
+            var tee = ElementFactory.make("tee", "Tee")
+            var local_branch = create_local_branch("Local")
+            var remote_branch = create_remote_branch("Remote", "localhost", 8081, 8082)
+            
+            _pipeline.add_many(source, decode, convert, tee, local_branch)
             source.link(decode)
             _pipeline.ownerships.add(new LinkDecodeBinLater(decode, convert))
-            convert.link_many(resample, volume, sink)
+            convert.link(tee)
+            
+            tee.get_request_pad("src_%u").link(local_branch.get_static_pad("sink"))
+            //tee.get_request_pad("src_%u").link(remote_branch.get_static_pad("sink"))
     
         _pipeline: GstUtil.Pipeline?
         _path: string?
