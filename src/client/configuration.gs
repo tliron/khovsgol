@@ -182,6 +182,24 @@ namespace Khovsgol.Client
             set
                 _key_file.set_boolean("server", "autostop", value)
                 
+        prop receiver_autostart: bool
+            get
+                try
+                    return _key_file.get_boolean("receiver", "autostart")
+                except e: KeyFileError
+                    return true
+            set
+                _key_file.set_boolean("receiver", "autostart", value)
+
+        prop receiver_autostop: bool
+            get
+                try
+                    return _key_file.get_boolean("receiver", "autostop")
+                except e: KeyFileError
+                    return false
+            set
+                _key_file.set_boolean("receiver", "autostop", value)
+
         def is_feature_active(name: string): bool
             try
                 return _key_file.get_boolean("features", name)

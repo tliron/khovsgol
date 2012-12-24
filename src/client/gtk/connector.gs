@@ -158,10 +158,14 @@ namespace Khovsgol.Client.GTK
             pass
             
         def private on_start()
-            _instance.start_server()
+            var feature = _instance.get_feature("server")
+            if feature is not null
+                feature.start()
 
         def private on_stop()
-            _instance.stop_server()
+            var feature = _instance.get_feature("server")
+            if feature is not null
+                feature.stop()
             
         def private on_button_pressed(e: Gdk.EventButton): bool
             if e.type == Gdk.EventType.@2BUTTON_PRESS

@@ -10,8 +10,8 @@ namespace Khovsgol.Client.GTK
             var main_box = new Notebook()
             main_box.append_page(new ServerPage(instance), new Label.with_mnemonic("_Server"))
             main_box.append_page(new UiPage(instance), new Label.with_mnemonic("User _interface"))
-            main_box.append_page(new FeaturesPage(instance), new Label.with_mnemonic("_Extra features"))
             main_box.append_page(new ScrobblingPage(instance), new Label.with_mnemonic("Scro_bbling"))
+            main_box.append_page(new FeaturesPage(instance), new Label.with_mnemonic("_Features"))
 
             add(main_box)
 

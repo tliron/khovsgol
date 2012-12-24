@@ -57,10 +57,13 @@ namespace Khovsgol.Client.GTK
             def private on_clicked()
                 var active = self.active
 
-                var configured_active = _instance.configuration.is_feature_active(_feature.name)
-                if active != configured_active
-                    _instance.configuration.set_feature_active(_feature.name, active)
-                    _instance.configuration.save()
+                // Update configuration
+                // Note: special handling for "server" and "receiver" features
+                if (_feature.name != "server") and (_feature.name != "receiver")
+                    var configured_active = _instance.configuration.is_feature_active(_feature.name)
+                    if active != configured_active
+                        _instance.configuration.set_feature_active(_feature.name, active)
+                        _instance.configuration.save()
 
                 if active
                     sensitive = false

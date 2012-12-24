@@ -19,6 +19,7 @@ namespace Khovsgol.Client.GTK
             _dir = File.new_for_path(args[0]).get_parent()
             _window = new MainWindow(self)
             
+            add_feature(new Features.ServerFeature())
             add_feature(new Features.NotificationsFeature())
             add_feature(new Features.MediaPlayerKeysFeature())
             add_feature(new Features.Mpris2Feature())
@@ -55,12 +56,17 @@ namespace Khovsgol.Client.GTK
         def start()
             _started = true
         
-            if _configuration.server_autostart
-                start_server()
-                
+            // Note: special handling for "server" and "receiver" features
             for var feature in _features.values
-                if _configuration.is_feature_active(feature.name)
-                    feature.start()
+                if feature.name == "server"
+                    if _configuration.server_autostart
+                        feature.start()
+                else if feature.name == "receiver"
+                    if _configuration.receiver_autostart
+                        feature.start()
+                else
+                    if _configuration.is_feature_active(feature.name)
+                        feature.start()
                 
             _api.start_watch_thread()
             
@@ -71,11 +77,16 @@ namespace Khovsgol.Client.GTK
         def stop()
             _api.stop_watch_thread(true)
             
+            // Note: special handling for "server" and "receiver" features
             for var feature in _features.values
-                feature.stop()
-                
-            if _configuration.server_autostop
-                stop_server()
+                if feature.name == "server"
+                    if _configuration.server_autostop
+                        feature.stop()
+                if feature.name == "receiver"
+                    if _configuration.receiver_autostop
+                        feature.stop()
+                else
+                    feature.stop()
 
             Gtk.main_quit()
 
@@ -84,22 +95,6 @@ namespace Khovsgol.Client.GTK
         def show()
             _window.present()
 
-        def start_server()
-            try
-                pid: Pid
-                Process.spawn_async(_dir.get_path(), {"khovsgold", "--start"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
-                _logger.messagef("Starting khovsgold, daemonizer pid: %d", pid)
-            except e: SpawnError
-                _logger.exception(e)
-
-        def stop_server()
-            try
-                pid: Pid
-                Process.spawn_async(_dir.get_path(), {"khovsgold", "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
-                _logger.messagef("Stopping khovsgold, daemonizer pid: %d", pid)
-            except e: SpawnError
-                _logger.exception(e)
-        
         def get_resource(name: string): File?
             var file = File.new_for_path("/usr/share/khovsgol").get_child(name)
             if file.query_exists()
