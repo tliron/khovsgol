@@ -8,7 +8,7 @@ namespace Khovsgol.Server
             
             var options = new array of OptionEntry[10]
             options[0] = {"version", 0, 0, OptionArg.NONE,  ref _version,       "Show version", null}
-            options[1] = {"port",    0, 0, OptionArg.INT,   ref _port,          "Web server TCP port (defaults to 8080)", "number"}
+            options[1] = {"port",    0, 0, OptionArg.INT,   ref _port,          "Web server TCP port (defaults to 8185)", "number"}
             options[2] = {"threads", 0, 0, OptionArg.INT,   ref _threads,       "Non-zero number of threads to enable multithreaded web server, -1 to use all CPU cores (defaults to 0)", "number"}
             options[3] = {"delay",   0, 0, OptionArg.INT64, ref _delay,         "Delay all web responses (defaults to 0)", "milliseconds"}
             options[4] = {"start",   0, 0, OptionArg.NONE,  ref _start_daemon,  "Start as daemon", null}

@@ -206,7 +206,7 @@ namespace Khovsgol.Server.GStreamer
             var convert = ElementFactory.make("audioconvert", "AudioConvert")
             var tee = ElementFactory.make("tee", "Tee")
             var local_branch = create_local_branch("Local")
-            var remote_branch = create_remote_branch("Remote", "localhost", 8081, 8082)
+            var remote_branch = create_remote_branch("Remote", "localhost", 8186, 8187)
             
             _pipeline.add_many(source, decode, convert, tee, remote_branch)
             source.link(decode)

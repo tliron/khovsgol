@@ -10,8 +10,6 @@ uses
 
 namespace Khovsgol.Receiver
 
-    const CAPS: string = "application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)828824404, timestamp-offset=(uint)2490881599, seqnum-offset=(uint)64183"
-
     class Instance
         construct(args: array of string) raises GLib.Error
             _arguments = new Arguments(args)
@@ -22,12 +20,16 @@ namespace Khovsgol.Receiver
             if _arguments.start_daemon or _arguments.stop_daemon or _arguments.status_daemon
                 Daemonize.handle("khovsgol", "khovsgolr", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
                 
+            _configuration = new Configuration()
+            initialize_logging(_arguments.console)
+
             _uri_space = new UriSpace(self)
 
-            _server = new _Soup.Server(8081, _main_loop.get_context())
+            if _arguments.port != int.MIN
+                _configuration.port_override = _arguments.port
+
+            _server = new _Soup.Server(_configuration.port, _main_loop.get_context())
             _server.set_handler(_uri_space.handle)
-            
-            initialize_logging(_arguments.console)
             
         def start()
             _server.start()
@@ -68,6 +70,7 @@ namespace Khovsgol.Receiver
             _logger.warning(text)
 
         _arguments: Arguments
+        _configuration: Configuration
         _server: Nap.Server
         _main_loop: MainLoop
         _uri_space: UriSpace

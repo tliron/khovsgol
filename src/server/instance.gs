@@ -18,7 +18,6 @@ namespace Khovsgol.Server
     class Instance: Object implements Crucible
         construct(args: array of string) raises GLib.Error
             _arguments = new Arguments(args)
-            _configuration = new Configuration()
 
             // Note: the Gst bus seems to work only with the default GLib.MainContext
             _main_loop = new MainLoop(null, false)
@@ -26,6 +25,7 @@ namespace Khovsgol.Server
             if _arguments.start_daemon or _arguments.stop_daemon or _arguments.status_daemon
                 Daemonize.handle("khovsgol", "khovsgold", _arguments.start_daemon, _arguments.stop_daemon, _main_loop)
             
+            _configuration = new Configuration()
             initialize_logging(_arguments.console)
             
             if not SqliteUtil.initialize(true)

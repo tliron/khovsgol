@@ -6,14 +6,15 @@ namespace Khovsgol.Receiver
         construct(args: array of string)
             restart_daemon: bool = false
 
-            var options = new array of OptionEntry[7]
+            var options = new array of OptionEntry[9]
             options[0] = {"version", 0, 0, OptionArg.NONE, ref _version,       "Show version", null}
-            options[1] = {"start",   0, 0, OptionArg.NONE, ref _start_daemon,  "Start as daemon", null}
-            options[2] = {"stop",    0, 0, OptionArg.NONE, ref _stop_daemon,   "Stop daemon", null}
-            options[3] = {"restart", 0, 0, OptionArg.NONE, ref restart_daemon, "Restart daemon", null}
-            options[4] = {"status",  0, 0, OptionArg.NONE, ref _status_daemon, "Show daemon status", null}
-            options[5] = {"console", 0, 0, OptionArg.NONE, ref _console,       "Log to console", null}
-            options[6] = {null}
+            options[1] = {"port",    0, 0, OptionArg.INT,  ref _port,          "Web server TCP port (defaults to 8186)", "number"}
+            options[2] = {"start",   0, 0, OptionArg.NONE, ref _start_daemon,  "Start as daemon", null}
+            options[3] = {"stop",    0, 0, OptionArg.NONE, ref _stop_daemon,   "Stop daemon", null}
+            options[4] = {"restart", 0, 0, OptionArg.NONE, ref restart_daemon, "Restart daemon", null}
+            options[5] = {"status",  0, 0, OptionArg.NONE, ref _status_daemon, "Show daemon status", null}
+            options[6] = {"console", 0, 0, OptionArg.NONE, ref _console,       "Log to console", null}
+            options[7] = {null}
             
             var context = new OptionContext("- Khovsgol Receiver")
             context.set_summary("The anywhere-to-anywhere music player and library/playlist manager")
@@ -38,6 +39,7 @@ namespace Khovsgol.Receiver
     
         _version: bool
         
+        prop readonly port: int = int.MIN
         prop readonly console: bool
 
         prop readonly start_daemon: bool

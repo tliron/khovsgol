@@ -33,7 +33,7 @@ namespace Khovsgol.Server
                 try
                     return _key_file.get_integer("server", "port")
                 except e: KeyFileError
-                    return 8181
+                    return 8185
             set
                 _key_file.set_integer("server", "port", (int) value)
         
