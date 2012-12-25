@@ -30,7 +30,7 @@ namespace Daemonize
         // Make sure dir exists
         var file = File.new_for_path("%s/.%s".printf(Environment.get_home_dir(), dir))
         if not file.query_exists() or (file.query_info(FileAttribute.STANDARD_TYPE, FileQueryInfoFlags.NONE).get_file_type() != FileType.DIRECTORY)
-            file.make_directory()
+            file.make_directory_with_parents()
 
         _dir = dir
         Daemon.pid_file_ident = Daemon.log_ident = _name = name

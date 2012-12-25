@@ -47,6 +47,8 @@ namespace Nap
             owned get
         prop abstract response_json_array: Json.Array?
             owned get
+
+        prop abstract readonly peer: string?
         
         event committed(conversation: Conversation)
         
@@ -107,6 +109,8 @@ namespace Nap
                 return _response_array
             set
                 _response_array = value
+
+        prop readonly peer: string? = null
             
         def commit(asynchronous: bool = false)
             pass

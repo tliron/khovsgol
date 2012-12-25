@@ -38,33 +38,55 @@ namespace Khovsgol.Receiver
         def post_receiver(conversation: Conversation)
             var entity = conversation.request_json_object
             if entity is not null
-                var port = get_int_member_or_min(entity, "port")
-                if port != int.MIN
+                var spec = get_string_member_or_null(entity, "spec")
+                if spec is not null
                     var caps = get_string_member_or_null(entity, "caps")
-                    if caps is not null
-                        _logger.messagef("Start receiving at port: %d, caps: %s", port, caps)
-                        
-                        if _pipeline is not null
-                            _pipeline.kill()
-                    
-                        _pipeline = new GstUtil.Pipeline("Receiver")
+                    if _pipeline is not null
+                        _pipeline.kill()
+                    _pipeline = create_pipeline(spec, caps)
+                    if _pipeline is not null
                         _pipeline.error.connect(on_error)
-                    
-                        source: dynamic Element = ElementFactory.make("udpsrc", "Source")
-                        source.port = port
-                        source.caps = Caps.from_string(caps)
-                        
-                        var buffer = ElementFactory.make("rtpjitterbuffer", "Buffer")
-                        var depay = ElementFactory.make("rtpL16depay", "Depay")
-                        var convert = ElementFactory.make("audioconvert", "AudioConvert")
-                        var resample = ElementFactory.make("audioresample", "AudioResample")
-                        var volume = ElementFactory.make("volume", "Volume")
-                        var sink = ElementFactory.make("pulsesink", "Sink")
-                        
-                        _pipeline.add_many(source, buffer, depay, convert, resample, volume, sink)
-                        source.link_many(buffer, depay, convert, resample, volume, sink)
-
                         _pipeline.state = State.PLAYING
+                        return
+            conversation.status_code = StatusCode.BAD_REQUEST
+
+        /*
+         * Supported specs:
+         * 
+         * rtpL16:udp:[port]
+         */
+        def private create_pipeline(spec: string, caps: string?): GstUtil.Pipeline?
+            if spec.has_prefix("rtpL16:")
+                if caps is not null
+                    var specs = spec.substring(7).split(":")
+                    if specs.length > 0
+                        var transport = specs[0]
+                        if transport == "udp"
+                            if specs.length > 1
+                                var port = int.parse(specs[1])
+                                return create_rtpL16_pipeline(port, caps)
+            
+            return null
+        
+        def private static create_rtpL16_pipeline(port: uint, caps: string): GstUtil.Pipeline
+            var pipeline = new GstUtil.Pipeline("Receiver")
+
+            source: dynamic Element = ElementFactory.make("udpsrc", "Source")
+            source.port = port
+            source.caps = Caps.from_string(caps)
+            
+            var buffer = ElementFactory.make("rtpjitterbuffer", "Buffer")
+            var depay = ElementFactory.make("rtpL16depay", "Depay")
+            var convert = ElementFactory.make("audioconvert", "AudioConvert")
+            var resample = ElementFactory.make("audioresample", "AudioResample")
+            var volume = ElementFactory.make("volume", "Volume")
+            var sink = ElementFactory.make("pulsesink", "Sink")
+            
+            pipeline.add_many(source, buffer, depay, convert, resample, volume, sink)
+            source.link_many(buffer, depay, convert, resample, volume, sink)
+            
+            _logger.messagef("Created rtpL16 pipeilne: %u, caps: %s", port, caps)
+            return pipeline
 
         def private on_error(error: GLib.Error, text: string)
             _logger.warning(text)

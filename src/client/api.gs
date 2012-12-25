@@ -1002,21 +1002,45 @@ namespace Khovsgol.Client
                 return null
 
         /*
+         * TODO
          */
-        def get_plug(player: string, plug: string): Json.Object?
+        def get_plug(player: string, plug: string, full: bool = false): Json.Object?
             return null
 
         /*
          * receive =get_plug
          */
-        def set_plug(player: string, plug: string): Json.Object?
-            return null
+        def set_plug(player: string, plug: string, full: bool = false): Json.Object?
+            try
+                var conversation = _client.create_conversation()
+                conversation.method = Method.PUT
+                conversation.path = "/player/{player}/plug/{plug}/"
+                conversation.variables["player"] = player
+                conversation.variables["plug"] = plug
+                if full
+                    conversation.query["fullrepresentation"] = "true"
+                conversation.commit()
+                var entity = conversation.response_json_object
+                if entity is not null
+                    if full
+                        watch(entity)
+                    return entity
+                else
+                    return null
+            except e: GLib.Error
+                on_error(e)
+                return null
 
-        /*
-         * receive =get_player
-         */
-        def delete_plug(player: string, plug: string): Json.Object?
-            return null
+        def delete_plug(player: string, plug: string)
+            try
+                var conversation = _client.create_conversation()
+                conversation.method = Method.DELETE
+                conversation.path = "/player/{player}/plug/{plug}/"
+                conversation.variables["player"] = player
+                conversation.variables["plug"] = plug
+                conversation.commit()
+            except e: GLib.Error
+                on_error(e)
         
         _client: Nap.Client
 

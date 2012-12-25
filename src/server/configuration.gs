@@ -134,8 +134,11 @@ namespace Khovsgol.Server
         def save(): bool
             var data = _key_file.to_data()
             try
+                var dir = File.new_for_path(_file).get_parent()
+                if not dir.query_exists() or (dir.query_info(FileAttribute.STANDARD_TYPE, FileQueryInfoFlags.NONE).get_file_type() != FileType.DIRECTORY)
+                    dir.make_directory_with_parents()
                 return FileUtils.set_data(_file, data.data)
-            except e: GLib.FileError
+            except e: GLib.Error
                 _logger.exception(e)
                 return false
     

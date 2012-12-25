@@ -185,7 +185,7 @@ namespace Khovsgol.Client.GTK
             if _store.iter_children(out placeholder_iter, iter)
                 value: Value
                 _store.get_value(placeholder_iter, Column.NODE, out value)
-                if (Json.Node) value == null
+                if (Json.Node) value is null
                     // We found the placeholder, so use the active style to fill
                     _store.remove(ref placeholder_iter)
                     if fill_at(iter)

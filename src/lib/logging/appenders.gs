@@ -78,6 +78,9 @@ namespace Logging
             _file = file
             stream = null
             if _file is not null
+                var dir = _file.get_parent()
+                if not dir.query_exists() or (dir.query_info(FileAttribute.STANDARD_TYPE, FileQueryInfoFlags.NONE).get_file_type() != FileType.DIRECTORY)
+                    dir.make_directory_with_parents()
                 stream = _file.append_to(FileCreateFlags.NONE)
         
         def set_path(path: string) raises Error

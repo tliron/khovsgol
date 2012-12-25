@@ -14,14 +14,14 @@ namespace Khovsgol.Server.GStreamer
             set
                 if _path != value
                     _path = value
-                    if _pipeline != null
+                    if _pipeline is not null
                         _pipeline.state = State.NULL
-                    if _path != null
-                        build()
-                        source: dynamic Element =_pipeline.get_by_name("Source")
-                        if source is not null
-                            source.location = _path
-                            _pipeline.state = State.PLAYING
+                    if _path is not null
+                        if validate_pipeline()
+                            source: dynamic Element =_pipeline.get_by_name("Source")
+                            if source is not null
+                                source.location = _path
+                                _pipeline.state = State.PLAYING
         
         prop override volume: double
             get
@@ -117,36 +117,165 @@ namespace Khovsgol.Server.GStreamer
                         return duration / 1000000000.0 // convert to seconds
                 return double.MIN
         
+        def override set_plug(spec: string, host: string): Plug?
+            var plug = get_plug(spec, host)
+            if plug is null
+                plug = super.set_plug(spec, host)
+                if _pipeline is not null
+                    var branch = create_branch(plug)
+                    if branch is not null
+                        _pipeline.add_branch(branch)
+                
+            return plug
+        
+        def override remove_plug(spec: string, host: string): bool
+            return super.remove_plug(spec, host)
+
+        def private validate_pipeline(): bool
+            if _pipeline is not null
+                return true
+                
+            var plugs = self.plugs
+            if not plugs.iterator().next()
+                return false
+                
+            _pipeline = new GstUtil.Pipeline("Pipeline:" + name)
+            _pipeline.state_change.connect(on_state_changed)
+            _pipeline.eos.connect(on_eos)
+            _pipeline.tag.connect(on_tag)
+            _pipeline.error.connect(on_error)
+
+            var source = ElementFactory.make("filesrc", "Source")
+            var decode = ElementFactory.make("decodebin", "Decode")
+            var convert = ElementFactory.make("audioconvert", "Convert")
+            var tee = ElementFactory.make("tee", "Tee")
+            
+            _pipeline.add_many(source, decode, convert, tee)
+            source.link(decode)
+            _pipeline.ownerships.add(new LinkDecodeBinLater(decode, convert))
+            convert.link(tee)
+            
+            has_branches: bool = false
+            for var plug in plugs
+                var branch = create_branch(plug)
+                if branch is not null
+                    _pipeline.add_branch(branch)
+                    has_branches = true
+            
+            if not has_branches
+                // Don't allow pipelines with no sinks
+                _pipeline = null
+                return false
+            
+            return true
+        
+        /*
+         * Supported specs:
+         * 
+         * pulse
+         * pulse:[host]
+         * alsa
+         * jack
+         * 
+         * rtpL16:udp:[http_port]
+         */
+        def private create_branch(plug: Plug): Bin?
+            var spec = plug.spec
+            if spec == "pulse"
+                return create_pulse_branch(spec)
+            else if spec.has_prefix("pulse:")
+                pass
+            else if spec == "alsa"
+                pass
+            else if spec == "jack"
+                pass
+            else if spec.has_prefix("rtpL16:")
+                var specs = spec.substring(7).split(":")
+                if specs.length > 0
+                    var transport = specs[0]
+                    if transport == "udp"
+                        if specs.length > 1
+                            var http_port = int.parse(specs[1])
+                            return create_rtpL16_branch(spec, plug.host, http_port, http_port + 1)
+            return null
+
+        def private create_pulse_branch(name: string): Bin
+            valve: dynamic Element = ElementFactory.make("valve", "Valve")
+            var queue = ElementFactory.make("queue", "Queue")
+            var resample = ElementFactory.make("audioresample", "Resample")
+            var volume = ElementFactory.make("volume", "Volume")
+            var sink = ElementFactory.make("pulsesink", "Sink")
+
+            valve.drop = true
+
+            var bin = new Bin(name)
+            bin.add_many(valve, queue, resample, volume, sink)
+            valve.link_many(queue, resample, volume, sink)
+            bin.add_pad(new GhostPad("sink", valve.get_static_pad("sink")))
+            return bin
+        
+        def private create_rtpL16_branch(name: string, host: string, http_port: uint, udp_port: uint): Bin
+            valve: dynamic Element = ElementFactory.make("valve", "Valve")
+            var queue = ElementFactory.make("queue", "Queue")
+            var pay = ElementFactory.make("rtpL16pay", "Pay")
+            sink: dynamic Element = ElementFactory.make("udpsink", "RemoteSink:%s:%u:rtpL16:udp:%u".printf(host, http_port, udp_port))
+            
+            valve.drop = true
+            sink.host = host
+            sink.port = udp_port
+            //sink.sync = false // this can cause CPU to spike?
+
+            var bin = new Bin(name)
+            bin.add_many(valve, queue, pay, sink)
+            valve.link_many(queue, pay, sink)
+            bin.add_pad(new GhostPad("sink", valve.get_static_pad("sink")))
+            return bin
+        
+        def private post_receiver(host: string, http_port: uint, spec: string, caps: string? = null)
+            var client = new Nap._Soup.Client()
+            client.base_url = "http://%s:%u".printf(host, http_port)
+            try
+                var conversation = client.create_conversation()
+                conversation.method = Nap.Method.POST
+                conversation.path = "/receiver/"
+                var payload = new Json.Object()
+                payload.set_string_member("spec", spec)
+                if caps is not null
+                    payload.set_string_member("caps", caps)
+                conversation.request_json_object = payload
+                conversation.commit(true)
+            except e: GLib.Error
+                _logger.exception(e)
+
+        /*
+         * Supported specs:
+         * 
+         * RemoteSink:[host]:[http_port]:rtpL16:udp:[udp_port]
+         */
+        def private on_remote_sink(source: Element)
+            var spec = source.name.substring(11)
+            var specs = spec.split(":")
+            if specs.length > 2
+                var host = specs[0]
+                var http_port = int.parse(specs[1])
+                var tech = specs[2]
+                if tech == "rtpL16"
+                    if specs.length > 3
+                        var transport = specs[3]
+                        if transport == "udp"
+                            if specs.length > 4
+                                var udp_port = int.parse(specs[4])
+                                var sink = source.get_static_pad("sink")
+                                var caps = sink.caps.to_string()
+                                post_receiver(host, http_port, "rtpL16:udp:%u".printf(udp_port), caps)
+        
         def private on_state_changed(source: Gst.Object, new_state: State, old_state: State, pending_state: State)
             _state = new_state // are we using this?
-            if (new_state == State.PAUSED) and source.name.has_prefix("RemoteSink:")
+            if ((new_state == State.PAUSED) || (new_state == State.PLAYING)) and source.name.has_prefix("RemoteSink:")
                 // TODO: maybe STREAM_STATUS msg?
                 // STREAM_START?
                 // see: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html
-            
-                var info = source.name.substring(11)
-                var infos = info.split(":", 3)
-                if infos.length == 3
-                    var host = infos[0]
-                    var http_port = int.parse(infos[1])
-                    var udp_port = int.parse(infos[2])
-
-                    var caps = ((Element) source).get_static_pad("sink").caps.to_string()
-                
-                    // Tell receiver to start playing
-                    var client = new Nap._Soup.Client()
-                    client.base_url = "http://%s:%d".printf(host, http_port)
-                    try
-                        var conversation = client.create_conversation()
-                        conversation.method = Nap.Method.POST
-                        conversation.path = "/receiver/"
-                        var payload = new Json.Object()
-                        payload.set_int_member("port", udp_port)
-                        payload.set_string_member("caps", caps)
-                        conversation.request_json_object = payload
-                        conversation.commit(true)
-                    except e: GLib.Error
-                        _logger.exception(e)
+                on_remote_sink((Element) source)
 
         def private on_eos()
             next()
@@ -164,57 +293,6 @@ namespace Khovsgol.Server.GStreamer
         
         def private on_error(error: GLib.Error, text: string)
             _logger.warning(text)
-            
-        def private create_local_branch(name: string): Bin
-            var queue = ElementFactory.make("queue", "Queue")
-            var resample = ElementFactory.make("audioresample", "AudioResample")
-            var volume = ElementFactory.make("volume", "Volume")
-            var sink = ElementFactory.make("pulsesink", "Sink")
-
-            var bin = new Bin(name)
-            bin.add_many(queue, resample, volume, sink)
-            queue.link_many(resample, volume, sink)
-            bin.add_pad(new GhostPad("sink", queue.get_static_pad("sink")))
-            return bin
-        
-        def private create_remote_branch(name: string, host: string, http_port: int, udp_port: int): Bin
-            var queue = ElementFactory.make("queue", "Queue")
-            var pay = ElementFactory.make("rtpL16pay", "Pay")
-            sink: dynamic Element = ElementFactory.make("udpsink", "RemoteSink:%s:%d:%d".printf(host, http_port, udp_port))
-            sink.host = host
-            sink.port = udp_port
-            //sink.sync = false // this can cause CPU to spike
-
-            var bin = new Bin(name)
-            bin.add_many(queue, pay, sink)
-            queue.link_many(pay, sink)
-            bin.add_pad(new GhostPad("sink", queue.get_static_pad("sink")))
-            return bin
-        
-        def private build()
-            if _pipeline is not null
-                return
-        
-            _pipeline = new GstUtil.Pipeline("Player:" + name)
-            _pipeline.state_change.connect(on_state_changed)
-            _pipeline.eos.connect(on_eos)
-            _pipeline.tag.connect(on_tag)
-            _pipeline.error.connect(on_error)
-
-            var source = ElementFactory.make("filesrc", "Source")
-            var decode = ElementFactory.make("decodebin", "DecodeBin")
-            var convert = ElementFactory.make("audioconvert", "AudioConvert")
-            var tee = ElementFactory.make("tee", "Tee")
-            var local_branch = create_local_branch("Local")
-            var remote_branch = create_remote_branch("Remote", "localhost", 8186, 8187)
-            
-            _pipeline.add_many(source, decode, convert, tee, remote_branch)
-            source.link(decode)
-            _pipeline.ownerships.add(new LinkDecodeBinLater(decode, convert))
-            convert.link(tee)
-            
-            //tee.get_request_pad("src_%u").link(local_branch.get_static_pad("sink"))
-            tee.get_request_pad("src_%u").link(remote_branch.get_static_pad("sink"))
     
         _pipeline: GstUtil.Pipeline?
         _path: string?

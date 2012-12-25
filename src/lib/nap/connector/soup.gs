@@ -97,6 +97,10 @@ namespace Nap._Soup
                         _response_text = "%s(%s)".printf(jsonp, _response_text)
                     if _response_media_type is null
                         _response_media_type = "application/json"
+
+        prop readonly peer: string?
+            get
+                return _soup_client.get_host() 
         
         def commit(asynchronous: bool = false)
             _soup_message.set_status(_status_code)
@@ -224,6 +228,8 @@ namespace Nap._Soup
             set
                 pass
         
+        prop readonly peer: string? = null
+        
         def commit(asynchronous: bool = false)
             if _base_url is null
                 return
@@ -277,7 +283,7 @@ namespace Nap._Soup
 
         def unpause()
             pass
-                
+        
         _soup_session: Soup.Session
         _soup_message: Soup.Message
         _base_url: string?
@@ -287,9 +293,17 @@ namespace Nap._Soup
         
         def private on_message_handled(session: Soup.Session, message: Soup.Message)
             _status_code = message.status_code
-            _logger.debugf("%s", message.uri.to_string(false))
+            _logger.debugf("Async done: %s", message.uri.to_string(false))
             committed(self)
+            
+            // We need to kill our instance *after* this callback returns,
+            // otherwise, if we are the only reference to it, the Soup session
+            // might be destroyed
+            Soup.add_idle(_soup_session.async_context, kill)
+        
+        def private kill(): bool
             unref()
+            return false
 
         _logger: static Logging.Logger
 
@@ -363,12 +377,12 @@ namespace Nap._Soup
     class Client: Object implements Nap.Client
         construct(context: MainContext? = null)
             if context is not null
-                // Note: we are using a SessionSync even for asynchronous calls; thsose will happen in another thread. 
+                // Note: we are using a SessionSync even for asynchronous calls; those will happen in another thread. 
                 // See note at: http://developer.gnome.org/libsoup/stable/libsoup-client-howto.html
                 _soup_session = new Soup.SessionSync.with_options(Soup.SESSION_USER_AGENT, "Nap", Soup.SERVER_ASYNC_CONTEXT, context)
             else
                 _soup_session = new Soup.SessionSync.with_options(Soup.SESSION_USER_AGENT, "Nap")
-            
+        
         prop timeout: uint
             get
                 return _soup_session.timeout

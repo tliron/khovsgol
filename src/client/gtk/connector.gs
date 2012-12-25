@@ -152,6 +152,27 @@ namespace Khovsgol.Client.GTK
                             player = Environment.get_user_name()
                         _instance.api.connect(server_node.host, server_node.port)
                         _instance.player = player
+                        
+                        if not server_node.is_local
+                            var dialog = new MessageDialog.with_markup(self, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "You're connecting to \"%s\", a computer in your network. Do you want the sound to come out <i>here</i>?\n\n(Answering no will make the sound come out at \"%s\")", server_node.host, server_node.host)
+                            dialog.title = "Connecting to %s:%u".printf(server_node.host, server_node.port)
+                            dialog.set_default_response(Gtk.ResponseType.YES)
+                            var response = dialog.run()
+                            dialog.destroy()
+                            if response == ResponseType.YES
+                                // Make sure receiver is running
+                                var feature = _instance.get_feature("receiver")
+                                if feature is not null
+                                    feature.start()
+                                    _instance.api.set_plug(_instance.player, "rtpL16:udp:%u".printf(_instance.receiver_configuration.port), true)
+                                else
+                                    // TODO: error! no receiver!
+                                    pass
+                            else
+                                _instance.api.set_plug(_instance.player, "pulse", true)
+                        else
+                            _instance.api.set_plug(_instance.player, "pulse", true)
+                        
                         destroy()
 
         def private on_connect_other()

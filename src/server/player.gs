@@ -96,6 +96,7 @@ namespace Khovsgol.Server
             if player is null
                 _players[name] = player = crucible.create_player()
                 player.name = name
+                _logger.messagef("Created player: %s", name)
             return player
 
         def to_json(): Json.Array
@@ -107,7 +108,9 @@ namespace Khovsgol.Server
     
         prop crucible: Crucible
         prop name: string
-        prop plugs: list of Plug = new list of Plug
+        prop plugs: Gee.Iterable of Plug
+            get
+                return _plugs
 
         prop readonly playlist: Playlist
             get
@@ -117,7 +120,7 @@ namespace Khovsgol.Server
                     try
                         _playlist.initialize()
                     except e: GLib.Error
-                        Logging.get_logger("khovsgol.playlist").warning(e.message)
+                        _logger.warning(e.message)
                 return _playlist
 
         prop position_in_playlist: int
@@ -225,16 +228,38 @@ namespace Khovsgol.Server
             // Default to point nowhere
             position_in_playlist = int.MIN
         
+        def virtual get_plug(spec: string, host: string): Plug?
+            for var plug in _plugs
+                if (plug.spec == spec) and (plug.host == host)
+                    return plug
+            return null
+        
+        def virtual set_plug(spec: string, host: string): Plug?
+            var plug = new Plug(spec, host)
+            _plugs.add(plug)
+            _logger.messagef("Set plug: %s, %s, %s", _name, spec, host)
+            return plug
+        
+        def virtual remove_plug(spec: string, host: string): bool
+            var i = _plugs.iterator()
+            while i.next()
+                var plug = i.@get()
+                    if (plug.spec == spec) and (plug.host == host)
+                        i.remove()
+                        _logger.messagef("Removed plug: %s, %s", _name, spec)
+                        return true
+            return false
+        
         def to_json(): Json.Object
             var json = new Json.Object()
             set_string_member_not_null(json, "name", _name)
             set_double_member_not_min(json, "volume", volume)
             set_string_member_not_null(json, "playMode", get_name_from_play_mode(play_mode))
             set_string_member_not_null(json, "cursorMode", get_name_from_cursor_mode(cursor_mode))
-            var plugs = new Json.Object()
+            var plugs = new Json.Array()
             for var plug in _plugs
-                plugs.set_object_member(plug.name, plug.to_json())
-            json.set_object_member("plugs", plugs)
+                plugs.add_object_element(plug.to_json())
+            json.set_array_member("plugs", plugs)
             var cursor = new Json.Object()
             set_int_member_not_min(cursor, "positionInPlaylist", position_in_playlist)
             set_double_member_not_min(cursor, "positionInTrack", position_in_track)
@@ -243,6 +268,7 @@ namespace Khovsgol.Server
             json.set_object_member("playList", playlist.to_json())
             return json
         
+        _plugs: list of Plug = new list of Plug
         _playlist: Playlist
         _position_in_playlist: int = int.MIN
 
@@ -251,9 +277,15 @@ namespace Khovsgol.Server
     //
     
     class Plug: Object implements HasJsonObject
-        prop name: string
+        construct(spec: string, host: string)
+            _spec = spec
+            _host = host
+        
+        prop spec: string
+        prop host: string
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            set_string_member_not_null(json, "name", _name)
+            set_string_member_not_null(json, "spec", _spec)
+            set_string_member_not_null(json, "host", _host)
             return json

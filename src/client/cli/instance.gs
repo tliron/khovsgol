@@ -25,18 +25,23 @@ namespace Khovsgol.Client.CLI
                 pass
 
             else if command == "play"
+                _api.set_plug(_arguments.player, "pulse")
                 print_player(_api.set_play_mode(_arguments.player, "playing"))
 
             else if command == "stop"
+                _api.set_plug(_arguments.player, "pulse")
                 print_player(_api.set_play_mode(_arguments.player, "stopped"))
 
             else if command == "pause"
+                _api.set_plug(_arguments.player, "pulse")
                 print_player(_api.set_play_mode(_arguments.player, "toggle_paused"))
 
             else if command == "next"
+                _api.set_plug(_arguments.player, "pulse")
                 print_player(_api.set_position_in_playlist_string(_arguments.player, "next"))
 
             else if command == "prev"
+                _api.set_plug(_arguments.player, "pulse")
                 print_player(_api.set_position_in_playlist_string(_arguments.player, "prev"))
 
             else if command == "cursor"
@@ -44,6 +49,7 @@ namespace Khovsgol.Client.CLI
                     stderr.printf("You must provide the position (a number)\n")
                     Posix.exit(1)
                 var position = int.parse(_arguments.args[2])
+                _api.set_plug(_arguments.player, "pulse")
                 print_player(_api.set_position_in_playlist(_arguments.player, position))
 
             else if command == "trackposition"
@@ -51,6 +57,7 @@ namespace Khovsgol.Client.CLI
                     stderr.printf("You must provide the position (a decimal)\n")
                     Posix.exit(1)
                 var position = double.parse(_arguments.args[2])
+                _api.set_plug(_arguments.player, "pulse")
                 print_player(_api.set_position_in_track(_arguments.player, position))
 
             else if command == "trackratio"
@@ -58,6 +65,7 @@ namespace Khovsgol.Client.CLI
                     stderr.printf("You must provide the ratio (a decimal)\n")
                     Posix.exit(1)
                 var ratio = double.parse(_arguments.args[2])
+                _api.set_plug(_arguments.player, "pulse")
                 print_player(_api.set_ratio_in_track(_arguments.player, ratio))
 
             else if command == "cursormode"

@@ -71,6 +71,23 @@ namespace GstUtil
         event eos()
         event tag(tag_list: TagList)
         event error(error: GLib.Error, text: string)
+
+        def add_branch(branch: Bin)
+            add(branch)
+            
+            // Link
+            var tee = get_by_name("Tee")
+            var src = tee.get_request_pad("src_%u")
+            var sink = branch.get_static_pad("sink")
+            src.link(sink)
+
+            // Branch must be in same state as pipeline
+            if branch.set_state(state) == StateChangeReturn.SUCCESS
+                // Open valve
+                valve: dynamic Element = branch.get_by_name("Valve")
+                valve.drop = false
+            /*else
+                _logger.warningf("Could could not set branch status: %s to %d", branch.name, state)*/
         
         def private on_message(message: Message)
             var type = message.type

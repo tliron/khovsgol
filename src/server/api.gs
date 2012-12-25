@@ -791,21 +791,54 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.BAD_REQUEST
 
         /*
+         * TODO
          */
         def get_plug(conversation: Conversation) raises GLib.Error
-            return
+            var player = _crucible.players.get_or_create_player(conversation.variables["player"])
+            if player is null
+                conversation.status_code = StatusCode.NOT_FOUND
+                return
+
+            var spec = conversation.variables["plug"]
+            var plug = player.get_plug(spec, conversation.peer)
+        
+            if plug is not null
+                if conversation.query["fullrepresentation"] == "true"
+                    set_response_json_object_or_not_found(player, conversation)
+                else
+                    set_response_json_object_or_not_found(plug, conversation)
+            else
+                conversation.status_code = StatusCode.NOT_FOUND
 
         /*
          * receive =get_plug
          */
         def put_plug(conversation: Conversation) raises GLib.Error
-            return
+            var player = _crucible.players.get_or_create_player(conversation.variables["player"])
+            if player is null
+                conversation.status_code = StatusCode.NOT_FOUND
+                return
 
-        /*
-         * receive =get_plug
-         */
+            var spec = conversation.variables["plug"]
+            var plug = player.set_plug(spec, conversation.peer)
+        
+            if plug is not null
+                if conversation.query["fullrepresentation"] == "true"
+                    set_response_json_object_or_not_found(player, conversation)
+                else
+                    set_response_json_object_or_not_found(plug, conversation)
+            else
+                conversation.status_code = StatusCode.INTERNAL_SERVER_ERROR
+
         def delete_plug(conversation: Conversation) raises GLib.Error
-            return
+            var player = _crucible.players.get_or_create_player(conversation.variables["player"])
+            if player is null
+                conversation.status_code = StatusCode.NOT_FOUND
+                return
+
+            var spec = conversation.variables["plug"]
+            if not player.remove_plug(spec, conversation.peer)
+                conversation.status_code = StatusCode.NOT_FOUND
         
         _crucible: Crucible
 

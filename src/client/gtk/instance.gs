@@ -11,6 +11,7 @@ namespace Khovsgol.Client.GTK
             _arguments = new Arguments(args)
             _configuration = new Configuration()
             _server_configuration = new Server.Configuration()
+            _receiver_configuration = new Receiver.Configuration()
             
             initialize_logging(_arguments.console)
             
@@ -31,6 +32,7 @@ namespace Khovsgol.Client.GTK
             
         prop readonly configuration: Configuration
         prop readonly server_configuration: Server.Configuration
+        prop readonly receiver_configuration: Receiver.Configuration
         prop readonly dir: File
         prop readonly api: Client.API = new API()
         prop readonly window: MainWindow
@@ -117,6 +119,7 @@ namespace Khovsgol.Client.GTK
             // Connect to first local service found
             if (info.flags & Avahi.LookupResultFlags.LOCAL) != 0
                 _api.connect(info.hostname, info.port)
+                _api.set_plug(_player, "pulse", true)
                 _browser = null
         
     _logger: Logging.Logger
