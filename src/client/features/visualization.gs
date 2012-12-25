@@ -3,11 +3,11 @@
 namespace Khovsgol.Client.Features
 
     /*
-     * Local receiver feature.
+     * Visualization feature.
      */
-    class ReceiverFeature: Object implements Feature
-        prop readonly name: string = "receiver"
-        prop readonly label: string = "Local Khövsgöl receiver"
+    class VisualizationFeature: Object implements Feature
+        prop readonly name: string = "visualization"
+        prop readonly label: string = "Visualization"
         prop readonly persistent: bool = false
         prop readonly state: FeatureState
             get
@@ -18,7 +18,7 @@ namespace Khovsgol.Client.Features
         def start()
             if state == FeatureState.STOPPED
                 set_state(FeatureState.STARTING)
-                if khovsgolr(true)
+                if visualization()
                     set_state(FeatureState.STARTED)
                 else
                     set_state(FeatureState.STOPPED)
@@ -26,8 +26,7 @@ namespace Khovsgol.Client.Features
         def stop()
             if state == FeatureState.STARTED
                 set_state(FeatureState.STOPPING)
-                khovsgolr(false)
-                set_state(FeatureState.STOPPED)
+                Posix.kill(_pid, Posix.SIGKILL)
 
         _state: int = FeatureState.STOPPED
         
@@ -36,20 +35,23 @@ namespace Khovsgol.Client.Features
             _logger.message(get_name_from_feature_state(state))
             state_change(state)
 
-        def private khovsgolr(start: bool): bool
-            pid: Pid
+        def private visualization(): bool
             try
-                Process.spawn_async(instance.dir.get_path(), {"khovsgolr", start ? "--start" : "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
-                ChildWatch.add(pid, on_died)
+                Process.spawn_async(_instance.dir.get_path(), {"projectM-pulseaudio"}, null, SpawnFlags.SEARCH_PATH|SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL|SpawnFlags.DO_NOT_REAP_CHILD, null, out _pid)
+                ChildWatch.add(_pid, on_visualization_died)
                 return true
             except e: SpawnError
                 _logger.exception(e)
                 return false
 
-        def private on_died(pid: Pid, status: int)
-            Process.close_pid(pid) // Doesn't do anything on Unix
+        def private on_visualization_died(pid: Pid, status: int)
+            Process.close_pid(_pid) // Doesn't do anything on Unix
+            _pid = 0
+            set_state(FeatureState.STOPPED)
+        
+        _pid: Pid
         
         _logger: static Logging.Logger
         
         init
-            _logger = Logging.get_logger("khovsgol.receiver")
+            _logger = Logging.get_logger("khovsgol.visualization")

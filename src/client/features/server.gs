@@ -34,15 +34,20 @@ namespace Khovsgol.Client.Features
         def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
             _logger.message(get_name_from_feature_state(state))
+            state_change(state)
 
         def private khovsgold(start: bool): bool
             pid: Pid
             try
                 Process.spawn_async(instance.dir.get_path(), {"khovsgold", start ? "--start" : "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
+                ChildWatch.add(pid, on_died)
                 return true
             except e: SpawnError
                 _logger.exception(e)
                 return false
+
+        def private on_died(pid: Pid, status: int)
+            Process.close_pid(pid) // Doesn't do anything on Unix
         
         _logger: static Logging.Logger
         

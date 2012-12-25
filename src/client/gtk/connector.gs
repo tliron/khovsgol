@@ -53,27 +53,31 @@ namespace Khovsgol.Client.GTK
             connect_other_button.image.show()
             connect_other_button.clicked.connect(on_connect_other)
 
-            _start_button = new Button.with_mnemonic("_Start my server")
-            _start_button.image = new Image.from_stock(Stock.EXECUTE, IconSize.MENU)
-            _start_button.image.show()
-            _start_button.sensitive = true
-            _start_button.clicked.connect(on_start)
+            _server = _instance.get_feature("server")
+            if _server is not null
+                _start_button = new Button.with_mnemonic("_Start my server")
+                _start_button.image = new Image.from_stock(Stock.EXECUTE, IconSize.MENU)
+                _start_button.image.show()
+                _start_button.clicked.connect(on_start)
 
-            _stop_button = new Button.with_mnemonic("S_top my server")
-            _stop_button.image = new Image.from_stock(Stock.STOP, IconSize.MENU)
-            _stop_button.image.show()
-            _stop_button.sensitive = false
-            _stop_button.clicked.connect(on_stop)
+                _stop_button = new Button.with_mnemonic("S_top my server")
+                _stop_button.image = new Image.from_stock(Stock.STOP, IconSize.MENU)
+                _stop_button.image.show()
+                _stop_button.clicked.connect(on_stop)
+
+                on_server_state_changed(_server.state)
+                _server.state_change.connect(on_server_state_changed)
 
             var button_box = new ButtonBox(Orientation.VERTICAL)
             button_box.set_layout(ButtonBoxStyle.START)
             button_box.spacing = 10
             button_box.add(_connect_button)
             button_box.add(connect_other_button)
-            button_box.add(_start_button)
-            button_box.add(_stop_button)
-            button_box.set_child_secondary(_start_button, true)
-            button_box.set_child_secondary(_stop_button, true)
+            if _server is not null
+                button_box.add(_start_button)
+                button_box.add(_stop_button)
+                button_box.set_child_secondary(_start_button, true)
+                button_box.set_child_secondary(_stop_button, true)
             
             // Icons
             
@@ -218,6 +222,10 @@ namespace Khovsgol.Client.GTK
             _store.clear()
             _browser.reset()
             
+        def private on_server_state_changed(state: FeatureState)
+            _stop_button.sensitive = state == FeatureState.STARTED
+            _start_button.sensitive = state == FeatureState.STOPPED
+            
         // TODO: are we in the Gdk thread?!
         def private on_avahi_found(info: ServiceFoundInfo)
             // Only show IPv4
@@ -234,10 +242,6 @@ namespace Khovsgol.Client.GTK
                 
                 if is_current
                     markup = "<b>%s</b>".printf(markup)
-                    
-                if node.is_local
-                    _stop_button.sensitive = true
-                    _start_button.sensitive = false
                     
                 iter: TreeIter
                 _store.append(out iter, null)
@@ -275,9 +279,6 @@ namespace Khovsgol.Client.GTK
                     _store.get_value(iter, Column.NODE, out value)
                     var node = (ServerNode) value
                     if node.id == id
-                        if node.is_local
-                            _stop_button.sensitive = false
-                            _start_button.sensitive = true
                         _store.remove(ref iter)
                         break
                     if not _store.iter_next(ref iter)
@@ -295,6 +296,7 @@ namespace Khovsgol.Client.GTK
         _paused_icon: Gdk.Pixbuf
         _plug_icon: Gdk.Pixbuf
         _browser: Browser
+        _server: Feature?
 
         enum private Column
             NODE = 0     // Object

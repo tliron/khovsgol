@@ -94,6 +94,7 @@ namespace Khovsgol.Client.Features
         def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
             _logger.message(get_name_from_feature_state(state))
+            state_change(state)
 
         def private on_connected(connection: DBusConnection)
             // Register a MediaPlayer2 object with several interfaces

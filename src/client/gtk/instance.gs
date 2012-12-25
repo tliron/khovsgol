@@ -16,9 +16,7 @@ namespace Khovsgol.Client.GTK
             initialize_logging(_arguments.console)
             
             player = Environment.get_user_name()
-
             _dir = File.new_for_path(args[0]).get_parent()
-            _window = new MainWindow(self)
             
             add_feature(new Features.ServerFeature())
             add_feature(new Features.ReceiverFeature())
@@ -29,6 +27,9 @@ namespace Khovsgol.Client.GTK
             add_feature(new Features.UnityFeature())
             add_feature(new Features.PurpleFeature())
             add_feature(new Features.ScrobblingFeature())
+            add_feature(new Features.VisualizationFeature())
+
+            _window = new MainWindow(self)
             
         prop readonly configuration: Configuration
         prop readonly server_configuration: Server.Configuration

@@ -56,6 +56,7 @@ namespace Khovsgol.Client.Features
         def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
             _logger.message(get_name_from_feature_state(state))
+            state_change(state)
 
         def private on_position_in_track_changed(position_in_track: double, old_position_in_track: double, track_duration: double)
             if _launcher_entry is not null

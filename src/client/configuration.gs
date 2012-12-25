@@ -177,7 +177,7 @@ namespace Khovsgol.Client
             try
                 return _key_file.get_boolean("feature." + name, property)
             except e: KeyFileError
-                if property == "autostart"
+                if (property == "autostart") and (name != "visualization")
                     return true
                 else
                     return false

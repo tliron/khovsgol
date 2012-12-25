@@ -43,6 +43,8 @@ namespace Khovsgol.Client
         prop abstract readonly state: FeatureState
 
         prop abstract instance: Instance
+        
+        event state_change(state: FeatureState)
 
         def abstract start()
         def abstract stop()
