@@ -269,15 +269,11 @@ namespace Khovsgol.Server.GStreamer
                                 var caps = sink.caps.to_string()
                                 post_receiver(host, http_port, "rtpL16:udp:%u".printf(udp_port), caps)
         
-        def private on_state_changed(source: Gst.Object, new_state: State, old_state: State, pending_state: State)
-            _state = new_state // are we using this?
-            if ((new_state == State.PAUSED) || (new_state == State.PLAYING)) and source.name.has_prefix("RemoteSink:")
-                // TODO: maybe STREAM_STATUS msg?
-                // STREAM_START?
-                // see: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html
+        def private on_state_changed(source: Gst.Object, old_state: State, new_state: State, pending_state: State)
+            if (new_state == State.PLAYING) and source.name.has_prefix("RemoteSink:")
                 on_remote_sink((Element) source)
 
-        def private on_eos()
+        def private on_eos(source: Gst.Object)
             next()
             
         def private on_tag(tag_list: TagList)
@@ -291,12 +287,11 @@ namespace Khovsgol.Server.GStreamer
                 //print "channel-mode %s", channel_mode
                 pass
         
-        def private on_error(error: GLib.Error, text: string)
+        def private on_error(source: Gst.Object, error: GLib.Error, text: string)
             _logger.warning(text)
     
         _pipeline: GstUtil.Pipeline?
         _path: string?
-        _state: State
 
         _logger: static Logging.Logger
         

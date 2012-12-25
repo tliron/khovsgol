@@ -67,10 +67,11 @@ namespace GstUtil
             set
                 seek_simple(Format.TIME, SeekFlags.FLUSH, value)
 
-        event state_change(source: Gst.Object, new_state: State, old_state: State, pending_state: State)
-        event eos()
+        event state_change(source: Gst.Object, old_state: State, new_state: State, pending_state: State)
+        event stream_start(source: Gst.Object)
+        event eos(source: Gst.Object)
         event tag(tag_list: TagList)
-        event error(error: GLib.Error, text: string)
+        event error(source: Gst.Object, error: GLib.Error, text: string)
 
         def add_branch(branch: Bin)
             add(branch)
@@ -90,19 +91,22 @@ namespace GstUtil
                 _logger.warningf("Could could not set branch status: %s to %d", branch.name, state)*/
         
         def private on_message(message: Message)
+            // See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html
             var type = message.type
             if type == MessageType.STATE_CHANGED
                 new_state: State
                 old_state: State
                 pending_state: State
-                message.parse_state_changed(out new_state, out old_state, out pending_state)
+                message.parse_state_changed(out old_state, out new_state, out pending_state)
                 if _dying and (new_state == State.NULL)
                     _dying = false
                     unref()
                     return
-                state_change(message.src, new_state, old_state, pending_state)
+                state_change(message.src, old_state, new_state, pending_state)
+            else if type == MessageType.STREAM_START
+                stream_start(message.src)
             else if type == MessageType.EOS
-                eos()
+                eos(message.src)
             else if type == MessageType.TAG
                 tag_list: TagList
                 message.parse_tag(out tag_list)
@@ -111,7 +115,7 @@ namespace GstUtil
                 e: GLib.Error
                 text: string
                 message.parse_error(out e, out text)
-                error(e, text)
+                error(message.src, e, text)
 
         _dying: bool
 
