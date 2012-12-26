@@ -36,6 +36,7 @@ debian.clean:
 	$(RM) -f $(DEBIAN)/*.mk
 	$(RM) -rf $(DEBIAN)/src/
 	$(RM) -rf $(DEBIAN)/resources/
+	$(RM) -rf $(DEBIAN)/bin/
 	$(RM) -f $(DEBIAN)/debian/changelog
 	$(RM) -f $(DEBIAN)/debian/files
 	$(RM) -f $(DEBIAN)/debian/*.substvars

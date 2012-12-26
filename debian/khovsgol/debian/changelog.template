@@ -1,3 +1,10 @@
+khovsgol (0.6-0ubuntu6) %DISTRIBUTION%; urgency=low
+
+  * Fixes for GTK+.
+  * Listen to music remotely!
+
+ -- Tal Liron <tal.liron@gmail.com>  Wed, 26 Dec 2012 02:29:38 -0600
+
 khovsgol (0.6-0ubuntu5) %DISTRIBUTION%; urgency=low
 
   * Turn features on/off from preferences.

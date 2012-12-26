@@ -8,7 +8,11 @@ debian/*.build
 debian/*.upload
 debian/*.tar.gz
 debian/khovsgol/*.mk
+debian/khovsgol/Makefile
+debian/khovsgol/README
 debian/khovsgol/src/
+debian/khovsgol/resources/
+debian/khovsgol/bin/
 debian/khovsgol/debian/changelog
 debian/khovsgol/debian/files
 debian/khovsgol/debian/*.log
