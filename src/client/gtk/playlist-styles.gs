@@ -98,7 +98,7 @@ namespace Khovsgol.Client.GTK
                             title_markup = "%d\t%s".printf(position, title)
                     else
                         title_markup = "%d\t%s".printf(position, title)
-                    var duration_markup = (show_duration and duration != int.MIN) ? format_duration(duration) : ""
+                    var duration_markup = get_duration_markup(duration, show_duration)
                     
                     node.append_object(track.to_json(), position, track.title, title_markup, duration_markup)
                     
@@ -214,7 +214,7 @@ namespace Khovsgol.Client.GTK
                         title_markup = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                     else
                         title_markup = "%d\t%s".printf(position, title)
-                    var duration_markup = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
+                    var duration_markup = get_duration_markup(duration, show_duration)
                     
                     node.append_object(track.to_json(), position, track.title, title_markup, duration_markup)
     
@@ -259,6 +259,6 @@ namespace Khovsgol.Client.GTK
                         title_markup = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position_in_playlist, title, album)
                     else
                         title_markup = "%d\t%s".printf(position_in_playlist, title)
-                    var duration_markup = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
+                    var duration_markup = get_duration_markup(duration, show_duration)
                     
                     node.append_object(track.to_json(), position_in_playlist, track.title, title_markup, duration_markup)

@@ -753,7 +753,7 @@ namespace Khovsgol.Client.GTK
                 title_markup = "%s - <i>%s</i>".printf(title, artist)
             else
                 title_markup = title
-            var duration_markup = (show_duration and duration != double.MIN) ? format_duration(duration) : null
+            var duration_markup = get_duration_markup(duration, show_duration)
             
             node.append_object(track.to_json(), track.title, title_markup, duration_markup)
 
@@ -796,7 +796,7 @@ namespace Khovsgol.Client.GTK
                 title_markup = "%s - %s".printf(title, album)
             else
                 title_markup = title
-            var duration_markup = (show_duration and duration != double.MIN) ? format_duration(duration) : null
+            var duration_markup = get_duration_markup(duration, show_duration)
             
             node.append_object(track.to_json(), track.title, title_markup, duration_markup)
 

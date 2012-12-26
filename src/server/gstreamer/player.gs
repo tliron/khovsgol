@@ -231,12 +231,12 @@ namespace Khovsgol.Server.GStreamer
             bin.add_pad(new GhostPad("sink", valve.get_static_pad("sink")))
             return bin
         
-        def private post_receiver(host: string, http_port: uint, spec: string, caps: string? = null)
+        def private put_receiver(host: string, http_port: uint, spec: string, caps: string? = null)
             var client = new Nap._Soup.Client()
             client.base_url = "http://%s:%u".printf(host, http_port)
             try
                 var conversation = client.create_conversation()
-                conversation.method = Nap.Method.POST
+                conversation.method = Nap.Method.PUT
                 conversation.path = "/receiver/"
                 var payload = new Json.Object()
                 payload.set_string_member("spec", spec)
@@ -267,7 +267,7 @@ namespace Khovsgol.Server.GStreamer
                                 var udp_port = int.parse(specs[4])
                                 var sink = source.get_static_pad("sink")
                                 var caps = sink.caps.to_string()
-                                post_receiver(host, http_port, "rtpL16:udp:%u".printf(udp_port), caps)
+                                put_receiver(host, http_port, "rtpL16:udp:%u".printf(udp_port), caps)
         
         def private on_state_changed(source: Gst.Object, old_state: State, new_state: State, pending_state: State)
             if (new_state == State.PLAYING) and source.name.has_prefix("RemoteSink:")

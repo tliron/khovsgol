@@ -5,6 +5,12 @@ uses
 
 namespace Khovsgol.Client.GTK
 
+    def get_duration_markup(duration: double, show_duration: bool): string?
+        if show_duration and duration != double.MIN
+            return Markup.escape_text("(%s)".printf(format_duration(duration)))
+        else
+            return null
+
     //def get_stock_icon_pixbuf(window, name):
       //  return window.render_icon(getattr(Gtk, 'STOCK_' + name), Gtk.IconSize.MENU, None)
 
