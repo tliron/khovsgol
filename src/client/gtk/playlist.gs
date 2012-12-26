@@ -74,25 +74,30 @@ namespace Khovsgol.Client.GTK
             
             // Main
 
+            var title_renderer = new CellRendererText()
+            title_renderer.ellipsize = Pango.EllipsizeMode.END
+
+            var duration_renderer = new CellRendererText()
+            duration_renderer.xalign = 1
+            duration_renderer.alignment = Pango.Alignment.RIGHT
+            
             var progress_renderer = new CellRendererProgress()
             progress_renderer.width = 70
 
-            var renderer1 = new CellRendererText()
-            renderer1.ellipsize = Pango.EllipsizeMode.END // This also mysteriously enables right alignment for RTL text
-            var renderer2 = new CellRendererText()
-            renderer2.xalign = 1
-            renderer2.alignment = Pango.Alignment.RIGHT
+            //var column = new TreeViewColumn.with_area(new MyCellArea())
             var column = new TreeViewColumn()
-            column.pack_start(renderer1, true)
+            column.pack_start(title_renderer, true)
             column.pack_start(progress_renderer, false)
-            column.pack_start(renderer2, false)
-            column.add_attribute(renderer1, "markup", Column.MARKUP1)
-            column.add_attribute(renderer2, "markup", Column.MARKUP2)
-            column.set_cell_data_func(progress_renderer, on_progress_render)
-            column.set_cell_data_func(renderer2, on_markup2_render)
+            column.pack_start(duration_renderer, false)
 
-            // object, search, markup1, markup2, position
-            _store = new ListStore(5, typeof(Json.Node), typeof(string), typeof(string), typeof(string), typeof(int))
+            column.add_attribute(title_renderer, "markup", Column.TITLE)
+
+            column.set_cell_data_func(title_renderer, on_title_render)
+            column.set_cell_data_func(duration_renderer, on_duration_render)
+            column.set_cell_data_func(progress_renderer, on_progress_render)
+
+            // node, position, search, title_markup, duration_markup, rtl
+            _store = new ListStore(6, typeof(Json.Node), typeof(int), typeof(string), typeof(string), typeof(string), typeof(bool))
 
             _tree_view = new ClickableDraggableTreeView()
             _tree_view.model = _store
@@ -183,23 +188,41 @@ namespace Khovsgol.Client.GTK
             api.position_in_playlist_change_gdk.disconnect(on_position_in_playlist_changed)
             api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
             
-        def private on_progress_render(layout: CellLayout, renderer: dynamic CellRenderer, model: TreeModel, iter: TreeIter)
+        def private on_title_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
+            // Set xalign according to RTL column
+            value: Value
+            model.get_value(iter, Column.RTL, out value)
+            var rtl = (bool) value
+            renderer.xalign = rtl ? 1 : 0
+
+        def private on_duration_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
+            // Should not be visible when empty
+            value: Value
+            model.get_value(iter, Column.DURATION, out value)
+            var duration_markup = (string) value
+            if (duration_markup is not null) and (duration_markup.length > 0)
+                renderer.visible = true
+                var text = (CellRendererText) renderer
+                text.markup = duration_markup
+            else
+                renderer.visible = false
+            
+        def private on_progress_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
             position: Value
             _store.get_value(iter, Column.POSITION, out position)
             if _position_in_playlist == (int) position
                 renderer.visible = true
+
+                var progress = (CellRendererProgress) renderer
                 if (_position_in_track != double.MIN) and (_track_duration != double.MIN)
                     var percent = (_position_in_track / _track_duration) * 100.0
-                    renderer.value = (int) percent
-                    renderer.text = first_upper(_play_mode)
+                    progress.value = (int) percent
+                    progress.text = first_upper(_play_mode)
                 else
-                    renderer.value = 0
-                    renderer.text = "Stopped"
+                    progress.value = 0
+                    progress.text = "Stopped"
             else
                 renderer.visible = false
-            
-        def private on_markup2_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
-            pass
             
         def private on_row_separator(mode: TreeModel, iter: TreeIter): bool
             position: Value
@@ -514,10 +537,11 @@ namespace Khovsgol.Client.GTK
             
         enum private Column
             NODE = 0     // Json.Node
-            SEARCH = 1   // string
-            MARKUP1 = 2  // string
-            MARKUP2 = 3  // string
-            POSITION = 4 // int
+            POSITION = 1 // int
+            SEARCH = 2   // string
+            TITLE = 3    // string
+            DURATION = 4 // string
+            RTL = 5      // bool
 
         const private SEPARATOR_POSITION: int = -1
 

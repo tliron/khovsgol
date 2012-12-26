@@ -66,23 +66,29 @@ namespace Khovsgol.Client.GTK
                     _albums_dict[album.path] = album
             return _albums_dict[path]
 
-        def append(node: Json.Node?, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
+        def append(node: Json.Node?, position: int, search: string? = null, title_markup: string? = null, duration_markup: string? = null)
+            rtl: bool = false
+            if search is not null
+                var direction = Pango.find_base_dir(search, -1)
+                rtl = (direction == Pango.Direction.RTL) or (direction == Pango.Direction.WEAK_RTL)
+
             if not _is_frozen
                 _tree_view.freeze_child_notify()
                 _is_frozen = true
+
             iter: TreeIter
             _store.append(out iter)
-            _store.@set(iter, Playlist.Column.NODE, node, Playlist.Column.SEARCH, search, Playlist.Column.MARKUP1, markup1, Playlist.Column.MARKUP2, markup2, Playlist.Column.POSITION, position, -1)
+            _store.@set(iter, Playlist.Column.NODE, node, Playlist.Column.POSITION, position, Playlist.Column.SEARCH, search, Playlist.Column.TITLE, title_markup, Playlist.Column.DURATION, duration_markup, Playlist.Column.RTL, rtl, -1)
 
-        def append_object(obj: Json.Object, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
+        def append_object(obj: Json.Object, position: int, search: string? = null, title_markup: string? = null, duration_markup: string? = null)
             var node = new Json.Node(Json.NodeType.OBJECT)
             node.set_object(obj)
-            append(node, position, search, markup1, markup2)
+            append(node, position, search, title_markup, duration_markup)
         
-        def append_array(arr: Json.Array, position: int, search: string? = null, markup1: string? = null, markup2: string? = null)
+        def append_array(arr: Json.Array, position: int, search: string? = null, title_markup: string? = null, duration_markup: string? = null)
             var node = new Json.Node(Json.NodeType.ARRAY)
             node.set_array(arr)
-            append(node, position, search, markup1, markup2)
+            append(node, position, search, title_markup, duration_markup)
 
         def append_separator()
             append(null, Playlist.SEPARATOR_POSITION)
@@ -144,38 +150,45 @@ namespace Khovsgol.Client.GTK
                 _store.get_value(_iter, Library.Column.NODE, out value)
                 return ((Json.Node) value).get_node_type()
 
-        def append(node: Json.Node?, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+        def append(node: Json.Node?, search: string? = null, title_markup: string? = null, duration_markup: string? = null, is_expandable: bool = false)
+            rtl: bool = false
+            if search is not null
+                var direction = Pango.find_base_dir(search, -1)
+                rtl = (direction == Pango.Direction.RTL) or (direction == Pango.Direction.WEAK_RTL)
+
             if not _is_frozen
                 _tree_view.freeze_child_notify()
                 _is_frozen = true
+
             child_iter: TreeIter
             _store.append(out child_iter, _iter)
-            _store.@set(child_iter, Library.Column.NODE, node, Library.Column.SEARCH, search, Library.Column.MARKUP1, markup1, Library.Column.MARKUP2, markup2, -1)
+            _store.@set(child_iter, Library.Column.NODE, node, Library.Column.SEARCH, search, Library.Column.TITLE, title_markup, Library.Column.DURATION, duration_markup, Library.Column.RTL, rtl, -1)
+
             if is_expandable
                 // Add placeholder
                 placeholder_iter: TreeIter
                 _store.append(out placeholder_iter, child_iter)
                 _store.@set(placeholder_iter, Library.Column.NODE, null, -1)
         
-        def append_object(obj: Json.Object, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+        def append_object(obj: Json.Object, search: string? = null, title_markup: string? = null, duration_markup: string? = null, is_expandable: bool = false)
             var node = new Json.Node(Json.NodeType.OBJECT)
             node.set_object(obj)
-            append(node, search, markup1, markup2, is_expandable)
+            append(node, search, title_markup, duration_markup, is_expandable)
 
-        def append_array(arr: Json.Array, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+        def append_array(arr: Json.Array, search: string? = null, title_markup: string? = null, duration_markup: string? = null, is_expandable: bool = false)
             var node = new Json.Node(Json.NodeType.ARRAY)
             node.set_array(arr)
-            append(node, search, markup1, markup2, is_expandable)
+            append(node, search, title_markup, duration_markup, is_expandable)
 
-        def append_string(data: string, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+        def append_string(data: string, search: string? = null, title_markup: string? = null, duration_markup: string? = null, is_expandable: bool = false)
             var node = new Json.Node(Json.NodeType.VALUE)
             node.set_string(data)
-            append(node, search, markup1, markup2, is_expandable)
+            append(node, search, title_markup, duration_markup, is_expandable)
 
-        def append_int(data: int, search: string? = null, markup1: string? = null, markup2: string? = null, is_expandable: bool = false)
+        def append_int(data: int, search: string? = null, title_markup: string? = null, duration_markup: string? = null, is_expandable: bool = false)
             var node = new Json.Node(Json.NodeType.VALUE)
             node.set_int(data)
-            append(node, search, markup1, markup2, is_expandable)
+            append(node, search, title_markup, duration_markup, is_expandable)
 
         def append_separator()
             var node = new Json.Node(Json.NodeType.NULL)
@@ -411,7 +424,7 @@ namespace Khovsgol.Client.GTK
 
         def private on_drag_begin(context: Gdk.DragContext)
             _selectable = true
-
+    
     /*
      * The FreeDesktop autostart specification.
      * 

@@ -1,9 +1,0 @@
-[Desktop Entry]
-Encoding=UTF-8
-Name=Khövsgöl
-Comment=Music player and library/playlist manager
-Type=Application
-Categories=AudioVideo;Audio;Player;GTK;
-Icon=khovsgol
-Exec=/usr/bin/khovsgol
-Terminal=false

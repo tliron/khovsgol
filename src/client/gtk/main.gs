@@ -83,8 +83,6 @@ namespace Khovsgol.Client.GTK
             else
                 _playlist.initial_focus()
 
-            show_all()
-            
             configure_event.connect(on_configured)
             _panes.notify.connect(on_split)
             

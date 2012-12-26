@@ -42,6 +42,7 @@ debian.clean:
 	$(RM) -f $(DEBIAN)/debian/*.log
 	$(RM) -rf $(DEBIAN)/debian/tmp/
 	$(RM) -rf $(DEBIAN)/debian/khovsgol-server/
+	$(RM) -rf $(DEBIAN)/debian/khovsgol-receiver/
 	$(RM) -rf $(DEBIAN)/debian/khovsgol-cli/
 	$(RM) -rf $(DEBIAN)/debian/khovsgol-gtk/
 	$(RM) -f debian/*.dsc

@@ -14,24 +14,30 @@ namespace Khovsgol.Client.GTK
 
             // Tree view
             
-            _store = new TreeStore(5, typeof(Node), typeof(Gdk.Pixbuf), typeof(string), typeof(string), typeof(bool)) // node, icon, markup1, markup2, active
+            // node, icon, title_markup, status_markup, active
+            _store = new TreeStore(5, typeof(Node), typeof(Gdk.Pixbuf), typeof(string), typeof(string), typeof(bool))
+
+            var icon_renderer = new CellRendererPixbuf()
+            var title_renderer = new CellRendererText()
+            title_renderer.ellipsize = Pango.EllipsizeMode.END // This also mysteriously enables right alignment for RTL text
+            title_renderer.mode = CellRendererMode.ACTIVATABLE // Allows the CellRendererToggle to work
+            var status_renderer = new CellRendererText()
+            var active_renderer = new CellRendererToggle()
+            
+            active_renderer.toggled.connect(on_active_toggled)
 
             var column = new TreeViewColumn()
-            var icon_renderer = new CellRendererPixbuf()
-            var markup1_renderer = new CellRendererText()
-            markup1_renderer.ellipsize = Pango.EllipsizeMode.END // This also mysteriously enables right alignment for RTL text
-            markup1_renderer.mode = CellRendererMode.ACTIVATABLE // Allows the CellRendererToggle to work
-            var markup2_renderer = new CellRendererText()
-            var active_renderer = new CellRendererToggle()
-            active_renderer.toggled.connect(on_active_toggled)
+            
             column.pack_start(icon_renderer, false)
-            column.pack_start(markup1_renderer, true)
-            column.pack_start(markup2_renderer, false)
+            column.pack_start(title_renderer, true)
+            column.pack_start(status_renderer, false)
             column.pack_start(active_renderer, false)
+
             column.add_attribute(icon_renderer, "pixbuf", Column.ICON)
-            column.add_attribute(markup1_renderer, "markup", Column.MARKUP1)
-            column.add_attribute(markup2_renderer, "markup", Column.MARKUP2)
+            column.add_attribute(title_renderer, "markup", Column.TITLE)
+            column.add_attribute(status_renderer, "markup", Column.STATUS)
             column.add_attribute(active_renderer, "active", Column.ACTIVE)
+
             column.set_cell_data_func(active_renderer, on_active_render)
             
             _tree_view = new TreeView.with_model(_store)
@@ -237,7 +243,7 @@ namespace Khovsgol.Client.GTK
                     library_iter: TreeIter? = null
                     if not get_library(name, out library_iter)
                         _store.append(out library_iter, null)
-                        _store.@set(library_iter, Column.NODE, node, Column.ICON, _library_icon, Column.MARKUP1, Markup.escape_text(name), Column.ACTIVE, true, -1)
+                        _store.@set(library_iter, Column.NODE, node, Column.ICON, _library_icon, Column.TITLE, Markup.escape_text(name), Column.ACTIVE, true, -1)
                     
                     directory_iter: TreeIter? = null
                     for var directory in new JsonObjects(get_array_member_or_null(library, "directories"))
@@ -251,10 +257,10 @@ namespace Khovsgol.Client.GTK
                             
                             if not get_directory(path, library_iter, out directory_iter)
                                 _store.append(out directory_iter, library_iter)
-                                _store.@set(directory_iter, Column.NODE, node, Column.ICON, _directory_icon, Column.MARKUP1, Markup.escape_text(path), Column.MARKUP2, status, -1)
+                                _store.@set(directory_iter, Column.NODE, node, Column.ICON, _directory_icon, Column.TITLE, Markup.escape_text(path), Column.STATUS, status, -1)
                             else
                                 // Just update the status column
-                                _store.@set(directory_iter, Column.MARKUP2, status, -1)
+                                _store.@set(directory_iter, Column.STATUS, status, -1)
 
                     var path = _store.get_path(library_iter)
                     if path is not null
@@ -440,8 +446,8 @@ namespace Khovsgol.Client.GTK
         enum private Column
             NODE = 0     // Node
             ICON = 1     // Pixbuf
-            MARKUP1 = 2  // string
-            MARKUP2 = 3  // string
+            TITLE = 2    // string
+            STATUS = 3   // string
             ACTIVE = 4   // bool
 
         _logger: static Logging.Logger

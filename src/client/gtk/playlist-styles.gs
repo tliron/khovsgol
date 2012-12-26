@@ -56,18 +56,18 @@ namespace Khovsgol.Client.GTK
                                 title = format_washed_out(title)
                             var artist = album.artist
 
-                            markup1: string
+                            title_markup: string
                             if artist is not null
                                 artist = Markup.escape_text(artist)
-                                markup1 = "%s - <i>%s</i>".printf(title, artist)
+                                title_markup = "%s - <i>%s</i>".printf(title, artist)
                             else
-                                markup1 = title
-                            markup1 = "<span size=\"smaller\" weight=\"bold\">%s</span>".printf(markup1)
+                                title_markup = title
+                            title_markup = "<span size=\"smaller\" weight=\"bold\">%s</span>".printf(title_markup)
                             
                             if not first
                                 node.append_separator()
                                 
-                            node.append_object(album.to_json(), ALBUM_POSITION, album.title, markup1)
+                            node.append_object(album.to_json(), ALBUM_POSITION, album.title, title_markup)
                             
                             current_album_positions = new Json.Array()
                             current_album_paths = new Json.Array()
@@ -88,19 +88,19 @@ namespace Khovsgol.Client.GTK
                     if subdue_lossy and not is_lossless(file_type)
                         title = format_washed_out(title)
 
-                    markup1: string
+                    title_markup: string
                     if show_artist
                         var artist = track.artist
                         if artist is not null
                             artist = Markup.escape_text(artist)
-                            markup1 = "%d\t%s - <i>%s</i>".printf(position, title, artist)
+                            title_markup = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                         else
-                            markup1 = "%d\t%s".printf(position, title)
+                            title_markup = "%d\t%s".printf(position, title)
                     else
-                        markup1 = "%d\t%s".printf(position, title)
-                    var markup2 = (show_duration and duration != int.MIN) ? format_duration(duration) : ""
+                        title_markup = "%d\t%s".printf(position, title)
+                    var duration_markup = (show_duration and duration != int.MIN) ? format_duration(duration) : ""
                     
-                    node.append_object(track.to_json(), position, track.title, markup1, markup2)
+                    node.append_object(track.to_json(), position, track.title, title_markup, duration_markup)
                     
                     if (current_album_positions is not null) and (position != int.MIN)
                         current_album_positions.add_int_element(position)
@@ -208,15 +208,15 @@ namespace Khovsgol.Client.GTK
                     if subdue_lossy and not is_lossless(file_type)
                         title = format_washed_out(title)
 
-                    markup1: string
+                    title_markup: string
                     if artist is not null
                         artist = Markup.escape_text(artist)
-                        markup1 = "%d\t%s - <i>%s</i>".printf(position, title, artist)
+                        title_markup = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                     else
-                        markup1 = "%d\t%s".printf(position, title)
-                    var markup2 = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
+                        title_markup = "%d\t%s".printf(position, title)
+                    var duration_markup = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
                     
-                    node.append_object(track.to_json(), position, track.title, markup1, markup2)
+                    node.append_object(track.to_json(), position, track.title, title_markup, duration_markup)
     
     /*
      * Three lines per track with extended information.
@@ -248,17 +248,17 @@ namespace Khovsgol.Client.GTK
                         album = Markup.escape_text(album)
                         album = format_annotation(album)
 
-                    markup1: string
+                    title_markup: string
                     if (artist is not null) and (album is not null) and (position_in_album != int.MIN)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">%s in %s</span>".printf(position_in_playlist, title, artist, format_ordinal(position_in_album), album)
+                        title_markup = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">%s in %s</span>".printf(position_in_playlist, title, artist, format_ordinal(position_in_album), album)
                     else if (artist is not null) and (album is not null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">In %s</span>".printf(position_in_playlist, title, artist, album)
+                        title_markup = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>\r\t<span size=\"smaller\">In %s</span>".printf(position_in_playlist, title, artist, album)
                     else if (artist is not null) and (album is null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>".printf(position_in_playlist, title, artist)
+                        title_markup = "%d\t%s\r\t<span size=\"smaller\">By <i>%s</i></span>".printf(position_in_playlist, title, artist)
                     else if (artist is null) and (album is not null)
-                        markup1 = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position_in_playlist, title, album)
+                        title_markup = "%d\t%s\r\t<span size=\"smaller\">In %s</span>".printf(position_in_playlist, title, album)
                     else
-                        markup1 = "%d\t%s".printf(position_in_playlist, title)
-                    var markup2 = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
+                        title_markup = "%d\t%s".printf(position_in_playlist, title)
+                    var duration_markup = (show_duration and duration != int.MIN) ? Markup.escape_text(format_duration(duration)) : ""
                     
-                    node.append_object(track.to_json(), position_in_playlist, track.title, markup1, markup2)
+                    node.append_object(track.to_json(), position_in_playlist, track.title, title_markup, duration_markup)

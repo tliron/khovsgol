@@ -7,16 +7,19 @@ uses
 namespace Khovsgol.Client.GTK
 
     class Instance: Object implements Client.Instance
-        construct(application: Application, args: array of string) raises GLib.Error
-            _arguments = new Arguments(args)
+        construct(application: Application, arguments: Arguments) raises GLib.Error
+            _application = application
+            _arguments = arguments
             _configuration = new Configuration()
             _server_configuration = new Server.Configuration()
             _receiver_configuration = new Receiver.Configuration()
             
             initialize_logging(_arguments.console)
+
+            GtkUtil.initialize()
             
             player = Environment.get_user_name()
-            _dir = File.new_for_path(args[0]).get_parent()
+            _dir = _arguments.file.get_parent()
             
             add_feature(new Features.ServerFeature())
             add_feature(new Features.ReceiverFeature())
@@ -38,7 +41,6 @@ namespace Khovsgol.Client.GTK
         prop readonly api: Client.API = new API()
         prop readonly window: MainWindow
         prop readonly application: Application
-        prop readonly started: bool
 
         prop player: string
             get
@@ -58,8 +60,14 @@ namespace Khovsgol.Client.GTK
             return _features.values
     
         def start()
+            if _started
+                show()
+                return
+        
             _started = true
         
+            _window.show_all()
+
             for var feature in _features.values
                 if feature.persistent
                     if _configuration.is_feature_active(feature.name)
@@ -86,6 +94,8 @@ namespace Khovsgol.Client.GTK
 
             _started = false
             
+            _application.quit()
+            
         def show()
             _window.present()
 
@@ -110,6 +120,7 @@ namespace Khovsgol.Client.GTK
         _player: string
         _features: dict of string, Feature = new dict of string, Feature
         _browser: Browser?
+        _started: bool
         
         def private connect_to_first_local_service()
             _browser = new Browser("_khovsgol._tcp")

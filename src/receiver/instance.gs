@@ -88,7 +88,7 @@ namespace Khovsgol.Receiver
             _logger.messagef("Created rtpL16 pipeilne: %u, caps: %s", port, caps)
             return pipeline
 
-        def private on_error(error: GLib.Error, text: string)
+        def private on_error(source: Gst.Object, error: GLib.Error, text: string)
             _logger.warning(text)
 
         _arguments: Arguments

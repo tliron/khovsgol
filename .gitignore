@@ -17,3 +17,5 @@ debian/khovsgol/debian/tmp/
 debian/khovsgol/debian/khovsgol-server/
 debian/khovsgol/debian/khovsgol-cli/
 debian/khovsgol/debian/khovsgol-gtk/
+debian/khovsgol/debian/khovsgol-receiver/
+

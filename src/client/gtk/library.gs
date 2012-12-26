@@ -32,19 +32,24 @@ namespace Khovsgol.Client.GTK
 
             // Tree
             
-            _store = new TreeStore(4, typeof(Json.Node), typeof(string), typeof(string), typeof(string)) // node, search, markup1, markup2
+            // node, search, title_markup, duration_markup, rtl
+            _store = new TreeStore(5, typeof(Json.Node), typeof(string), typeof(string), typeof(string), typeof(bool))
             
             var renderer1 = new CellRendererText()
-            renderer1.ellipsize = Pango.EllipsizeMode.END // This also mysteriously enables right alignment for RTL text
+            renderer1.ellipsize = Pango.EllipsizeMode.END
+
             var renderer2 = new CellRendererText()
             renderer2.xalign = 1
             renderer2.alignment = Pango.Alignment.RIGHT
+            
             var column = new TreeViewColumn()
             column.pack_start(renderer1, true)
             column.pack_start(renderer2, false)
-            column.add_attribute(renderer1, "markup", Column.MARKUP1)
-            column.add_attribute(renderer2, "markup", Column.MARKUP2)
-            column.set_cell_data_func(renderer2, on_markup2_render)
+            
+            column.add_attribute(renderer1, "markup", Column.TITLE)
+            
+            column.set_cell_data_func(renderer1, on_title_render)
+            column.set_cell_data_func(renderer2, on_duration_render)
 
             _tree_view = new ClickableDraggableTreeView()
             _tree_view.model = _store
@@ -132,11 +137,24 @@ namespace Khovsgol.Client.GTK
             var api = (API) _instance.api
             api.connection_change_gdk.disconnect(on_connection_changed)
 
-        //def private on_progress_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
-          //  pass
-            
-        def private on_markup2_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
-            pass
+        def private on_title_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
+            // Set xalign according to RTL column
+            value: Value
+            model.get_value(iter, Column.RTL, out value)
+            var rtl = (bool) value
+            renderer.xalign = rtl ? 1 : 0
+
+        def private on_duration_render(layout: CellLayout, renderer: CellRenderer, model: TreeModel, iter: TreeIter)
+            // Should not be visible when empty
+            value: Value
+            model.get_value(iter, Column.DURATION, out value)
+            var duration_markup = (string) value
+            if (duration_markup is not null) and (duration_markup.length > 0)
+                renderer.visible = true
+                var text = (CellRendererText) renderer
+                text.markup = duration_markup
+            else
+                renderer.visible = false
             
         def private on_row_separator(mode: TreeModel, iter: TreeIter): bool
             value: Value
@@ -279,7 +297,6 @@ namespace Khovsgol.Client.GTK
                 var selection = _tree_view.get_selection()
                 var tree_paths = selection.get_selected_rows(null)
                 if tree_paths.length() > 0
-                    //var filter = _filter_box.entry.text
                     iter: TreeIter
                     var data = new Json.Array()
                     for var tree_path in tree_paths
@@ -349,8 +366,9 @@ namespace Khovsgol.Client.GTK
         enum private Column
             NODE = 0     // Json.Node
             SEARCH = 1   // string
-            MARKUP1 = 2  // string
-            MARKUP2 = 3  // string
+            TITLE = 2    // string
+            DURATION = 3 // string
+            RTL = 4      // bool
 
         const private DRAG_TARGETS: array of TargetEntry = {
             {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, TargetInfo.JSON_ARRAY},

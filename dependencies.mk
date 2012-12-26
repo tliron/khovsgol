@@ -8,7 +8,7 @@ dependencies.quantal:
 		libsqlite3-dev \
 		libgtk-3-dev \
 		libdaemon-dev \
-		libgstreamer1.0-dev \
+		libgstreamer-plugins-base1.0-dev \
 		libunity-dev \
 		libindicate-dev \
 		libtagc0-dev \

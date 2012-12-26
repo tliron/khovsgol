@@ -744,18 +744,18 @@ namespace Khovsgol.Client.GTK
                 title = format_washed_out(title)
             if artist is not null
                 artist = Markup.escape_text(artist)
-            markup1: string
+            title_markup: string
             if (position != int.MIN) and (artist is not null)
-                markup1 = "%d\t%s - <i>%s</i>".printf(position, title, artist)
+                title_markup = "%d\t%s - <i>%s</i>".printf(position, title, artist)
             else if position != int.MIN
-                markup1 = "%d\t%s".printf(position, title)
+                title_markup = "%d\t%s".printf(position, title)
             else if artist is not null
-                markup1 = "%s - <i>%s</i>".printf(title, artist)
+                title_markup = "%s - <i>%s</i>".printf(title, artist)
             else
-                markup1 = title
-            var markup2 = (show_duration and duration != double.MIN) ? format_duration(duration) : null
+                title_markup = title
+            var duration_markup = (show_duration and duration != double.MIN) ? format_duration(duration) : null
             
-            node.append_object(track.to_json(), track.title, markup1, markup2)
+            node.append_object(track.to_json(), track.title, title_markup, duration_markup)
 
     def private fill_tracks(tracks: IterableOfTrack, node: LibraryNode, subdue_lossy: bool, show_duration: bool)
         current_letter: unichar = 0
@@ -789,16 +789,16 @@ namespace Khovsgol.Client.GTK
             if subdue_lossy and not is_lossless(file_type)
                 title = format_washed_out(title)
             
-            markup1: string
+            title_markup: string
             if album is not null
                 album = Markup.escape_text(album)
                 album = format_annotation(album)
-                markup1 = "%s - %s".printf(title, album)
+                title_markup = "%s - %s".printf(title, album)
             else
-                markup1 = title
-            var markup2 = (show_duration and duration != double.MIN) ? format_duration(duration) : null
+                title_markup = title
+            var duration_markup = (show_duration and duration != double.MIN) ? format_duration(duration) : null
             
-            node.append_object(track.to_json(), track.title, markup1, markup2)
+            node.append_object(track.to_json(), track.title, title_markup, duration_markup)
 
     def private gather_from_albums(albums: IterableOfAlbum, node: LibraryNode, ref paths: Json.Array)
         for var album in albums
