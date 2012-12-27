@@ -90,18 +90,20 @@ namespace Khovsgol.Receiver
             var pipeline = new GstUtil.Pipeline("Receiver")
 
             source: dynamic Element = ElementFactory.make("udpsrc", "Source")
-            source.port = port
-            source.caps = Caps.from_string(caps)
-            
-            var buffer = ElementFactory.make("rtpjitterbuffer", "Buffer")
+            buffer: dynamic Element = ElementFactory.make("rtpjitterbuffer", "Buffer")
             var depay = ElementFactory.make("rtpL16depay", "Depay")
             var convert = ElementFactory.make("audioconvert", "AudioConvert")
             var resample = ElementFactory.make("audioresample", "AudioResample")
+            var rate = ElementFactory.make("audiorate", "AudioRate")
             var volume = ElementFactory.make("volume", "Volume")
             var sink = ElementFactory.make("pulsesink", "Sink")
+
+            source.port = port
+            source.caps = Caps.from_string(caps)
+            buffer.do_lost = true // this message will be handled downstream by audiorate
             
-            pipeline.add_many(source, buffer, depay, convert, resample, volume, sink)
-            source.link_many(buffer, depay, convert, resample, volume, sink)
+            pipeline.add_many(source, buffer, depay, convert, resample, rate, volume, sink)
+            source.link_many(buffer, depay, convert, resample, rate, volume, sink)
             
             _logger.messagef("Created RTPL16 player: %u, caps: %s", port, caps)
 
