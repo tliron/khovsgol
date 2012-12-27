@@ -26,6 +26,8 @@ namespace Khovsgol.Receiver
 
             _server = new _Soup.Server(_configuration.port, _main_loop.get_context())
             _server.set_handler(_uri_space.handle)
+
+        prop readonly configuration: Configuration
         
         prop player: Player?
             get
@@ -41,7 +43,7 @@ namespace Khovsgol.Receiver
         def start()
             var player_spec = _configuration.player_spec
                 if player_spec is not null
-                    _player = create_player(player_spec, _configuration.player_caps)
+                    _player = create_player(_configuration, player_spec, _configuration.player_caps)
                     if _player is not null
                         _player.play()
             
@@ -49,7 +51,6 @@ namespace Khovsgol.Receiver
             _main_loop.run()
 
         _arguments: Arguments
-        _configuration: Configuration
         _server: Nap.Server
         _main_loop: MainLoop
         _api: Api

@@ -56,7 +56,7 @@ namespace Khovsgol.Receiver
                         // Don't create the same player twice
                         return
                     
-                    _instance.player = player = create_player(spec, caps)
+                    _instance.player = player = create_player(_instance.configuration, spec, caps)
                     if player is not null
                         player.play()
                         conversation.response_json_object = player.to_json()

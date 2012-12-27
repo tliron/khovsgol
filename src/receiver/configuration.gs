@@ -25,6 +25,20 @@ namespace Khovsgol.Receiver
         
         prop port_override: int = int.MIN
 
+        prop player_latency: uint
+            get
+                if _player_latency_override != int.MIN
+                    return _player_latency_override
+            
+                try
+                    return _key_file.get_integer("player", "latency")
+                except e: KeyFileError
+                    return 200
+            set
+                _key_file.set_integer("player", "latency", (int) value)
+        
+        prop player_latency_override: int = int.MIN
+
         prop player_spec: string?
             owned get
                 try

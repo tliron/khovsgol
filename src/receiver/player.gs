@@ -12,17 +12,17 @@ namespace Khovsgol.Receiver
      * 
      * rtpL16:udp:[port]
      */
-    def private create_player(spec: string, caps: string?): Player?
+    def private create_player(configuration: Configuration, spec: string, caps: string?): Player?
         player: Player? = null
         if spec.has_prefix("rtpL16:")
-            if caps is not null
+            if caps is not null // requires caps
                 var specs = spec.substring(7).split(":")
                 if specs.length > 0
                     var transport = specs[0]
                     if transport == "udp"
                         if specs.length > 1
                             var port = int.parse(specs[1])
-                            player = new PlayerRtpL16(port, caps)
+                            player = new PlayerRtpL16(configuration, port, caps)
         
         if player is not null
             player.spec = spec
@@ -86,7 +86,7 @@ namespace Khovsgol.Receiver
      * RTPL16 player.
      */
     class PlayerRtpL16: Player
-        construct(port: uint, caps: string)
+        construct(configuration: Configuration, port: uint, caps: string)
             var pipeline = new GstUtil.Pipeline("Receiver")
 
             source: dynamic Element = ElementFactory.make("udpsrc", "Source")
@@ -94,12 +94,13 @@ namespace Khovsgol.Receiver
             var depay = ElementFactory.make("rtpL16depay", "Depay")
             var convert = ElementFactory.make("audioconvert", "AudioConvert")
             var resample = ElementFactory.make("audioresample", "AudioResample")
-            var rate = ElementFactory.make("audiorate", "AudioRate")
+            var rate = ElementFactory.make("audiorate", "AudioRate") // will create a perfect stream for us, but do we really need this if we are not, say, saving to a WAV?
             var volume = ElementFactory.make("volume", "Volume")
             var sink = ElementFactory.make("pulsesink", "Sink")
 
             source.port = port
             source.caps = Caps.from_string(caps)
+            buffer.latency = configuration.player_latency
             buffer.do_lost = true // this message will be handled downstream by audiorate
             
             pipeline.add_many(source, buffer, depay, convert, resample, rate, volume, sink)
