@@ -184,7 +184,10 @@ namespace Khovsgol.Server.GStreamer
             if spec == "pulse"
                 return create_pulse_branch(spec)
             else if spec.has_prefix("pulse:")
-                pass
+                var specs = spec.substring(6).split(":")
+                if specs.length > 0
+                    var server = specs[0]
+                    return create_pulse_branch(spec, server)
             else if spec == "alsa"
                 pass
             else if spec == "jack"
@@ -199,14 +202,17 @@ namespace Khovsgol.Server.GStreamer
                             return create_rtpL16_branch(spec, plug.host, http_port, http_port + 1)
             return null
 
-        def private create_pulse_branch(name: string): Bin
+        def private create_pulse_branch(name: string, server: string? = null): Bin
             valve: dynamic Element = ElementFactory.make("valve", "Valve")
             var queue = ElementFactory.make("queue", "Queue")
             var resample = ElementFactory.make("audioresample", "Resample")
             var volume = ElementFactory.make("volume", "Volume")
-            var sink = ElementFactory.make("pulsesink", "Sink")
+            sink: dynamic Element = ElementFactory.make("pulsesink", "Sink")
 
             valve.drop = true
+            sink.client_name = "Khövgsöl"
+            if server is not null
+                sink.server = server
 
             var bin = new Bin(name)
             bin.add_many(valve, queue, resample, volume, sink)

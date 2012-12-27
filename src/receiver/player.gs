@@ -96,12 +96,15 @@ namespace Khovsgol.Receiver
             var resample = ElementFactory.make("audioresample", "AudioResample")
             var rate = ElementFactory.make("audiorate", "AudioRate") // will create a perfect stream for us, but do we really need this if we are not, say, saving to a WAV?
             var volume = ElementFactory.make("volume", "Volume")
-            var sink = ElementFactory.make(configuration.player_sink, "Sink")
+            sink: dynamic Element = ElementFactory.make(configuration.player_sink, "Sink")
 
             source.port = port
             source.caps = Caps.from_string(caps)
             buffer.latency = configuration.player_latency
             buffer.do_lost = true // this message will be handled downstream by audiorate
+            
+            if configuration.player_sink == "pulsesink"
+                sink.client_name = "Khövgsöl"
             
             pipeline.add_many(source, buffer, depay, convert, resample, rate, volume, sink)
             source.link_many(buffer, depay, convert, resample, rate, volume, sink)
