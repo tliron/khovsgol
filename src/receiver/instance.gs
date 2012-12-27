@@ -24,6 +24,12 @@ namespace Khovsgol.Receiver
             if _arguments.port != int.MIN
                 _configuration.port_override = _arguments.port
 
+            if _arguments.latency != int.MIN
+                _configuration.player_latency_override = _arguments.latency
+
+            if _arguments.sink is not null
+                _configuration.player_sink_override = _arguments.sink
+
             _server = new _Soup.Server(_configuration.port, _main_loop.get_context())
             _server.set_handler(_uri_space.handle)
 

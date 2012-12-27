@@ -39,6 +39,26 @@ namespace Khovsgol.Receiver
         
         prop player_latency_override: int = int.MIN
 
+        prop player_sink: string?
+            owned get
+                if _player_sink_override is not null
+                    return _player_sink_override
+
+                try
+                    return _key_file.get_string("player", "sink")
+                except e: KeyFileError
+                    return "pulsesink"
+            set
+                if (value is not null) and (value.length > 0)
+                    _key_file.set_string("player", "sink", value)
+                else
+                    try
+                        _key_file.remove_key("player", "sink")
+                    except e: KeyFileError
+                        pass
+
+        prop player_sink_override: string?
+
         prop player_spec: string?
             owned get
                 try
@@ -50,7 +70,7 @@ namespace Khovsgol.Receiver
                     _key_file.set_string("player", "spec", value)
                 else
                     try
-                        _key_file.remove_key("scrobbling", "username")
+                        _key_file.remove_key("player", "spec")
                     except e: KeyFileError
                         pass
 
@@ -65,7 +85,7 @@ namespace Khovsgol.Receiver
                     _key_file.set_string("player", "caps", value)
                 else
                     try
-                        _key_file.remove_key("scrobbling", "username")
+                        _key_file.remove_key("player", "caps")
                     except e: KeyFileError
                         pass
         

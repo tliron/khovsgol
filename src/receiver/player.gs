@@ -96,7 +96,7 @@ namespace Khovsgol.Receiver
             var resample = ElementFactory.make("audioresample", "AudioResample")
             var rate = ElementFactory.make("audiorate", "AudioRate") // will create a perfect stream for us, but do we really need this if we are not, say, saving to a WAV?
             var volume = ElementFactory.make("volume", "Volume")
-            var sink = ElementFactory.make("pulsesink", "Sink")
+            var sink = ElementFactory.make(configuration.player_sink, "Sink")
 
             source.port = port
             source.caps = Caps.from_string(caps)
