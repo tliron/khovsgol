@@ -51,7 +51,12 @@ namespace Khovsgol.Receiver
                 if spec is not null
                     var caps = get_string_member_or_null(entity, "caps")
                     
-                    var player = _instance.player = create_player(spec, caps)
+                    var player = _instance.player
+                    if (player is not null) and (player.spec == spec) and (player.caps == caps)
+                        // Don't create the same player twice
+                        return
+                    
+                    _instance.player = player = create_player(spec, caps)
                     if player is not null
                         player.play()
                         conversation.response_json_object = player.to_json()

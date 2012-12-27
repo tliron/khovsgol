@@ -96,7 +96,8 @@ namespace Khovsgol.Server
         
         def start()
             _server.start()
-            publish()
+            if _configuration.advertise
+                publish()
             _main_loop.run()
             
         def private publish()

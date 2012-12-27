@@ -28,8 +28,23 @@ namespace Khovsgol.Receiver
             _server.set_handler(_uri_space.handle)
         
         prop player: Player?
+            get
+                return _player
+            set
+                _player = value
+                if _player is not null
+                    if (_configuration.player_spec != _player.spec) or (_configuration.player_caps != _player.caps)
+                        _configuration.player_spec = _player.spec
+                        _configuration.player_caps = _player.caps
+                        _configuration.save()
             
         def start()
+            var player_spec = _configuration.player_spec
+                if player_spec is not null
+                    _player = create_player(player_spec, _configuration.player_caps)
+                    if _player is not null
+                        _player.play()
+            
             _server.start()
             _main_loop.run()
 
@@ -39,6 +54,7 @@ namespace Khovsgol.Receiver
         _main_loop: MainLoop
         _api: Api
         _uri_space: UriSpace
+        _player: Player?
 
     _logger: Logging.Logger
     

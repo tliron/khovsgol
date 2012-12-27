@@ -293,7 +293,7 @@ namespace Nap._Soup
         
         def private on_message_handled(session: Soup.Session, message: Soup.Message)
             _status_code = message.status_code
-            _logger.debugf("Async done: %s", message.uri.to_string(false))
+            _logger.debugf("Async done: %s %u", message.uri.to_string(false), message.status_code)
             committed(self)
             
             // We need to kill our instance *after* this callback returns,

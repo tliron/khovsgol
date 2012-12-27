@@ -61,7 +61,7 @@ namespace Khovsgol.Server
                 try
                     return _key_file.get_boolean("server", "advertise")
                 except e: KeyFileError
-                    return false
+                    return true
             set
                 _key_file.set_boolean("server", "advertise", value)
         

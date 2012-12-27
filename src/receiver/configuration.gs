@@ -24,6 +24,36 @@ namespace Khovsgol.Receiver
                 _key_file.set_integer("receiver", "port", (int) value)
         
         prop port_override: int = int.MIN
+
+        prop player_spec: string?
+            owned get
+                try
+                    return _key_file.get_string("player", "spec")
+                except e: KeyFileError
+                    return null
+            set
+                if (value is not null) and (value.length > 0)
+                    _key_file.set_string("player", "spec", value)
+                else
+                    try
+                        _key_file.remove_key("scrobbling", "username")
+                    except e: KeyFileError
+                        pass
+
+        prop player_caps: string?
+            owned get
+                try
+                    return _key_file.get_string("player", "caps")
+                except e: KeyFileError
+                    return null
+            set
+                if (value is not null) and (value.length > 0)
+                    _key_file.set_string("player", "caps", value)
+                else
+                    try
+                        _key_file.remove_key("scrobbling", "username")
+                    except e: KeyFileError
+                        pass
         
         /*
          * Saves the configuration.
