@@ -9,7 +9,6 @@ namespace Khovsgol.Client
         prop abstract readonly configuration: Configuration
         prop abstract readonly dir: File
         prop abstract readonly api: API
-        prop abstract player: string
 
         def abstract get_resource(name: string): File?
         def abstract stop()

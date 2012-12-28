@@ -10,13 +10,13 @@ namespace Khovsgol.Client.CLI
         construct(args: array of string) raises GLib.Error
             _arguments = new Arguments(args)
             _api = new Client.API()
-            _api.connect(_arguments.host, _arguments.port)
+            _api.connect(_arguments.host, _arguments.port, _arguments.player)
             
         def start() raises GLib.Error
             var command = _arguments.args[1]
             
             if command == "status"
-                print_player(_api.get_player(_arguments.player))
+                print_player(_api.get_player())
         
             else if command == "listen"
                 pass
@@ -25,55 +25,55 @@ namespace Khovsgol.Client.CLI
                 pass
 
             else if command == "play"
-                _api.set_plug(_arguments.player, "pulse")
-                print_player(_api.set_play_mode(_arguments.player, "playing"))
+                _api.set_plug("pulse")
+                print_player(_api.set_play_mode("playing"))
 
             else if command == "stop"
-                _api.set_plug(_arguments.player, "pulse")
-                print_player(_api.set_play_mode(_arguments.player, "stopped"))
+                _api.set_plug("pulse")
+                print_player(_api.set_play_mode("stopped"))
 
             else if command == "pause"
-                _api.set_plug(_arguments.player, "pulse")
-                print_player(_api.set_play_mode(_arguments.player, "toggle_paused"))
+                _api.set_plug("pulse")
+                print_player(_api.set_play_mode("toggle_paused"))
 
             else if command == "next"
-                _api.set_plug(_arguments.player, "pulse")
-                print_player(_api.set_position_in_playlist_string(_arguments.player, "next"))
+                _api.set_plug("pulse")
+                print_player(_api.set_position_in_playlist_string("next"))
 
             else if command == "prev"
-                _api.set_plug(_arguments.player, "pulse")
-                print_player(_api.set_position_in_playlist_string(_arguments.player, "prev"))
+                _api.set_plug("pulse")
+                print_player(_api.set_position_in_playlist_string("prev"))
 
             else if command == "cursor"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the position (a number)\n")
                     Posix.exit(1)
                 var position = int.parse(_arguments.args[2])
-                _api.set_plug(_arguments.player, "pulse")
-                print_player(_api.set_position_in_playlist(_arguments.player, position))
+                _api.set_plug("pulse")
+                print_player(_api.set_position_in_playlist(position))
 
             else if command == "trackposition"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the position (a decimal)\n")
                     Posix.exit(1)
                 var position = double.parse(_arguments.args[2])
-                _api.set_plug(_arguments.player, "pulse")
-                print_player(_api.set_position_in_track(_arguments.player, position))
+                _api.set_plug("pulse")
+                print_player(_api.set_position_in_track(position))
 
             else if command == "trackratio"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the ratio (a decimal)\n")
                     Posix.exit(1)
                 var ratio = double.parse(_arguments.args[2])
-                _api.set_plug(_arguments.player, "pulse")
-                print_player(_api.set_ratio_in_track(_arguments.player, ratio))
+                _api.set_plug("pulse")
+                print_player(_api.set_ratio_in_track(ratio))
 
             else if command == "cursormode"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the cursor mode\n")
                     Posix.exit(1)
                 var cursor_mode = _arguments.args[2]
-                print_player(_api.set_cursor_mode(_arguments.player, cursor_mode))
+                print_player(_api.set_cursor_mode(cursor_mode))
 
             else if command == "addtrack"
                 pass

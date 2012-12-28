@@ -15,12 +15,12 @@ namespace Khovsgol.Client.GTK
             about.set_alignment(0, 0)
             about.wrap = true
             
-            var service = _instance.configuration.scrobbling_service
+            var service = _instance.configuration.get_feature_string("scrobbling", "service")
 
             var service_label = new Label.with_mnemonic("Scrobbling ser_vice:")
             service_label.set_alignment(0, 0)
             var last_fm = new WrappedRadioButton("Last.fm")
-            if service == "last.fm"
+            if (service is null) or (service == "last.fm")
                 last_fm.active = true
             last_fm.clicked.connect(on_last_fm)
             var libre_fm = new WrappedRadioButton("Libre.fm", last_fm)
@@ -30,12 +30,14 @@ namespace Khovsgol.Client.GTK
             service_label.mnemonic_widget = last_fm
 
             _username = new EntryBox("User_name")
-            if _instance.configuration.scrobbling_username is not null
-                _username.entry.text = _instance.configuration.scrobbling_username
+            var username = _instance.configuration.get_feature_string("scrobbling", "username")
+            if username is not null
+                _username.entry.text = username
             _password = new EntryBox("_Password")
             _password.entry.visibility = false
-            if _instance.configuration.scrobbling_password is not null
-                _password.entry.text = _instance.configuration.scrobbling_password
+            var password = _instance.configuration.get_feature_string("scrobbling", "password")
+            if password is not null
+                _password.entry.text = password
             
             _start = new Button.with_mnemonic("Tu_rn on scrobbling")
             _start.sensitive = false
@@ -66,11 +68,11 @@ namespace Khovsgol.Client.GTK
             save(_instance.configuration.is_feature_active("scrobbling"))
 
         def private on_last_fm()
-            _instance.configuration.scrobbling_service = "last.fm"
+            _instance.configuration.set_feature_string("scrobbling", "service", "last.fm")
             _instance.configuration.save()
 
         def private on_libre_fm()
-            _instance.configuration.scrobbling_service = "libre.fm"
+            _instance.configuration.set_feature_string("scrobbling", "service", "libre.fm")
             _instance.configuration.save()
 
         def private on_start()
@@ -89,9 +91,9 @@ namespace Khovsgol.Client.GTK
         def private save(active: bool)
             var username = _username.entry.text
             var password = _password.entry.text
-            if (username != _instance.configuration.scrobbling_username) or (password != _instance.configuration.scrobbling_password) or (active != _instance.configuration.is_feature_active("scrobbling"))
-                _instance.configuration.scrobbling_username = username
-                _instance.configuration.scrobbling_password = password
+            if (username != _instance.configuration.get_feature_string("scrobbling", "username")) or (password != _instance.configuration.get_feature_string("scrobbling", "password")) or (active != _instance.configuration.is_feature_active("scrobbling"))
+                _instance.configuration.set_feature_string("scrobbling", "username", username)
+                _instance.configuration.set_feature_string("scrobbling", "password", password)
                 _instance.configuration.set_feature_active("scrobbling", active)
                 _instance.configuration.save()
 

@@ -21,10 +21,6 @@ namespace Khovsgol.Client
      * A polling thread can be started to regularly watch the player.
      */
     class API: GLib.Object
-        construct()
-            _client = new _Soup.Client()
-            _client.timeout = 5
-
         prop watching_player: string?
             get
                 _watching_lock.lock()
@@ -63,18 +59,35 @@ namespace Khovsgol.Client
             finally
                 _watching_lock.unlock()
 
-        def new connect(host: string, port: uint)
+        def new @connect(host: string, port: uint, player: string?)
             _watching_lock.lock()
             try
                 _host = host
                 _port = port
+                _watching_player = player
+                _client = new _Soup.Client()
+                _client.timeout = 5
                 _client.base_url = "http://%s:%u".printf(_host, _port)
                 reset_watch()
                 watch()
             finally
                 _watching_lock.unlock()
 
+        def new @disconnect()
+            _watching_lock.lock()
+            try
+                _host = null
+                _port = 0
+                _watching_player = null
+                _client = null
+                reset_watch()
+            finally
+                _watching_lock.unlock()
+        
         def update()
+            var client = get_client()
+            if client is null
+                return
             try
                 var conversation = _client.create_conversation()
                 conversation.method = Method.GET
@@ -118,8 +131,11 @@ namespace Khovsgol.Client
          * receive [=get_library, ...]
          */
         def get_libraries(): IterableOfJsonObject
+            var client = get_client()
+            if client is null
+                return new JsonObjects()
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/"
                 conversation.commit()
@@ -142,8 +158,11 @@ namespace Khovsgol.Client
          * receive [=get_track, ...]
          */
         def get_tracks(args: GetTracksArgs): IterableOfTrack
+            var client = get_client()
+            if client is null
+                return new JsonTracks()
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/tracks/"
                 if args.by_artist is not null
@@ -181,8 +200,11 @@ namespace Khovsgol.Client
          * receive [=get_album, ...]
          */
         def get_albums(args: GetAlbumsArgs? = null): IterableOfAlbum
+            var client = get_client()
+            if client is null
+                return new JsonAlbums()
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/albums/"
                 if args is not null
@@ -212,8 +234,11 @@ namespace Khovsgol.Client
          * ]
          */
         def get_artists(album_artists: bool = false, sort: string? = null): IterableOfArtist
+            var client = get_client()
+            if client is null
+                return new JsonArtists()
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/artists/"
                 if album_artists
@@ -230,8 +255,11 @@ namespace Khovsgol.Client
          * receive [int, ...]
          */
         def get_dates(by_album: bool = true): IterableOfInt
+            var client = get_client()
+            if client is null
+                return new JsonInts()
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/dates/"
                 if by_album
@@ -259,8 +287,11 @@ namespace Khovsgol.Client
          * }
          */
         def get_track(path: string): Track?
+            var client = get_client()
+            if client is null
+                return null
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/track/{path}/"
                 conversation.variables["path"] = path
@@ -288,8 +319,11 @@ namespace Khovsgol.Client
          * }
          */
         def get_album(path: string): Album?
+            var client = get_client()
+            if client is null
+                return null
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
@@ -310,6 +344,9 @@ namespace Khovsgol.Client
          * receive =get_album
          */
         def move_in_album(path: string, destination: int, positions: Json.Array): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
                 var payload = new Json.Object()
                 if destination != int.MIN
@@ -320,7 +357,7 @@ namespace Khovsgol.Client
                 else
                     payload.set_array_member("move", positions)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
@@ -338,6 +375,9 @@ namespace Khovsgol.Client
          * receive =get_album
          */
         def add_to_album(path: string, destination: int, paths: Json.Array): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
                 var payload = new Json.Object()
                 if destination != int.MIN
@@ -348,7 +388,7 @@ namespace Khovsgol.Client
                 else
                     payload.set_array_member("add", paths)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
@@ -365,11 +405,14 @@ namespace Khovsgol.Client
          * receive =get_album
          */
         def remove_from_album(path: string, positions: Json.Array): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
                 var payload = new Json.Object()
                 payload.set_array_member("remove", positions)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
@@ -386,13 +429,16 @@ namespace Khovsgol.Client
          * receive =get_album
          */
         def create_album(path: string, title: string, library: string, paths: Json.Array): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
                 var payload = new Json.Object()
                 payload.set_string_member("title", title)
                 payload.set_string_member("library", library)
                 payload.set_array_member("tracks", paths)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.PUT
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
@@ -403,15 +449,20 @@ namespace Khovsgol.Client
                 on_error(e)
                 return null
 
-        def delete_album(path: string)
+        def delete_album(path: string): bool
+            var client = get_client()
+            if client is null
+                return false
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.DELETE
                 conversation.path = "/libraries/album/{path}/"
                 conversation.variables["path"] = path
                 conversation.commit()
+                return conversation.status_code == StatusCode.OK
             except e: GLib.Error
                 on_error(e)
+                return false
 
         /*
          * receive {
@@ -420,8 +471,11 @@ namespace Khovsgol.Client
          * }
          */
         def get_library(name: string): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
@@ -437,11 +491,14 @@ namespace Khovsgol.Client
          * receive =get_library
          */
         def add_directory_to_library(name: string, path: string): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
                 var payload = new Json.Object()
                 payload.set_string_member("add", path)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
@@ -458,11 +515,14 @@ namespace Khovsgol.Client
          * receive =get_library
          */
         def remove_directory_from_library(name: string, path: string): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
                 var payload = new Json.Object()
                 payload.set_string_member("remove", path)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
@@ -480,11 +540,14 @@ namespace Khovsgol.Client
          * receive =get_library
          */
         def library_action(name: string, action: string): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
                 var payload = new Json.Object()
                 payload.set_string_member("action", action)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
@@ -499,8 +562,11 @@ namespace Khovsgol.Client
          * receive =get_library
          */
         def create_library(name: string): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.PUT
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
@@ -510,15 +576,20 @@ namespace Khovsgol.Client
                 on_error(e)
                 return null
 
-        def delete_library(name: string)
+        def delete_library(name: string): bool
+            var client = get_client()
+            if client is null
+                return false
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.DELETE
                 conversation.path = "/library/{library}/"
                 conversation.variables["library"] = name
                 conversation.commit()
+                return conversation.status_code == StatusCode.OK
             except e: GLib.Error
                 on_error(e)
+                return false
 
         /*
          * receive {
@@ -527,8 +598,11 @@ namespace Khovsgol.Client
          * }
          */
         def get_directory(name: string, path: string): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/library/{library}/directory/{path}/"
                 conversation.variables["library"] = name
@@ -546,11 +620,14 @@ namespace Khovsgol.Client
          * receive =get_directory
          */
         def directory_action(name: string, path: string, action: string): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
                 var payload = new Json.Object()
                 payload.set_string_member("action", action)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/library/{library}/directory/{path}/"
                 conversation.variables["library"] = name
@@ -566,8 +643,11 @@ namespace Khovsgol.Client
          * receive =get_directory
          */
         def create_directory(name: string, path: string): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.PUT
                 conversation.path = "/library/{library}/directory/{path}/"
                 conversation.variables["library"] = name
@@ -578,23 +658,31 @@ namespace Khovsgol.Client
                 on_error(e)
                 return null
 
-        def delete_directory(name: string, path: string)
+        def delete_directory(name: string, path: string): bool
+            var client = get_client()
+            if client is null
+                return false
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.DELETE
                 conversation.path = "/library/{library}/directory/{path}/"
                 conversation.variables["library"] = name
                 conversation.variables["path"] = path
                 conversation.commit()
+                return conversation.status_code == StatusCode.OK
             except e: GLib.Error
                 on_error(e)
+                return false
 
         /*
          * receive [=get_player, ...]
          */
         def get_players(): IterableOfJsonObject
+            var client = get_client()
+            if client is null
+                return new JsonObjects()
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/players/"
                 conversation.commit()
@@ -617,9 +705,14 @@ namespace Khovsgol.Client
          *  playList: =get_playlist
          * }
          */
-        def get_player(player: string): Json.Object?
+        def get_player(player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
@@ -639,12 +732,17 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_volume(player: string, volume: double): Json.Object?
+        def set_volume(volume: double, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 payload.set_double_member("volume", volume)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
@@ -665,12 +763,17 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_play_mode(player: string, play_mode: string): Json.Object?
+        def set_play_mode(play_mode: string, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 payload.set_string_member("playMode", play_mode)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
@@ -691,12 +794,17 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_cursor_mode(player: string, cursor_mode: string): Json.Object?
+        def set_cursor_mode(cursor_mode: string, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 payload.set_string_member("cursorMode", cursor_mode)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
@@ -717,14 +825,19 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_position_in_playlist(player: string, position: int): Json.Object?
+        def set_position_in_playlist(position: int, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
                 cursor.set_int_member("positionInPlaylist", position)
                 payload.set_object_member("cursor", cursor)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
@@ -745,14 +858,19 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_position_in_playlist_string(player: string, position: string): Json.Object?
+        def set_position_in_playlist_string(position: string, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
                 cursor.set_string_member("positionInPlaylist", position)
                 payload.set_object_member("cursor", cursor)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
@@ -773,14 +891,19 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_position_in_track(player: string, position: double): Json.Object?
+        def set_position_in_track(position: double, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
                 cursor.set_double_member("positionInTrack", position)
                 payload.set_object_member("cursor", cursor)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
@@ -801,14 +924,19 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def set_ratio_in_track(player: string, ratio: double): Json.Object?
+        def set_ratio_in_track(ratio: double, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 var cursor = new Json.Object()
                 cursor.set_double_member("ratioInTrack", ratio)
                 payload.set_object_member("cursor", cursor)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/"
                 conversation.variables["player"] = player
@@ -829,7 +957,13 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def add_plug_to_player(player: string, plug: string): Json.Object?
+        def add_plug_to_player(plug: string, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
+            // TODO
             return null
 
         /*
@@ -837,7 +971,13 @@ namespace Khovsgol.Client
          * 
          * receive =get_player
          */
-        def remove_plug_from_player(player: string, plug: string): Json.Object?
+        def remove_plug_from_player(plug: string, player: string? = null): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
+            // TODO
             return null
 
         /*
@@ -851,9 +991,14 @@ namespace Khovsgol.Client
          *  albums: =get_albums
          * }
          */
-        def get_playlist(player: string, full: bool = false): Json.Object?
+        def get_playlist(player: string? = null, full: bool = false): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/player/{player}/playlist/"
                 conversation.variables["player"] = player
@@ -876,12 +1021,17 @@ namespace Khovsgol.Client
          * 
          * receive =get_playlist
          */
-        def set_playlist_paths(player: string, paths: Json.Array, full: bool = false): Json.Object?
+        def set_playlist_paths(paths: Json.Array, player: string? = null, full: bool = false): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 payload.set_array_member("paths", paths)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/playlist/"
                 conversation.variables["player"] = player
@@ -906,7 +1056,12 @@ namespace Khovsgol.Client
          * 
          * receive =get_playlist
          */
-        def move_in_playlist(player: string, destination: int, positions: Json.Array, full: bool = false): Json.Object?
+        def move_in_playlist(destination: int, positions: Json.Array, player: string? = null, full: bool = false): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 if destination != int.MIN
@@ -917,7 +1072,7 @@ namespace Khovsgol.Client
                 else
                     payload.set_array_member("move", positions)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/playlist/"
                 conversation.variables["player"] = player
@@ -942,7 +1097,12 @@ namespace Khovsgol.Client
          * 
          * receive =get_playlist
          */
-        def add_to_playlist(player: string, position: int, paths: Json.Array, full: bool = false): Json.Object?
+        def add_to_playlist(position: int, paths: Json.Array, player: string? = null, full: bool = false): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 if position != int.MIN
@@ -953,7 +1113,7 @@ namespace Khovsgol.Client
                 else
                     payload.set_array_member("add", paths)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/playlist/"
                 conversation.variables["player"] = player
@@ -977,12 +1137,17 @@ namespace Khovsgol.Client
          * 
          * receive =get_playlist
          */
-        def remove_from_playlist(player: string, positions: Json.Array, full: bool = false): Json.Object?
+        def remove_from_playlist(positions: Json.Array, player: string? = null, full: bool = false): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
                 var payload = new Json.Object()
                 payload.set_array_member("remove", positions)
 
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.POST
                 conversation.path = "/player/{player}/playlist/"
                 conversation.variables["player"] = player
@@ -1004,15 +1169,25 @@ namespace Khovsgol.Client
         /*
          * TODO
          */
-        def get_plug(player: string, plug: string, full: bool = false): Json.Object?
+        def get_plug(plug: string, player: string? = null, full: bool = false): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             return null
 
         /*
          * receive =get_plug
          */
-        def set_plug(player: string, plug: string, full: bool = false): Json.Object?
+        def set_plug(plug: string, player: string? = null, full: bool = false): Json.Object?
+            var client = get_client()
+            if client is null
+                return null
+            if player is null
+                player = watching_player
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.PUT
                 conversation.path = "/player/{player}/plug/{plug}/"
                 conversation.variables["player"] = player
@@ -1031,19 +1206,24 @@ namespace Khovsgol.Client
                 on_error(e)
                 return null
 
-        def delete_plug(player: string, plug: string)
+        def delete_plug(plug: string, player: string? = null): bool
+            var client = get_client()
+            if client is null
+                return false
+            if player is null
+                player = watching_player
             try
-                var conversation = _client.create_conversation()
+                var conversation = client.create_conversation()
                 conversation.method = Method.DELETE
                 conversation.path = "/player/{player}/plug/{plug}/"
                 conversation.variables["player"] = player
                 conversation.variables["plug"] = plug
                 conversation.commit()
+                return conversation.status_code == StatusCode.OK
             except e: GLib.Error
                 on_error(e)
+                return false
         
-        _client: Nap.Client
-
         _poll_thread: Thread of bool
         _poll_interval: ulong = 1000000
 
@@ -1053,6 +1233,7 @@ namespace Khovsgol.Client
 
         // The following should only be accessed via mutex
         _watching_lock: RecMutex = RecMutex()
+        _client: Nap.Client?
         _watching_player: string?
         _last_watching_player: string?
         _host: string?
@@ -1074,6 +1255,13 @@ namespace Khovsgol.Client
         init
             _logger = Logging.get_logger("khovsgol.client.api")
         
+        def private get_client(): Nap.Client?
+            _watching_lock.lock()
+            try
+                return _client
+            finally
+                _watching_lock.unlock()
+
         def private on_committed(conversation: Conversation)
             var player_object = conversation.response_json_object
                 if player_object is not null

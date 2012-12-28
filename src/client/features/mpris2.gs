@@ -223,11 +223,11 @@ namespace Khovsgol.Client.Features
                 set
                     _LoopStatus = value
                     if value == "None"
-                        _instance.api.set_cursor_mode(_instance.player, "playlist")
+                        _instance.api.set_cursor_mode("playlist")
                     else if value == "Playlist"
-                        _instance.api.set_cursor_mode(_instance.player, "repeat_playlist")
+                        _instance.api.set_cursor_mode("repeat_playlist")
                     else if value == "Track"
-                        _instance.api.set_cursor_mode(_instance.player, "repeat_track")
+                        _instance.api.set_cursor_mode("repeat_track")
 
             prop Rate: double
             
@@ -237,9 +237,9 @@ namespace Khovsgol.Client.Features
                 set
                     _Shuffle = value
                     if value
-                        _instance.api.set_cursor_mode(_instance.player, "repeat_track")
+                        _instance.api.set_cursor_mode("repeat_track")
                     else
-                        _instance.api.set_cursor_mode(_instance.player, "playlist")
+                        _instance.api.set_cursor_mode("playlist")
                         
             prop readonly Metadata: HashTable of string, Variant?
                 owned get
@@ -260,27 +260,27 @@ namespace Khovsgol.Client.Features
             event Seeked(position: int64)
             
             def Next()
-                _instance.api.set_position_in_playlist_string(_instance.player, "next")
+                _instance.api.set_position_in_playlist_string("next")
 
             def Previous()
-                _instance.api.set_position_in_playlist_string(_instance.player, "prev")
+                _instance.api.set_position_in_playlist_string("prev")
 
             def Pause()
-                 _instance.api.set_play_mode(_instance.player, "paused")
+                 _instance.api.set_play_mode("paused")
 
             def PlayPause()
-                 _instance.api.set_play_mode(_instance.player, "toggle_paused")
+                 _instance.api.set_play_mode("toggle_paused")
 
             def Stop()
-                 _instance.api.set_play_mode(_instance.player, "stopped")
+                 _instance.api.set_play_mode("stopped")
 
             def Play()
-                 _instance.api.set_play_mode(_instance.player, "playing")
+                 _instance.api.set_play_mode("playing")
 
             def Seek(offset: int64)
                 if _position_in_track != double.MIN
                     var position = _position_in_track + (offset / 1000000.0)
-                    _instance.api.set_position_in_track(_instance.player, position)
+                    _instance.api.set_position_in_track(position)
 
             def SetPosition(obj: string, position: int64)
                 pass

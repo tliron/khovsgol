@@ -283,7 +283,7 @@ namespace Khovsgol.Client.GTK
                     try
                         var positions = from_array(text)
                         API.in_gdk = true
-                        _instance.api.move_in_playlist(_instance.player, destination, positions, true)
+                        _instance.api.move_in_playlist(destination, positions, null, true)
                         API.in_gdk = false
                         Gdk.drop_finish(context, true, time)
                     except e: GLib.Error
@@ -296,7 +296,7 @@ namespace Khovsgol.Client.GTK
                     try
                         var tracks = from_array(text)
                         API.in_gdk = true
-                        _instance.api.add_to_playlist(_instance.player, destination, tracks, true)
+                        _instance.api.add_to_playlist(destination, tracks, null, true)
                         API.in_gdk = false
                         Gdk.drop_finish(context, true, time)
                     except e: GLib.Error
@@ -320,7 +320,7 @@ namespace Khovsgol.Client.GTK
             
         _on_cursor_mode_id: ulong
         def private on_cursor_mode()
-            _instance.api.set_cursor_mode(_instance.player, (string) _mode_box.active)
+            _instance.api.set_cursor_mode((string) _mode_box.active)
         
         def private on_style()
             var style = _style_box.active_style
@@ -333,9 +333,9 @@ namespace Khovsgol.Client.GTK
             var position = get_first_selected_position()
             if position != int.MIN
                 if _position_in_playlist != position
-                    _instance.api.set_position_in_playlist(_instance.player, position)
+                    _instance.api.set_position_in_playlist(position)
                 else
-                    _instance.api.set_position_in_track(_instance.player, 0)
+                    _instance.api.set_position_in_track(0)
         
         def private on_move_to_cursor()
             pass
@@ -344,12 +344,12 @@ namespace Khovsgol.Client.GTK
             var positions = get_selected_positions()
             if positions.get_length() > 0
                 API.in_gdk = true
-                _instance.api.remove_from_playlist(_instance.player, positions, true)
+                _instance.api.remove_from_playlist(positions, null, true)
                 API.in_gdk = false
         
         def private on_clear()
             API.in_gdk = true
-            _instance.api.set_playlist_paths(_instance.player, new Json.Array(), true)
+            _instance.api.set_playlist_paths(new Json.Array(), null, true)
             API.in_gdk = false
 
         def private on_save_as_compilation()

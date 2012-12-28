@@ -236,7 +236,7 @@ namespace Khovsgol.Client.GTK
             var tracks = gather_selected_tracks()
             if tracks is not null
                 API.in_gdk = true
-                _instance.api.add_to_playlist(_instance.player, int.MIN, tracks, true)
+                _instance.api.add_to_playlist(int.MIN, tracks, null, true)
                 API.in_gdk = false
 
         def private on_add_at()

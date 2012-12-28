@@ -152,11 +152,6 @@ namespace Khovsgol.Client.GTK
                         player = plug_node.player_node.name
                         
                     if server_node is not null
-                        if player is null
-                            player = Environment.get_user_name()
-                        _instance.api.connect(server_node.host, server_node.port)
-                        _instance.player = player
-                        
                         if not server_node.is_local
                             var dialog = new MessageDialog.with_markup(self, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "You're connecting to \"%s\", a computer in your network. Do you want the sound to come out <i>here</i>?\n\n(Answering no will make the sound come out at \"%s\")", server_node.host, server_node.host)
                             dialog.title = "Connecting to %s:%u".printf(server_node.host, server_node.port)
@@ -168,14 +163,14 @@ namespace Khovsgol.Client.GTK
                                 var feature = _instance.get_feature("receiver")
                                 if feature is not null
                                     feature.start()
-                                    _instance.api.set_plug(_instance.player, "rtpL16:udp:%u".printf(_instance.receiver_configuration.port), true)
+                                    _instance.@connect(server_node.host, server_node.port, player, "rtpL16:udp:%u".printf(_instance.receiver_configuration.port))
                                 else
                                     // TODO: error! no receiver!
                                     pass
                             else
-                                _instance.api.set_plug(_instance.player, "pulse", true)
+                                _instance.@connect(server_node.host, server_node.port, player)
                         else
-                            _instance.api.set_plug(_instance.player, "pulse", true)
+                            _instance.@connect(server_node.host, server_node.port, player)
                         
                         destroy()
 
@@ -251,14 +246,14 @@ namespace Khovsgol.Client.GTK
                 
         def private fill_players(server_node: ServerNode, server_iter: TreeIter, is_current: bool)
             var api = new API()
-            api.connect(server_node.host, server_node.port)
+            api.@connect(server_node.host, server_node.port, null)
             for var player in api.get_players()
                 var name = get_string_member_or_null(player, "name")
                 if name is not null
                     var play_mode = get_string_member_or_null(player, "playMode")
                 
                     if is_current
-                        is_current = _instance.player == name
+                        is_current = _instance.api.watching_player == name
                             
                     iter: TreeIter
                     _store.append(out iter, server_iter)
@@ -323,8 +318,7 @@ namespace Khovsgol.Client.GTK
                 _iter = iter
                 _is_current = is_current
                 
-                _api.connect(server_node.host, server_node.port)
-                _api.watching_player = name
+                _api.@connect(server_node.host, server_node.port, name)
                 _api.play_mode_change_gdk.connect(on_play_mode_changed)
                 _api.start_watch_thread()
     

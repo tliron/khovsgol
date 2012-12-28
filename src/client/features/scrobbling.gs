@@ -26,16 +26,16 @@ namespace Khovsgol.Client.Features
             if state == FeatureState.STOPPED
                 set_state(FeatureState.STARTING)
                 
-                var service = _instance.configuration.scrobbling_service
-                var username = _instance.configuration.scrobbling_username
-                var password = _instance.configuration.scrobbling_password
+                var service = _instance.configuration.get_feature_string("scrobbling", "service")
+                var username = _instance.configuration.get_feature_string("scrobbling", "username")
+                var password = _instance.configuration.get_feature_string("scrobbling", "password")
 
                 if (username is null) or (password is null)
                     set_state(FeatureState.STOPPED)
                     return
 
                 try
-                    if service == "last.fm"
+                    if (service is null) or (service == "last.fm")
                         _session = new Session(LAST_FM_API, LAST_FM_AUTH_API, LAST_FM_API_KEY, LAST_FM_API_SECRET)
                     else
                         _logger.warningf("Unsupported service: %s", service)

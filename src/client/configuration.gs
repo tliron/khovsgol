@@ -119,48 +119,57 @@ namespace Khovsgol.Client
             set
                 _key_file.set_boolean("ui", "focus-on-library", value)
         
-        prop scrobbling_service: string?
+        prop connection_host: string?
             owned get
                 try
-                    return _key_file.get_string("scrobbling", "service")
-                except e: KeyFileError
-                    return "last.fm"
-            set
-                if (value is not null) and (value.length > 0)
-                    _key_file.set_string("scrobbling", "service", value)
-                else
-                    try
-                        _key_file.remove_key("scrobbling", "service")
-                    except e: KeyFileError
-                        pass
-
-        prop scrobbling_username: string?
-            owned get
-                try
-                    return _key_file.get_string("scrobbling", "username")
+                    return _key_file.get_string("connection", "host")
                 except e: KeyFileError
                     return null
             set
                 if (value is not null) and (value.length > 0)
-                    _key_file.set_string("scrobbling", "username", value)
+                    _key_file.set_string("connection", "host", value)
                 else
                     try
-                        _key_file.remove_key("scrobbling", "username")
+                        _key_file.remove_key("connection", "host")
                     except e: KeyFileError
                         pass
 
-        prop scrobbling_password: string?
+        prop connection_port: uint
+            get
+                try
+                    return _key_file.get_integer("connection", "port")
+                except e: KeyFileError
+                    return 0
+            set
+                _key_file.set_integer("connection", "port", (int) value)
+
+        prop connection_plug: string?
             owned get
                 try
-                    return _key_file.get_string("scrobbling", "password")
+                    return _key_file.get_string("connection", "plug")
                 except e: KeyFileError
                     return null
             set
                 if (value is not null) and (value.length > 0)
-                    _key_file.set_string("scrobbling", "password", value)
+                    _key_file.set_string("connection", "plug", value)
                 else
                     try
-                        _key_file.remove_key("scrobbling", "password")
+                        _key_file.remove_key("connection", "plug")
+                    except e: KeyFileError
+                        pass
+
+        prop connection_player: string?
+            owned get
+                try
+                    return _key_file.get_string("connection", "player")
+                except e: KeyFileError
+                    return null
+            set
+                if (value is not null) and (value.length > 0)
+                    _key_file.set_string("connection", "player", value)
+                else
+                    try
+                        _key_file.remove_key("connection", "player")
                     except e: KeyFileError
                         pass
 
@@ -184,6 +193,21 @@ namespace Khovsgol.Client
 
         def set_feature_boolean(name: string, property: string, value: bool)
             _key_file.set_boolean("feature." + name, property, value)
+
+        def get_feature_string(name: string, property: string): string?
+            try
+                return _key_file.get_string("feature." + name, property)
+            except e: KeyFileError
+                return null
+
+        def set_feature_string(name: string, property: string, value: string)
+            if value is not null
+                _key_file.set_string("feature." + name, property, value)
+            else
+                try
+                    _key_file.remove_key("feature." + name, property)
+                except e: KeyFileError
+                    pass
 
         /*
          * Saves the configuration.

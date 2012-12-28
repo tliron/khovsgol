@@ -27,7 +27,7 @@ namespace Khovsgol.Client.GTK
             var connect = new ControlToolButton(Stock.NETWORK, Gdk.Key.C, "Connector\n<Alt>C", _accel_group)
             connect.clicked.connect(on_connector)
             
-            _info = new Label("<b>Not connected</b>")
+            _info = new Label("<b>Connecting...</b>")
             _info.use_markup = true
             _info.ellipsize = Pango.EllipsizeMode.END
             _info.set_alignment(0, 0.5f)
@@ -130,20 +130,20 @@ namespace Khovsgol.Client.GTK
             new Connector(_instance).show_all()
 
         def private on_previous()
-            _instance.api.set_position_in_playlist_string(_instance.player, "prev")
+            _instance.api.set_position_in_playlist_string("prev")
             
         def private on_play()
-            _instance.api.set_play_mode(_instance.player, "playing")
+            _instance.api.set_play_mode("playing")
         
         _on_pause_toggled_id: ulong
         def private on_pause_toggled()
-            _instance.api.set_play_mode(_instance.player, "toggle_paused")
+            _instance.api.set_play_mode("toggle_paused")
             
         def private on_stop()
-            _instance.api.set_play_mode(_instance.player, "stopped")
+            _instance.api.set_play_mode("stopped")
             
         def private on_next()
-            _instance.api.set_position_in_playlist_string(_instance.player, "next")
+            _instance.api.set_position_in_playlist_string("next")
 
         def private on_info_clicked(e: Gdk.EventButton): bool
             on_connector()
@@ -152,7 +152,7 @@ namespace Khovsgol.Client.GTK
         def private on_progress_clicked(e: Gdk.EventButton): bool
             var w = _progress.get_allocated_width()
             var ratio = (double) e.x / w
-            _instance.api.set_ratio_in_track(_instance.player, ratio)
+            _instance.api.set_ratio_in_track(ratio)
             return true // returning false would cause window dragging
             
         def private on_progress_scrolled(e: Gdk.EventScroll): bool
@@ -167,12 +167,12 @@ namespace Khovsgol.Client.GTK
                     position = 0
                 else if (_track_duration != double.MIN) and (position > _track_duration)
                     position = _track_duration
-                _instance.api.set_position_in_track(_instance.player, position)
+                _instance.api.set_position_in_track(position)
             return false
         
         _on_volume_id: ulong
         def private on_volume(value: double)
-            _instance.api.set_volume(_instance.player, value)
+            _instance.api.set_volume(value)
             
         _on_toggle_visualization_id: ulong
         def private on_visualization_toggled()

@@ -146,5 +146,5 @@ Useful run options:
    Set a GStreamer debug level, which will output colorized log messages to
    the console.
 
- "G_DEBUG=fatal_warnings khovsgol"
-   Breakpoint on logged warnings. Useful when running in gdb.
+ "G_DEBUG=fatal_warnings gdb khovsgol"
+   Breakpoint on logged warnings.

@@ -56,15 +56,15 @@ namespace Khovsgol.Client.Features
             _logger.infof("Pressed: %s", key)
             if key == "Play"
                 // For many keyboards the play button is identical to the play/pause button
-                _instance.api.set_play_mode(_instance.player, "toggle_paused")
+                _instance.api.set_play_mode("toggle_paused")
             else if key == "Pause"
-                _instance.api.set_play_mode(_instance.player, "toggle_paused")
+                _instance.api.set_play_mode("toggle_paused")
             else if key == "Stop"
-                _instance.api.set_play_mode(_instance.player, "stopped")
+                _instance.api.set_play_mode("stopped")
             else if key == "Previous"
-                _instance.api.set_position_in_playlist_string(_instance.player, "prev")
+                _instance.api.set_position_in_playlist_string("prev")
             else if key == "Next"
-                _instance.api.set_position_in_playlist_string(_instance.player, "next")
+                _instance.api.set_position_in_playlist_string("next")
 
         _logger: static Logging.Logger
         

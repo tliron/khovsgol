@@ -67,19 +67,19 @@ namespace Khovsgol.Client.Features
                     _launcher_entry.progress_visible = false
         
         def private on_pause()
-            _instance.api.set_play_mode(_instance.player, "toggle_paused")
+            _instance.api.set_play_mode("toggle_paused")
 
         def private on_play()
-            _instance.api.set_play_mode(_instance.player, "playing")
+            _instance.api.set_play_mode("playing")
 
         def private on_stop()
-            _instance.api.set_play_mode(_instance.player, "stopped")
+            _instance.api.set_play_mode("stopped")
         
         def private on_previous()
-            _instance.api.set_position_in_playlist_string(_instance.player, "prev")
+            _instance.api.set_position_in_playlist_string("prev")
 
         def private on_next()
-            _instance.api.set_position_in_playlist_string(_instance.player, "next")
+            _instance.api.set_position_in_playlist_string("next")
         
         def private create_menu(): Menuitem
             var pause_item = new Menuitem()

@@ -18,7 +18,6 @@ namespace Khovsgol.Client.GTK
 
             GtkUtil.initialize()
             
-            player = Environment.get_user_name()
             _dir = _arguments.file.get_parent()
             
             add_feature(new Features.ServerFeature())
@@ -42,12 +41,26 @@ namespace Khovsgol.Client.GTK
         prop readonly window: MainWindow
         prop readonly application: Application
 
-        prop player: string
-            get
-                return _player
-            set
-                if _player != value
-                    _api.watching_player = _player = value
+        def new @connect(host: string, port: uint, player: string? = null, plug: string? = null): bool
+            if player is null
+                player = Environment.get_user_name()
+            if plug is null
+                plug = "pulse"
+
+            _api.@connect(host, port, player)
+            var success = _api.set_plug(plug, null, true) is not null
+            
+            if success
+                if (host != _configuration.connection_host) or (port != _configuration.connection_port) or (player != _configuration.connection_player) or (plug != _configuration.connection_plug)
+                    _configuration.connection_host = host
+                    _configuration.connection_port = port
+                    _configuration.connection_player = player
+                    _configuration.connection_plug = plug
+                    _configuration.save()
+                return true
+            else
+                _api.@disconnect()
+                return false
         
         def add_feature(feature: Feature)
             feature.instance = self
@@ -74,10 +87,10 @@ namespace Khovsgol.Client.GTK
                         feature.start()
                 else if _configuration.is_feature_boolean(feature.name, "autostart")
                     feature.start()
-                
+                    
+            Gdk.threads_add_idle(connect_first)
+
             _api.start_watch_thread()
-            
-            connect_to_first_local_service()
             
             Gtk.main()
         
@@ -117,10 +130,18 @@ namespace Khovsgol.Client.GTK
             return null
         
         _arguments: Arguments
-        _player: string
         _features: dict of string, Feature = new dict of string, Feature
         _browser: Browser?
         _started: bool
+        
+        def private connect_first(): bool
+            var host = _configuration.connection_host
+            if host is not null
+                if not @connect(host, _configuration.connection_port, _configuration.connection_player, _configuration.connection_plug)
+                    connect_to_first_local_service()
+            else
+                connect_to_first_local_service()
+            return false
         
         def private connect_to_first_local_service()
             _browser = new Browser("_khovsgol._tcp")
@@ -130,8 +151,7 @@ namespace Khovsgol.Client.GTK
         def private on_avahi_found(info: ServiceFoundInfo)
             // Connect to first local service found
             if (info.flags & Avahi.LookupResultFlags.LOCAL) != 0
-                _api.connect(info.hostname, info.port)
-                _api.set_plug(_player, "pulse", true)
+                @connect(info.hostname, info.port)
                 _browser = null
         
     _logger: Logging.Logger
