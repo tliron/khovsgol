@@ -131,6 +131,9 @@ namespace Khovsgol.Server
                         _logger.warning(e.message)
                 return _playlist
 
+        /*
+         * Setting this to a valid value will switch the play mode to PLAYING.
+         */
         prop position_in_playlist: int
             get
                 return _position_in_playlist

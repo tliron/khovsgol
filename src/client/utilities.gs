@@ -25,6 +25,10 @@ namespace Khovsgol.Client
                 return file
 
         return null
+    
+    def aligned_integer_print_format(max_number: int): string
+        var digits = max_number.to_string().length
+        return "%%0%dd".printf(digits)
 
     /*
      * String join for Gee.Iterable.

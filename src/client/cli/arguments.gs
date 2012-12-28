@@ -11,7 +11,7 @@ namespace Khovsgol.Client.CLI
             var options = new array of OptionEntry[7]
             options[0] = {"version", 0, 0, OptionArg.NONE,   ref _version, "Show version", null}
             options[1] = {"host",    0, 0, OptionArg.STRING, ref _host,    "Server host (defaults to \"localhost\")", ""}
-            options[2] = {"port",    0, 0, OptionArg.INT,    ref _port,    "Web server TCP port (defaults to 8080)", "number"}
+            options[2] = {"port",    0, 0, OptionArg.INT,    ref _port,    "Web server TCP port (defaults to 8185)", "number"}
             options[3] = {"player",  0, 0, OptionArg.STRING, ref _player,  "Select player (defaults to your username)", ""}
             options[4] = {"library", 0, 0, OptionArg.STRING, ref _library, "Filter by library", ""}
             options[5] = {"sort",    0, 0, OptionArg.STRING, ref _sort,    "Sort by these fields in order (comma separated)", ""}
@@ -47,7 +47,7 @@ namespace Khovsgol.Client.CLI
 
         prop readonly args: array of string
         prop readonly host: string = "localhost"
-        prop readonly port: int = 8181
+        prop readonly port: int = 8185
         prop readonly player: string
         prop readonly library: string
         prop readonly sort: string

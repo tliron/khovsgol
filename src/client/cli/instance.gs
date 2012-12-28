@@ -81,11 +81,17 @@ namespace Khovsgol.Client.CLI
             else if command == "removetrack"
                 pass
 
-            else if command == "setplug"
-                pass
+            else if command == "plug"
+                if _arguments.args.length < 3
+                    stderr.printf("You must provide the plug spec\n")
+                    Posix.exit(1)
+                _api.set_plug(_arguments.args[2])
 
-            else if command == "removeplug"
-                pass
+            else if command == "unplug"
+                if _arguments.args.length < 3
+                    stderr.printf("You must provide the plug spec\n")
+                    Posix.exit(1)
+                _api.delete_plug(_arguments.args[2])
 
             else if command == "tracks"
                 pass
@@ -259,7 +265,20 @@ namespace Khovsgol.Client.CLI
                     var cursor_mode = get_string_member_or_null(player, "cursorMode")
                     if cursor_mode is not null
                         indent(1)
-                        stdout.printf("Mode: %s\n", cursor_mode)
+                        stdout.printf("Cursor mode: %s\n", cursor_mode)
+                        
+                    var plugs = get_array_member_or_null(player, "plugs")
+                    if (plugs is not null) and (plugs.get_length() > 0)
+                        indent(1)
+                        stdout.printf("Plugs:\n")
+                        for var plug in new JsonObjects(plugs)
+                            var spec = get_string_member_or_null(plug, "spec")
+                            if spec is not null
+                                indent(2)
+                                stdout.printf("%s\n", spec)
+                    else
+                        indent(1)
+                        stdout.printf("No plugs\n")
                     
                     var track_duration = double.MIN
                     var ratio = double.MIN
@@ -281,16 +300,20 @@ namespace Khovsgol.Client.CLI
                             stdout.printf("Currently %s\n", play_mode)
                             
                     if playlist is not null
-                        for var track in new JsonTracks(get_array_member_or_null(playlist, "tracks"))
+                        var tracks = get_array_member_or_null(playlist, "tracks")
+                        var format = tracks is not null ? aligned_integer_print_format((int) tracks.get_length()) : "%d"
+                        var current_track_format = ">%s: %%s\n".printf(format)
+                        var track_format = " %s: %%s\n".printf(format)
+                        for var track in new JsonTracks(tracks)
                             var position = track.position_in_playlist
                             var path = track.path
                             if path is not null
                                 indent(2)
                                 if position != int.MIN
                                     if position == position_in_playlist
-                                        stdout.printf(">%d: %s\n", position, path)
+                                        stdout.printf(current_track_format, position, path)
                                     else
-                                        stdout.printf(" %d: %s\n", position, path)
+                                        stdout.printf(track_format, position, path)
                                 else
                                     stdout.printf("%s\n", path)
 
@@ -313,8 +336,8 @@ namespace Khovsgol.Client.CLI
         s.append("  cursormode [cursor mode]\n")
         s.append("  addtrack [track path]\n")
         s.append("  removetrack [track path]\n")
-        s.append("  setplug [name] [type] [host] [port]\n")
-        s.append("  removeplug [name]\n")
+        s.append("  plug [spec]\n")
+        s.append("  unplug [spec]\n")
         s.append("\n")
         s.append("Library commands:\n")
         s.append("  (Supported switches: --library=name, --sort=name,name,...)\n")

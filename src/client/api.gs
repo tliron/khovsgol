@@ -1177,6 +1177,24 @@ namespace Khovsgol.Client
                 return null
             if player is null
                 player = watching_player
+            try
+                var conversation = client.create_conversation()
+                conversation.method = Method.GET
+                conversation.path = "/player/{player}/plug/{plug}/"
+                conversation.variables["player"] = player
+                conversation.variables["plug"] = spec
+                if full
+                    conversation.query["fullrepresentation"] = "true"
+                conversation.commit()
+                var entity = conversation.response_json_object
+                if entity is not null
+                    if full
+                        watch(entity)
+                    return entity
+                else
+                    return null
+            except e: GLib.Error
+                on_error(e)
             return null
 
         /*

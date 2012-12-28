@@ -84,11 +84,11 @@ namespace Khovsgol.Server.GStreamer
                 if _pipeline is not null
                     var position = _pipeline.position
                     if position != int64.MIN
-                        return position / 1000000000.0 // convert to seconds
+                        return position / 1000000000.0 // seconds to seconds
                 return double.MIN
             set
                 if _pipeline is not null
-                    var position = (int64) (value * 1000000000.0) // convert to nanoseconds
+                    var position = (int64) (value * 1000000000.0) // seconds to nanoseconds
                     if position < 0
                         position = 0
                     _pipeline.position = position
@@ -113,7 +113,7 @@ namespace Khovsgol.Server.GStreamer
                 if _pipeline is not null
                     var duration = _pipeline.duration
                     if duration != int64.MIN
-                        return duration / 1000000000.0 // convert to seconds
+                        return duration / 1000000000.0 // nanoseconds to seconds
                 return double.MIN
         
         def override set_plug(spec: string): Plug?
