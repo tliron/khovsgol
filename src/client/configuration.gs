@@ -200,9 +200,24 @@ namespace Khovsgol.Client
             except e: KeyFileError
                 return null
 
-        def set_feature_string(name: string, property: string, value: string)
+        def set_feature_string(name: string, property: string, value: string?)
             if value is not null
                 _key_file.set_string("feature." + name, property, value)
+            else
+                try
+                    _key_file.remove_key("feature." + name, property)
+                except e: KeyFileError
+                    pass
+
+        def get_feature_int(name: string, property: string): int
+            try
+                return _key_file.get_integer("feature." + name, property)
+            except e: KeyFileError
+                return int.MIN
+
+        def set_feature_int(name: string, property: string, value: int)
+            if value != int.MIN
+                _key_file.set_integer("feature." + name, property, value)
             else
                 try
                     _key_file.remove_key("feature." + name, property)

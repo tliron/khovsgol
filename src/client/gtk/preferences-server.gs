@@ -6,14 +6,17 @@ uses
 namespace Khovsgol.Client.GTK
 
     class ServerPage: PreferencesPage
-        construct(instance: Instance)
+        construct(instance: Instance, feature: Feature)
             _instance = instance
         
             _autostart = new Autostart("khovsgold", _instance.get_resource("khovsgold.desktop"))
 
             var about = new Label("The program that you are using right now is just a user interface, a \"client.\" The music libraries and music players are actually running in a \"server,\" a separate program that runs in the background.\n\nBy default Khövsgöl connects to your own server, running on your computer. But you can easily connect to other servers in your network, to play music from and browse their libraries.\n\nYou can configure your own server here, and even disable it entirely so that you run only as a client for other servers in your network.")
             about.set_alignment(0, 0)
+            about.use_markup = true
             about.wrap = true
+
+            var active = new FeatureButton(_instance, feature, "My Khövsgöl server currently _on")
 
             var auto_label = new Label.with_mnemonic("A_uto-start my Khövsgöl server:")
             auto_label.set_alignment(0, 0)
@@ -33,6 +36,7 @@ namespace Khovsgol.Client.GTK
             var box = new Box(Orientation.VERTICAL, 10)
             box.pack_start(about, false)
             box.pack_start(new Separator(Orientation.HORIZONTAL), false)
+            box.pack_start(active, false)
             box.pack_start(auto_label, false)
             box.pack_start(with_client, false)
             box.pack_start(stop_with_client_alignment, false)

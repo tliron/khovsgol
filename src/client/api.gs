@@ -1193,7 +1193,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.PUT
                 conversation.path = "/player/{player}/plug/{plug}/"
                 conversation.variables["player"] = player
-                conversation.variables["plug"] = plug
+                conversation.variables["plug"] = spec
                 if full
                     conversation.query["fullrepresentation"] = "true"
                 conversation.commit()
@@ -1219,7 +1219,7 @@ namespace Khovsgol.Client
                 conversation.method = Method.DELETE
                 conversation.path = "/player/{player}/plug/{plug}/"
                 conversation.variables["player"] = player
-                conversation.variables["plug"] = plug
+                conversation.variables["plug"] = spec
                 conversation.commit()
                 return conversation.status_code == StatusCode.OK
             except e: GLib.Error

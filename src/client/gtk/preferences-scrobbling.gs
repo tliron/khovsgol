@@ -6,20 +6,21 @@ uses
 namespace Khovsgol.Client.GTK
 
     class ScrobblingPage: PreferencesPage
-        construct(instance: Instance)
+        construct(instance: Instance, feature: Feature)
             _instance = instance
-
-            unrealize.connect(on_unrealized)
+            _feature = feature
 
             var about = new Label("Note that the Khövsgöl user interface must be running for scrobbling to happen.")
             about.set_alignment(0, 0)
+            about.use_markup = true
             about.wrap = true
             
-            var service = _instance.configuration.get_feature_string("scrobbling", "service")
+            var active = new FeatureButton(_instance, feature, "Currently _active")
 
             var service_label = new Label.with_mnemonic("Scrobbling ser_vice:")
             service_label.set_alignment(0, 0)
             var last_fm = new WrappedRadioButton("Last.fm")
+            var service = _instance.configuration.get_feature_string("scrobbling", "service")
             if (service is null) or (service == "last.fm")
                 last_fm.active = true
             last_fm.clicked.connect(on_last_fm)
@@ -29,43 +30,22 @@ namespace Khovsgol.Client.GTK
             libre_fm.clicked.connect(on_libre_fm)
             service_label.mnemonic_widget = last_fm
 
-            _username = new EntryBox("User_name")
-            var username = _instance.configuration.get_feature_string("scrobbling", "username")
-            if username is not null
-                _username.entry.text = username
-            _password = new EntryBox("_Password")
+            _username = new ConnectedEntryBox("User_name", _instance.configuration, "scrobbling", "username")
+            _password = new ConnectedEntryBox("_Password", _instance.configuration, "scrobbling", "password")
             _password.entry.visibility = false
-            var password = _instance.configuration.get_feature_string("scrobbling", "password")
-            if password is not null
-                _password.entry.text = password
             
-            _start = new Button.with_mnemonic("Tu_rn on scrobbling")
-            _start.sensitive = false
-            _start.clicked.connect(on_start)
-            _stop = new Button.with_mnemonic("Turn o_ff scrobbling")
-            _stop.sensitive = false
-            _stop.clicked.connect(on_stop)
-
             var box = new Box(Orientation.VERTICAL, 10)
             box.pack_start(about, false)
             box.pack_start(new Separator(Orientation.HORIZONTAL), false)
+            box.pack_start(active, false)
             box.pack_start(service_label, false)
             box.pack_start(last_fm, false)
             box.pack_start(libre_fm, false)
             box.pack_start(_username, false)
             box.pack_start(_password, false)
-            box.pack_start(_start, false)
-            box.pack_start(_stop, false)
 
             set_padding(10, 10, 10, 10)
             add(box)
-
-            update()
-            _update_id = Timeout.add_seconds(1, update)
-
-        def private on_unrealized()
-            Source.remove(_update_id)
-            save(_instance.configuration.is_feature_active("scrobbling"))
 
         def private on_last_fm()
             _instance.configuration.set_feature_string("scrobbling", "service", "last.fm")
@@ -75,42 +55,7 @@ namespace Khovsgol.Client.GTK
             _instance.configuration.set_feature_string("scrobbling", "service", "libre.fm")
             _instance.configuration.save()
 
-        def private on_start()
-            var feature = _instance.get_feature("scrobbling")
-            if feature is not null
-                _start.sensitive = false
-                save(true)
-                feature.start()
-        
-        def private on_stop()
-            var feature = _instance.get_feature("scrobbling")
-            if feature is not null
-                save(false)
-                feature.stop()
-        
-        def private save(active: bool)
-            var username = _username.entry.text
-            var password = _password.entry.text
-            if (username != _instance.configuration.get_feature_string("scrobbling", "username")) or (password != _instance.configuration.get_feature_string("scrobbling", "password")) or (active != _instance.configuration.is_feature_active("scrobbling"))
-                _instance.configuration.set_feature_string("scrobbling", "username", username)
-                _instance.configuration.set_feature_string("scrobbling", "password", password)
-                _instance.configuration.set_feature_active("scrobbling", active)
-                _instance.configuration.save()
-
-        _update_id: uint
-        def private update(): bool
-            var feature = _instance.get_feature("scrobbling")
-            if feature is not null
-                var state = feature.state
-                _start.sensitive = state == FeatureState.STOPPED
-                _stop.sensitive = state == FeatureState.STARTED
-            else
-                _start.sensitive = false
-                _start.sensitive = false
-            return true
-
         _instance: Instance
-        _username: EntryBox
-        _password: EntryBox
-        _start: Button
-        _stop: Button
+        _feature: Feature
+        _username: PreferencesPage.ConnectedEntryBox
+        _password: PreferencesPage.ConnectedEntryBox

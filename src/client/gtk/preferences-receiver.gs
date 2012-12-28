@@ -6,14 +6,19 @@ uses
 namespace Khovsgol.Client.GTK
 
     class ReceiverPage: PreferencesPage
-        construct(instance: Instance)
+        construct(instance: Instance, feature: Feature)
             _instance = instance
         
             _autostart = new Autostart("khovsgolr", _instance.get_resource("khovsgolr.desktop"))
 
-            var about = new Label("Your receiver is used to listen to music from <i>other</i> servers in your network: you do <i>not</i> need it running if you are only listening to music locally.\n\nNote that the receiver can be running even if Khövsgöl isn't.")
+            var about = new Label("Your receiver is used to listen to music from <i>other</i> servers in your network: you do <i>not</i> need it running if you are only listening to music locally.\n\nNote that the receiver can be running even if Khövsgöl isn't.\n\nIncreasing the latency from the 200 millisecond default can help overcome slow or congested networks, though be aware that it will introduce a delay for when sound comes out on your end.")
             about.set_alignment(0, 0)
+            about.use_markup = true
             about.wrap = true
+
+            var active = new FeatureButton(_instance, feature, "My Khövsgöl receiver currently _on")
+            var latency = new ConnectedEntryBox("_Latency (in milliseconds)", _instance.receiver_configuration, null, "player_latency", true)
+            // TOD: if the latency changes, we should ask the user if they want to restart the receiver
 
             var auto_label = new Label.with_mnemonic("A_uto-start my Khövsgöl receiver:")
             auto_label.set_alignment(0, 0)
@@ -27,10 +32,12 @@ namespace Khovsgol.Client.GTK
             _autostart_with_session.clicked.connect(on_autostart_with_session)
             var disable_auto = new ConnectedRadioButton("Don\'t auto-start my receiver", with_client, _instance.configuration, "receiver", "autostart", true)
             auto_label.mnemonic_widget = with_client
-
+            
             var box = new Box(Orientation.VERTICAL, 10)
             box.pack_start(about, false)
             box.pack_start(new Separator(Orientation.HORIZONTAL), false)
+            box.pack_start(active, false)
+            box.pack_start(latency, false)
             box.pack_start(auto_label, false)
             box.pack_start(with_client, false)
             box.pack_start(stop_with_client_alignment, false)

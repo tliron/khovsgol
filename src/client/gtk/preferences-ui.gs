@@ -9,6 +9,7 @@ namespace Khovsgol.Client.GTK
         construct(instance: Instance)
             var about = new Label("Khövsgöl aims to be easy to use, but we all have our preferences. You can tweak the user interface here.")
             about.set_alignment(0, 0)
+            about.use_markup = true
             about.wrap = true
 
             var show_duration = new ConnectedCheckButton("Show track _durations", null, instance.configuration, null, "show_duration")
