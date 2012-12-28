@@ -116,19 +116,44 @@ namespace Khovsgol.Server.GStreamer
                         return duration / 1000000000.0 // nanoseconds to seconds
                 return double.MIN
         
-        def override set_plug(spec: string): Plug?
-            var plug = get_plug(spec)
+        def override validate_spec(spec: string, default_host: string?): string?
+            if spec == "pulse"
+                return spec
+            else if spec.has_prefix("pulse:")
+                var specs = spec.substring(6).split(":")
+                if specs.length > 0
+                    return spec
+                else
+                    return spec + default_host
+            else if spec == "alsa"
+                return spec
+            else if spec == "jack"
+                return spec
+            else if spec.has_prefix("rtpL16:")
+                var specs = spec.substring(7).split(":")
+                if specs.length > 0
+                    var transport = specs[0]
+                    if transport == "udp"
+                        if specs.length > 1
+                            if specs.length > 2
+                                return spec
+                            else
+                                return spec + ":" + default_host
+            return null
+
+        def override set_plug(spec: string, default_host: string?): Plug?
+            var plug = get_plug(spec, default_host)
             if plug is null
-                plug = super.set_plug(spec)
+                plug = super.set_plug(spec, default_host)
                 if _pipeline is not null
                     var branch = create_branch(plug)
                     if branch is not null
                         _pipeline.add_branch(branch)
                 
             return plug
-        
-        def override remove_plug(spec: string): bool
-            return super.remove_plug(spec)
+
+        def override remove_plug(spec: string, default_host: string?): bool
+            return super.remove_plug(spec, default_host)
 
         def private validate_pipeline(): bool
             if _pipeline is not null

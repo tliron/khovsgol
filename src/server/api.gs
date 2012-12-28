@@ -801,8 +801,8 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
 
-            var spec = conversation.variables["plug"] + ":" + conversation.peer
-            var plug = player.get_plug(spec)
+            var spec = conversation.variables["plug"]
+            var plug = player.get_plug(spec, conversation.peer)
         
             if plug is not null
                 if conversation.query["fullrepresentation"] == "true"
@@ -821,8 +821,8 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
 
-            var spec = conversation.variables["plug"] + ":" + conversation.peer
-            var plug = player.set_plug(spec)
+            var spec = conversation.variables["plug"]
+            var plug = player.set_plug(spec, conversation.peer)
         
             if plug is not null
                 if conversation.query["fullrepresentation"] == "true"
@@ -838,8 +838,8 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
 
-            var spec = conversation.variables["plug"] + ":" + conversation.peer
-            if not player.remove_plug(spec)
+            var spec = conversation.variables["plug"]
+            if not player.remove_plug(spec, conversation.peer)
                 conversation.status_code = StatusCode.NOT_FOUND
         
         _crucible: Crucible

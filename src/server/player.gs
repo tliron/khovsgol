@@ -262,32 +262,40 @@ namespace Khovsgol.Server
             // Default to point nowhere
             position_in_playlist = int.MIN
         
-        def virtual get_plug(spec: string): Plug?
-            for var plug in _plugs
-                if plug.spec == spec
-                    return plug
+        def abstract validate_spec(spec: string, default_host: string?): string?
+        
+        def virtual get_plug(spec: string, default_host: string?): Plug?
+            var valid_spec = validate_spec(spec, default_host)
+            if valid_spec is not null
+                for var plug in _plugs
+                    if plug.spec == valid_spec
+                        return plug
             return null
         
-        def virtual set_plug(spec: string): Plug?
-            var plug = get_plug(spec)
+        def virtual set_plug(spec: string, default_host: string?): Plug?
+            var plug = get_plug(spec, default_host)
             if plug is null
-                plug = new Plug(spec)
-                _plugs.add(plug)
-                _configuration.add_plug(_name, spec)
-                _configuration.save()
-                _logger.messagef("Set plug: %s, %s", _name, spec)
+                var valid_spec = validate_spec(spec, default_host)
+                if valid_spec is not null
+                    plug = new Plug(valid_spec)
+                    _plugs.add(plug)
+                    _configuration.add_plug(_name, valid_spec)
+                    _configuration.save()
+                    _logger.messagef("Set plug: %s, %s", _name, valid_spec)
             return plug
         
-        def virtual remove_plug(spec: string): bool
-            var i = _plugs.iterator()
-            while i.next()
-                var plug = i.@get()
-                    if plug.spec == spec
-                        i.remove()
-                        _configuration.delete_plug(_name, spec)
-                        _configuration.save()
-                        _logger.messagef("Removed plug: %s, %s", _name, spec)
-                        return true
+        def virtual remove_plug(spec: string, default_host: string?): bool
+            var valid_spec = validate_spec(spec, default_host)
+            if valid_spec is not null
+                var i = _plugs.iterator()
+                while i.next()
+                    var plug = i.@get()
+                        if plug.spec == valid_spec
+                            i.remove()
+                            _configuration.delete_plug(_name, valid_spec)
+                            _configuration.save()
+                            _logger.messagef("Removed plug: %s, %s", _name, valid_spec)
+                            return true
             return false
         
         def to_json(): Json.Object

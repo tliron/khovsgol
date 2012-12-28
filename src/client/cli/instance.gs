@@ -25,23 +25,18 @@ namespace Khovsgol.Client.CLI
                 pass
 
             else if command == "play"
-                _api.set_plug("pulse")
                 print_player(_api.set_play_mode("playing"))
 
             else if command == "stop"
-                _api.set_plug("pulse")
                 print_player(_api.set_play_mode("stopped"))
 
             else if command == "pause"
-                _api.set_plug("pulse")
                 print_player(_api.set_play_mode("toggle_paused"))
 
             else if command == "next"
-                _api.set_plug("pulse")
                 print_player(_api.set_position_in_playlist_string("next"))
 
             else if command == "prev"
-                _api.set_plug("pulse")
                 print_player(_api.set_position_in_playlist_string("prev"))
 
             else if command == "cursor"
@@ -49,7 +44,6 @@ namespace Khovsgol.Client.CLI
                     stderr.printf("You must provide the position (a number)\n")
                     Posix.exit(1)
                 var position = int.parse(_arguments.args[2])
-                _api.set_plug("pulse")
                 print_player(_api.set_position_in_playlist(position))
 
             else if command == "trackposition"
@@ -65,7 +59,6 @@ namespace Khovsgol.Client.CLI
                     stderr.printf("You must provide the ratio (a decimal)\n")
                     Posix.exit(1)
                 var ratio = double.parse(_arguments.args[2])
-                _api.set_plug("pulse")
                 print_player(_api.set_ratio_in_track(ratio))
 
             else if command == "cursormode"
@@ -85,7 +78,7 @@ namespace Khovsgol.Client.CLI
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the plug spec\n")
                     Posix.exit(1)
-                _api.set_plug(_arguments.args[2])
+                print_player(_api.set_plug(_arguments.args[2], null, true))
 
             else if command == "unplug"
                 if _arguments.args.length < 3

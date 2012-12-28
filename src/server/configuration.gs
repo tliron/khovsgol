@@ -136,7 +136,7 @@ namespace Khovsgol.Server
                 if _players.is_empty
                     for group in _key_file.get_groups()
                         if group.has_prefix("player.")
-                            var player = group.substring(8)
+                            var player = group.substring(7)
                             _players.add(player)
                 return _players
         
