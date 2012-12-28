@@ -12,8 +12,7 @@ namespace Khovsgol.Receiver
     
         /*
          * receive {
-         *  spec: string,
-         *  caps: string?
+         *  spec: string
          * }
          */
         def get_receiver(conversation: Conversation)
@@ -49,14 +48,12 @@ namespace Khovsgol.Receiver
             if entity is not null
                 var spec = get_string_member_or_null(entity, "spec")
                 if spec is not null
-                    var caps = get_string_member_or_null(entity, "caps")
-                    
                     var player = _instance.player
-                    if (player is not null) and (player.spec == spec) and (player.caps == caps)
+                    if (player is not null) and (player.spec == spec)
                         // Don't create the same player twice
                         return
                     
-                    _instance.player = player = create_player(_instance.configuration, spec, caps)
+                    _instance.player = player = create_player(_instance.configuration, spec)
                     if player is not null
                         player.play()
                         conversation.response_json_object = player.to_json()

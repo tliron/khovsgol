@@ -791,7 +791,9 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.BAD_REQUEST
 
         /*
-         * TODO
+         * receive {
+         *  spec: string
+         * }
          */
         def get_plug(conversation: Conversation) raises GLib.Error
             var player = _crucible.players.get_or_create_player(conversation.variables["player"])
@@ -799,8 +801,8 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
 
-            var spec = conversation.variables["plug"]
-            var plug = player.get_plug(spec, conversation.peer)
+            var spec = conversation.variables["plug"] + ":" + conversation.peer
+            var plug = player.get_plug(spec)
         
             if plug is not null
                 if conversation.query["fullrepresentation"] == "true"
@@ -819,8 +821,8 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
 
-            var spec = conversation.variables["plug"]
-            var plug = player.set_plug(spec, conversation.peer)
+            var spec = conversation.variables["plug"] + ":" + conversation.peer
+            var plug = player.set_plug(spec)
         
             if plug is not null
                 if conversation.query["fullrepresentation"] == "true"
@@ -836,8 +838,8 @@ namespace Khovsgol.Server
                 conversation.status_code = StatusCode.NOT_FOUND
                 return
 
-            var spec = conversation.variables["plug"]
-            if not player.remove_plug(spec, conversation.peer)
+            var spec = conversation.variables["plug"] + ":" + conversation.peer
+            if not player.remove_plug(spec)
                 conversation.status_code = StatusCode.NOT_FOUND
         
         _crucible: Crucible

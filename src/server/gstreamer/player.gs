@@ -21,8 +21,7 @@ namespace Khovsgol.Server.GStreamer
                             source: dynamic Element =_pipeline.get_by_name("Source")
                             if source is not null
                                 source.location = _path
-                                _pipeline.state = State.PLAYING
-        
+
         prop override volume: double
             get
                 if _pipeline is not null
@@ -117,10 +116,10 @@ namespace Khovsgol.Server.GStreamer
                         return duration / 1000000000.0 // convert to seconds
                 return double.MIN
         
-        def override set_plug(spec: string, host: string): Plug?
-            var plug = get_plug(spec, host)
+        def override set_plug(spec: string): Plug?
+            var plug = get_plug(spec)
             if plug is null
-                plug = super.set_plug(spec, host)
+                plug = super.set_plug(spec)
                 if _pipeline is not null
                     var branch = create_branch(plug)
                     if branch is not null
@@ -128,8 +127,8 @@ namespace Khovsgol.Server.GStreamer
                 
             return plug
         
-        def override remove_plug(spec: string, host: string): bool
-            return super.remove_plug(spec, host)
+        def override remove_plug(spec: string): bool
+            return super.remove_plug(spec)
 
         def private validate_pipeline(): bool
             if _pipeline is not null
@@ -199,7 +198,9 @@ namespace Khovsgol.Server.GStreamer
                     if transport == "udp"
                         if specs.length > 1
                             var http_port = int.parse(specs[1])
-                            return create_rtpL16_branch(spec, plug.host, http_port, http_port + 1)
+                            if specs.length > 2
+                                var host = specs[2]
+                                return create_rtpL16_branch(spec, host, http_port, http_port + 1)
             return null
 
         def private create_pulse_branch(name: string, server: string? = null): Bin
@@ -237,7 +238,7 @@ namespace Khovsgol.Server.GStreamer
             bin.add_pad(new GhostPad("sink", valve.get_static_pad("sink")))
             return bin
         
-        def private put_receiver(host: string, http_port: uint, spec: string, caps: string? = null)
+        def private put_receiver(host: string, http_port: uint, spec: string)
             var client = new Nap._Soup.Client()
             client.base_url = "http://%s:%u".printf(host, http_port)
             try
@@ -246,8 +247,6 @@ namespace Khovsgol.Server.GStreamer
                 conversation.path = "/receiver/"
                 var payload = new Json.Object()
                 payload.set_string_member("spec", spec)
-                if caps is not null
-                    payload.set_string_member("caps", caps)
                 conversation.request_json_object = payload
                 conversation.commit(true)
             except e: GLib.Error
@@ -273,7 +272,7 @@ namespace Khovsgol.Server.GStreamer
                                 var udp_port = int.parse(specs[4])
                                 var sink = source.get_static_pad("sink")
                                 var caps = sink.caps.to_string()
-                                put_receiver(host, http_port, "rtpL16:udp:%u".printf(udp_port), caps)
+                                put_receiver(host, http_port, "rtpL16:udp:%u:%s".printf(udp_port, caps))
         
         def private on_state_changed(source: Gst.Object, old_state: State, new_state: State, pending_state: State)
             if (new_state == State.PLAYING) and source.name.has_prefix("RemoteSink:")

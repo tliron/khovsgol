@@ -41,15 +41,14 @@ namespace Khovsgol.Receiver
             set
                 _player = value
                 if _player is not null
-                    if (_configuration.player_spec != _player.spec) or (_configuration.player_caps != _player.caps)
+                    if _configuration.player_spec != _player.spec
                         _configuration.player_spec = _player.spec
-                        _configuration.player_caps = _player.caps
                         _configuration.save()
             
         def start()
             var player_spec = _configuration.player_spec
                 if player_spec is not null
-                    _player = create_player(_configuration, player_spec, _configuration.player_caps)
+                    _player = create_player(_configuration, player_spec)
                     if _player is not null
                         _player.play()
             

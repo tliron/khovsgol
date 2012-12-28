@@ -74,21 +74,6 @@ namespace Khovsgol.Receiver
                     except e: KeyFileError
                         pass
 
-        prop player_caps: string?
-            owned get
-                try
-                    return _key_file.get_string("player", "caps")
-                except e: KeyFileError
-                    return null
-            set
-                if (value is not null) and (value.length > 0)
-                    _key_file.set_string("player", "caps", value)
-                else
-                    try
-                        _key_file.remove_key("player", "caps")
-                    except e: KeyFileError
-                        pass
-        
         /*
          * Saves the configuration.
          */

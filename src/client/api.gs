@@ -1167,9 +1167,11 @@ namespace Khovsgol.Client
                 return null
 
         /*
-         * TODO
+         * receive {
+         *  spec: string
+         * }
          */
-        def get_plug(plug: string, player: string? = null, full: bool = false): Json.Object?
+        def get_plug(spec: string, player: string? = null, full: bool = false): Json.Object?
             var client = get_client()
             if client is null
                 return null
@@ -1180,7 +1182,7 @@ namespace Khovsgol.Client
         /*
          * receive =get_plug
          */
-        def set_plug(plug: string, player: string? = null, full: bool = false): Json.Object?
+        def set_plug(spec: string, player: string? = null, full: bool = false): Json.Object?
             var client = get_client()
             if client is null
                 return null
@@ -1206,7 +1208,7 @@ namespace Khovsgol.Client
                 on_error(e)
                 return null
 
-        def delete_plug(plug: string, player: string? = null): bool
+        def delete_plug(spec: string, player: string? = null): bool
             var client = get_client()
             if client is null
                 return false

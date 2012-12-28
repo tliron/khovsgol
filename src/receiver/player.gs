@@ -10,23 +10,22 @@ namespace Khovsgol.Receiver
     /*
      * Supported specs:
      * 
-     * rtpL16:udp:[port]
+     * rtpL16:udp:[port]:[caps]
      */
-    def private create_player(configuration: Configuration, spec: string, caps: string?): Player?
+    def private create_player(configuration: Configuration, spec: string): Player?
         player: Player? = null
         if spec.has_prefix("rtpL16:")
-            if caps is not null // requires caps
-                var specs = spec.substring(7).split(":")
-                if specs.length > 0
-                    var transport = specs[0]
-                    if transport == "udp"
-                        if specs.length > 1
-                            var port = int.parse(specs[1])
-                            player = new PlayerRtpL16(configuration, port, caps)
+            var specs = spec.substring(7).split(":")
+            if specs.length > 0
+                var transport = specs[0]
+                if transport == "udp"
+                    if specs.length > 2
+                        var port = int.parse(specs[1])
+                        var caps = specs[2]
+                        player = new PlayerRtpL16(configuration, port, caps)
         
         if player is not null
             player.spec = spec
-            player.caps = caps
         return player
 
     /*
@@ -38,7 +37,6 @@ namespace Khovsgol.Receiver
                 _pipeline.kill()
     
         prop spec: string?
-        prop caps: string?
 
         prop pipeline: GstUtil.Pipeline?
             get
@@ -74,7 +72,6 @@ namespace Khovsgol.Receiver
         def to_json(): Json.Object
             var json = new Json.Object()
             set_string_member_not_null(json, "spec", _spec)
-            set_string_member_not_null(json, "caps", _caps)
             return json
 
         def private on_error(source: Gst.Object, error: GLib.Error, text: string)

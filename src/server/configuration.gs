@@ -85,7 +85,7 @@ namespace Khovsgol.Server
                 _key_file.remove_group("library." + library)
             except e: KeyFileError
                 pass
-        
+
         /*
          * Directory paths for a library.
          */
@@ -129,6 +129,105 @@ namespace Khovsgol.Server
                 pass
         
         /*
+         * Names of players.
+         */
+        prop readonly players: list of string
+            get
+                if _players.is_empty
+                    for group in _key_file.get_groups()
+                        if group.has_prefix("player.")
+                            var player = group.substring(8)
+                            _players.add(player)
+                return _players
+        
+        def add_player(player: string)
+            _key_file.set_string_list("player." + player, "plugs", new array of string[0])
+        
+        def delete_player(player: string)
+            try
+                _key_file.remove_group("player." + player)
+            except e: KeyFileError
+                pass
+                
+        /*
+         * Player's position in playlist.
+         */
+        def get_position_in_playlist(player: string): int
+            try
+                return _key_file.get_integer("player." + player, "position-in-playlist")
+            except e: KeyFileError
+                return int.MIN
+
+        def set_position_in_playlist(player: string, position_in_playlist: int)
+            if position_in_playlist != int.MIN
+                _key_file.set_integer("player." + player, "position-in-playlist", position_in_playlist)
+            else
+                try
+                    _key_file.remove_key("player." + player, "position-in-playlist")
+                except e: KeyFileError
+                    pass
+
+        /*
+         * Player's play mode.
+         */
+        def get_play_mode(player: string): string?
+            try
+                return _key_file.get_string("player." + player, "play-mode")
+            except e: KeyFileError
+                return null
+
+        def set_play_mode(player: string, play_mode: string?)
+            if play_mode is not null
+                _key_file.set_string("player." + player, "play-mode", play_mode)
+            else
+                try
+                    _key_file.remove_key("player." + player, "play-mode")
+                except e: KeyFileError
+                    pass
+
+        /*
+         * Plugs for a player.
+         */
+        def get_plugs(player: string): list of string
+            var plugs = new list of string
+            try
+                for var plug in _key_file.get_string_list("player." + player, "plugs")
+                    plugs.add(plug)
+            except e: KeyFileError
+                pass
+            return plugs
+
+        def add_plug(player: string, plug: string)
+            var group = "player." + player
+            plugs: array of string
+            try
+                plugs = _key_file.get_string_list(group, "plugs")
+            except e: KeyFileError
+                plugs = new array of string[0]
+            var new_plugs = new array of string[plugs.length + 1]
+            var i = 0
+            for var e in plugs
+                new_plugs[i++] = e
+            new_plugs[i] = plug
+            _key_file.set_string_list(group, "plugs", new_plugs)
+
+        def delete_plug(player: string, plug: string)
+            try
+                var group = "player." + player
+                var plugs = _key_file.get_string_list(group, "plugs")
+                var new_plugs = new array of string[plugs.length - 1]
+                var i = 0
+                found: bool = false
+                for var e in plugs
+                    if not found and (e == plug)
+                        found = true
+                        continue
+                    new_plugs[i++] = e
+                _key_file.set_string_list(group, "plugs", new_plugs)
+            except e: KeyFileError
+                pass
+
+        /*
          * Saves the configuration.
          */
         def save(): bool
@@ -145,6 +244,7 @@ namespace Khovsgol.Server
         _file: string
         _key_file: KeyFile
         _libraries: list of string = new list of string
+        _players: list of string = new list of string
         
         _logger: static Logging.Logger
 

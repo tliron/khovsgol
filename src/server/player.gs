@@ -89,14 +89,21 @@ namespace Khovsgol.Server
 
     class Players: Object implements HasJsonArray
         prop crucible: Crucible
+        prop configuration: Configuration
         prop players: dict of string, Player = new dict of string, Player
+    
+        def virtual initialize()
+            for var name in _configuration.players
+                get_or_create_player(name)
          
         def get_or_create_player(name: string): Player
             var player = _players[name]
             if player is null
                 _players[name] = player = crucible.create_player()
+                player.crucible = _crucible
+                player.configuration = _configuration
                 player.name = name
-                _logger.messagef("Created player: %s", name)
+                player.initialize()
             return player
 
         def to_json(): Json.Array
@@ -107,6 +114,7 @@ namespace Khovsgol.Server
             cursor_mode = CursorMode.PLAY_LIST
     
         prop crucible: Crucible
+        prop configuration: Configuration
         prop name: string
         prop plugs: Gee.Iterable of Plug
             get
@@ -140,6 +148,11 @@ namespace Khovsgol.Server
                     else
                         var track = tracks[_position_in_playlist - 1]
                         path = track.path
+                        play_mode = PlayMode.PLAYING
+                
+                if _position_in_playlist != _configuration.get_position_in_playlist(_name)
+                    _configuration.set_position_in_playlist(_name, _position_in_playlist)
+                    _configuration.save()
 
         prop abstract path: string?
         prop abstract volume: double
@@ -149,6 +162,24 @@ namespace Khovsgol.Server
         prop abstract ratio_in_track: double
         prop abstract readonly track_duration: double
         
+        def virtual initialize()
+            for var spec in _configuration.get_plugs(_name)
+                var plug = new Plug(spec)
+                _plugs.add(plug)
+            
+            _position_in_playlist = _configuration.get_position_in_playlist(_name)
+
+            var tracks = playlist.tracks
+            if _position_in_playlist > tracks.size
+                _position_in_playlist = int.MIN
+            else if _position_in_playlist > 0
+                var track = tracks[_position_in_playlist - 1]
+                path = track.path
+
+            var play_mode = _configuration.get_play_mode(_name)
+            if play_mode is not null
+                self.play_mode = get_play_mode_from_name(play_mode)
+         
         def prev()
             // TODO: different behavior for shuffle...
         
@@ -228,24 +259,30 @@ namespace Khovsgol.Server
             // Default to point nowhere
             position_in_playlist = int.MIN
         
-        def virtual get_plug(spec: string, host: string): Plug?
+        def virtual get_plug(spec: string): Plug?
             for var plug in _plugs
-                if (plug.spec == spec) and (plug.host == host)
+                if plug.spec == spec
                     return plug
             return null
         
-        def virtual set_plug(spec: string, host: string): Plug?
-            var plug = new Plug(spec, host)
-            _plugs.add(plug)
-            _logger.messagef("Set plug: %s, %s, %s", _name, spec, host)
+        def virtual set_plug(spec: string): Plug?
+            var plug = get_plug(spec)
+            if plug is null
+                plug = new Plug(spec)
+                _plugs.add(plug)
+                _configuration.add_plug(_name, spec)
+                _configuration.save()
+                _logger.messagef("Set plug: %s, %s", _name, spec)
             return plug
         
-        def virtual remove_plug(spec: string, host: string): bool
+        def virtual remove_plug(spec: string): bool
             var i = _plugs.iterator()
             while i.next()
                 var plug = i.@get()
-                    if (plug.spec == spec) and (plug.host == host)
+                    if plug.spec == spec
                         i.remove()
+                        _configuration.delete_plug(_name, spec)
+                        _configuration.save()
                         _logger.messagef("Removed plug: %s, %s", _name, spec)
                         return true
             return false
@@ -277,15 +314,12 @@ namespace Khovsgol.Server
     //
     
     class Plug: Object implements HasJsonObject
-        construct(spec: string, host: string)
+        construct(spec: string)
             _spec = spec
-            _host = host
         
         prop spec: string
-        prop host: string
         
         def to_json(): Json.Object
             var json = new Json.Object()
             set_string_member_not_null(json, "spec", _spec)
-            set_string_member_not_null(json, "host", _host)
             return json

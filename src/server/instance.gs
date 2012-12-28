@@ -34,6 +34,7 @@ namespace Khovsgol.Server
             _libraries = create_libraries()
             _libraries.initialize()
             _players = create_players()
+            _players.initialize()
 
             _api = new Api(self)
             _uri_space = new UriSpace(_api)
@@ -71,6 +72,7 @@ namespace Khovsgol.Server
         def create_players(): Players
             var players = new Players()
             players.crucible = self
+            players.configuration = _configuration
             return players
                         
         def create_library(): Library
@@ -87,6 +89,7 @@ namespace Khovsgol.Server
         def create_player(): Player
             var player = new GStreamer.Player()
             player.crucible = self
+            player.configuration = _configuration
             return player
             
         def create_playlist(): Playlist
