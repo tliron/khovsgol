@@ -169,6 +169,7 @@ namespace Khovsgol.Server
             for var spec in _configuration.get_plugs(_name)
                 var plug = new Plug(spec)
                 _plugs.add(plug)
+                _logger.messagef("Set plug: %s, %s", _name, spec)
             
             _position_in_playlist = _configuration.get_position_in_playlist(_name)
 

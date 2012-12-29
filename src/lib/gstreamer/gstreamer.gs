@@ -11,13 +11,31 @@ namespace GstUtil
             weak_arguments: weak array of string = arguments
             Gst.init(ref weak_arguments)
             _initialized = true
-            Logging.get_logger("gstreamer").messagef("Initialized %s", Gst.version_string())
+            _logger = Logging.get_logger("gstreamer")
+            _logger.messagef("Initialized %s", Gst.version_string())
 
     def list_element_factories()
         var l = ElementFactory.list_get_elements(ElementFactoryType.ANY, Rank.PRIMARY)
         for var e in l
             print e.get_name()
+
+    def link_on_demand(element: Element, next: Element, pad_type: string = "audio/x-raw", once: bool = false)
+        new LinkOnDemand(element, next, pad_type, once)
     
+    /*
+     * Enhanced Pipeline class.
+     * 
+     * Important: pipelines are not allowed to be detroyed if their state is not null,
+     * and unfortunately setting the state is not necessarily synchronous. The correct
+     * way to derefence a pipeline is:
+     * 
+     *  var pipeline = new Pipeline("Player")
+     *  ...
+     *  pipeline.kill()
+     *  pipline = null
+     * 
+     * Or, just use the PipelineContainer class, which will make sure to call kill().
+     */
     class Pipeline: Gst.Pipeline
         construct(name: string)
             initialize()
@@ -30,22 +48,32 @@ namespace GstUtil
             bus.message.connect(on_message)
         
         def kill()
-            // We are not allowed to die if the state is not null
             if state != State.NULL
-                ref()
-                _dying = true
-                state = State.NULL
-
-        prop readonly ownerships: list of GLib.Object = new list of GLib.Object
+                var result = set_state(State.NULL)
+                if result == StateChangeReturn.ASYNC
+                    // We'll have to do it later
+                    _logger.infof("Killing pipeline: %s", name)
+                    ref()
+                    _dying = true
+                else if result == StateChangeReturn.SUCCESS
+                    _logger.infof("Killed pipeline: %s", name)
+                else
+                    // This is bad! We'll keep the pipeline in memory to avoid
+                    // failure, but it is a memory leak...
+                    _logger.warningf("Could not kill pipeline: %s", name)
+                    ref()
+            else
+                _logger.infof("Killed pipeline: %s", name)
 
         prop state: State
             get
-                state: State
+                return current_state
+                /*state: State
                 pending_state: State
                 if get_state(out state, out pending_state, CLOCK_TIME_NONE) == StateChangeReturn.SUCCESS
                     return state
                 else
-                    return State.VOID_PENDING
+                    return State.VOID_PENDING*/
             set
                 set_state(value)
 
@@ -72,7 +100,7 @@ namespace GstUtil
         event eos(source: Gst.Object)
         event tag(tag_list: TagList)
         event error(source: Gst.Object, error: GLib.Error, text: string)
-
+        
         def add_branch(branch: Bin)
             add(branch)
             
@@ -99,6 +127,7 @@ namespace GstUtil
                 pending_state: State
                 message.parse_state_changed(out old_state, out new_state, out pending_state)
                 if _dying and (new_state == State.NULL)
+                    _logger.infof("Pipeline died: %s", name)
                     _dying = false
                     unref()
                     return
@@ -119,27 +148,43 @@ namespace GstUtil
 
         _dying: bool
 
-    class LinkDecodeBinLater: GLib.Object
-        construct(decodebin: dynamic Element, next: Element, once: bool = false)
+    /*
+     * Makes sure to kill() the pipeline when finalized.
+     */
+    class PipelineContainer: GLib.Object
+        construct(pipeline: Pipeline)
+            _pipeline = pipeline
+    
+        final
+            _pipeline.kill()
+    
+        prop readonly pipeline: Pipeline
+
+    class private LinkOnDemand: GLib.Object
+        construct(element: dynamic Element, next: Element, pad_type: string, once: bool)
             _next = next
+            _pad_type = pad_type
             _once = once
-            if _once
-                ref() // We keep a ref until our pad is added
-            decodebin.pad_added.connect(on_pad_added)
+            element.pad_added.connect(on_pad_added)
+            element.set_data("GstUtil.LinkOnDemand", self)
 
         def on_pad_added(element: dynamic Element, pad: Pad)
-            var name = pad.query_caps(null).get_structure(0).get_name()
-            if name == "audio/x-raw"
-                pad.link(_next.get_static_pad("sink"))
+            var caps = pad.query_caps(null)
+            if caps is not null
+                var structure = caps.get_structure(0)
+                if structure is not null
+                    var name = structure.get_name()
+                    if name == _pad_type
+                        pad.link(_next.get_static_pad("sink"))
                 
-            if _once
-                // Pad added, no need for us to exist anymore
-                element.pad_added.disconnect(on_pad_added)
-                unref()
-                
-            // TODO: we need this owned somewhere!!!
+                        if _once
+                            element.pad_added.disconnect(on_pad_added)
+                            element.set_data("GstUtil.LinkOnDemand", null)
         
         _next: Element
+        _pad_type: string
         _once: bool
+        
+    _logger: Logging.Logger
 
     _initialized: private bool = false

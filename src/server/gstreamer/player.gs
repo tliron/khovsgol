@@ -8,71 +8,83 @@ uses
 namespace Khovsgol.Server.GStreamer
 
     class Player: Khovsgol.Server.Player
+        prop readonly pipeline: GstUtil.Pipeline?
+            get
+                if _pipeline_container is not null
+                    return _pipeline_container.pipeline
+                else
+                    return null
+    
         prop override path: string?
             get
                 return _path
             set
                 if _path != value
                     _path = value
-                    if _pipeline is not null
-                        _pipeline.state = State.NULL
+                    var pipeline = self.pipeline
+                    if pipeline is not null
+                        pipeline.state = State.NULL
                     if _path is not null
                         if validate_pipeline()
-                            source: dynamic Element =_pipeline.get_by_name("Source")
+                            source: dynamic Element = pipeline.get_by_name("Source")
                             if source is not null
                                 source.location = _path
 
         prop override volume: double
             get
-                if _pipeline is not null
-                    volume: dynamic Element =_pipeline.get_by_name("Volume")
+                var pipeline = self.pipeline
+                if pipeline is not null
+                    volume: dynamic Element = pipeline.get_by_name("Volume")
                     if volume is not null
                         value: double = volume.volume
                         var converted = StreamVolume.convert_volume(StreamVolumeFormat.LINEAR, StreamVolumeFormat.CUBIC, value)
                         return converted
                 return double.MIN
             set
-                if _pipeline is not null
-                    volume: dynamic Element =_pipeline.get_by_name("Volume")
+                var pipeline = self.pipeline
+                if pipeline is not null
+                    volume: dynamic Element = pipeline.get_by_name("Volume")
                     if volume is not null
                         var converted = StreamVolume.convert_volume(StreamVolumeFormat.CUBIC, StreamVolumeFormat.LINEAR, value)
                         volume.volume = converted
 
         prop override play_mode: PlayMode
             get
-                if _pipeline is not null
-                    var state = _pipeline.state
+                var pipeline = self.pipeline
+                if pipeline is not null
+                    var state = pipeline.state
                     if state == State.PLAYING
                         return PlayMode.PLAYING
                     else if state == State.PAUSED
                         return PlayMode.PAUSED
                 return PlayMode.STOPPED
             set
-                if _pipeline is not null
+                var pipeline = self.pipeline
+                if pipeline is not null
                     if value == PlayMode.PAUSED
-                        _pipeline.state = State.PAUSED
+                        pipeline.state = State.PAUSED
                     else if value == PlayMode.PLAYING
-                        var state = _pipeline.state
+                        var state = pipeline.state
                         if state == State.PAUSED
-                            _pipeline.state = State.PLAYING
+                            pipeline.state = State.PLAYING
                         else if state == State.NULL
                             if position_in_playlist != int.MIN
-                                _pipeline.state = State.PLAYING
+                                pipeline.state = State.PLAYING
                             else
                                 next()
                     else if value == PlayMode.TOGGLE_PAUSED
-                        var state = _pipeline.state
+                        var state = pipeline.state
                         if state == State.PLAYING
-                            _pipeline.state = State.PAUSED
+                            pipeline.state = State.PAUSED
                         else if state == State.PAUSED
-                            _pipeline.state = State.PLAYING
+                            pipeline.state = State.PLAYING
                         else if state == State.NULL
                             if position_in_playlist != int.MIN
-                                _pipeline.state = State.PLAYING
+                                pipeline.state = State.PLAYING
                             else
                                 next()
                     else
-                        _pipeline.state = State.NULL
+                        pipeline.state = State.NULL
                 else
                     if (value == PlayMode.PLAYING) or (value == PlayMode.TOGGLE_PAUSED)
                         next()
@@ -81,37 +93,42 @@ namespace Khovsgol.Server.GStreamer
         
         prop override position_in_track: double
             get
-                if _pipeline is not null
-                    var position = _pipeline.position
+                var pipeline = self.pipeline
+                if pipeline is not null
+                    var position = pipeline.position
                     if position != int64.MIN
                         return position / 1000000000.0 // seconds to seconds
                 return double.MIN
             set
-                if _pipeline is not null
+                var pipeline = self.pipeline
+                if pipeline is not null
                     var position = (int64) (value * 1000000000.0) // seconds to nanoseconds
                     if position < 0
                         position = 0
-                    _pipeline.position = position
+                    pipeline.position = position
         
         prop override ratio_in_track: double
             get
-                if _pipeline is not null
-                    var duration = _pipeline.duration
+                var pipeline = self.pipeline
+                if pipeline is not null
+                    var duration = pipeline.duration
                     if duration != int64.MIN
-                        var position = _pipeline.position
+                        var position = pipeline.position
                         if position != int64.MIN
                             return position / duration
                 return double.MIN
             set
-                if _pipeline is not null
-                    var duration = _pipeline.duration
+                var pipeline = self.pipeline
+                if pipeline is not null
+                    var duration = pipeline.duration
                     if duration != int64.MIN
-                        _pipeline.position = (int64) (value * duration)
+                        pipeline.position = (int64) (value * duration)
         
         prop override readonly track_duration: double
             get
-                if _pipeline is not null
-                    var duration = _pipeline.duration
+                var pipeline = self.pipeline
+                if pipeline is not null
+                    var duration = pipeline.duration
                     if duration != int64.MIN
                         return duration / 1000000000.0 // nanoseconds to seconds
                 return double.MIN
@@ -145,53 +162,55 @@ namespace Khovsgol.Server.GStreamer
             var plug = get_plug(spec, default_host)
             if plug is null
                 plug = super.set_plug(spec, default_host)
-                if _pipeline is not null
+                if pipeline is not null
                     var branch = create_branch(plug)
                     if branch is not null
-                        _pipeline.add_branch(branch)
+                        pipeline.add_branch(branch)
                 
             return plug
 
         def override remove_plug(spec: string, default_host: string?): bool
+            _pipeline_container = null // for fun :)
             return super.remove_plug(spec, default_host)
 
         def private validate_pipeline(): bool
-            if _pipeline is not null
+            if _pipeline_container is not null
                 return true
                 
             var plugs = self.plugs
             if not plugs.iterator().next()
                 return false
                 
-            _pipeline = new GstUtil.Pipeline("Pipeline:" + name)
-            _pipeline.state_change.connect(on_state_changed)
-            _pipeline.eos.connect(on_eos)
-            _pipeline.tag.connect(on_tag)
-            _pipeline.error.connect(on_error)
+            var pipeline = new GstUtil.Pipeline("Player:" + name)
+            pipeline.state_change.connect(on_state_changed)
+            pipeline.eos.connect(on_eos)
+            pipeline.tag.connect(on_tag)
+            pipeline.error.connect(on_error)
 
             var source = ElementFactory.make("filesrc", "Source")
             var decode = ElementFactory.make("decodebin", "Decode")
             var convert = ElementFactory.make("audioconvert", "Convert")
             var tee = ElementFactory.make("tee", "Tee")
             
-            _pipeline.add_many(source, decode, convert, tee)
+            pipeline.add_many(source, decode, convert, tee)
             source.link(decode)
-            _pipeline.ownerships.add(new LinkDecodeBinLater(decode, convert))
+            link_on_demand(decode, convert)
             convert.link(tee)
             
             has_branches: bool = false
             for var plug in plugs
                 var branch = create_branch(plug)
                 if branch is not null
-                    _pipeline.add_branch(branch)
+                    pipeline.add_branch(branch)
                     has_branches = true
             
-            if not has_branches
+            if has_branches
+                _pipeline_container = new GstUtil.PipelineContainer(pipeline)
+                return true
+            else
                 // Don't allow pipelines with no sinks
-                _pipeline = null
+                _pipeline_container = null
                 return false
-            
-            return true
         
         /*
          * Supported specs:
@@ -319,8 +338,8 @@ namespace Khovsgol.Server.GStreamer
         
         def private on_error(source: Gst.Object, error: GLib.Error, text: string)
             _logger.warning(text)
-    
-        _pipeline: GstUtil.Pipeline?
+            
+        _pipeline_container: GstUtil.PipelineContainer?
         _path: string?
 
         _logger: static Logging.Logger

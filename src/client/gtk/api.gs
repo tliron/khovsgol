@@ -39,6 +39,7 @@ namespace Khovsgol.Client.GTK
                 AtomicInt.@set(ref _in_gdk, value ? 1 : 0)
 
         _in_gdk: static int = 0
+        _queue: list of Object = new list of Object
 
         def private on_connection_change(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
             if in_gdk
@@ -103,7 +104,7 @@ namespace Khovsgol.Client.GTK
                 _old_host = old_host
                 _old_port = old_port
                 _old_player = old_player
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -116,14 +117,14 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.connection_change_gdk(_host, _port, _player, _old_host, _old_port, _old_player)
-                unref()
+                _api._queue.remove(self)
                 return false
 
         class private ErrorGdk: Object
             construct(api: API, e: GLib.Error)
                 _api = api
                 _e = e
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -131,7 +132,7 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.error_gdk(_e)
-                unref()
+                _api._queue.remove(self)
                 return false
 
         class private VolumeChangeGdk: Object
@@ -139,7 +140,7 @@ namespace Khovsgol.Client.GTK
                 _api = api
                 _volume = volume
                 _old_volume = old_volume
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -148,7 +149,7 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.volume_change_gdk(_volume, _old_volume)
-                unref()
+                _api._queue.remove(self)
                 return false
 
         class private PlayModeChangeGdk: Object
@@ -156,7 +157,7 @@ namespace Khovsgol.Client.GTK
                 _api = api
                 _play_mode = play_mode
                 _old_play_mode = old_play_mode
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -165,7 +166,7 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.play_mode_change_gdk(_play_mode, _old_play_mode)
-                unref()
+                _api._queue.remove(self)
                 return false
 
         class private CursorModeChangeGdk: Object
@@ -173,7 +174,7 @@ namespace Khovsgol.Client.GTK
                 _api = api
                 _cursor_mode = cursor_mode
                 _old_cursor_mode = old_cursor_mode
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -182,7 +183,7 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.cursor_mode_change_gdk(_cursor_mode, _old_cursor_mode)
-                unref()
+                _api._queue.remove(self)
                 return false
 
         class private PositionInPlaylistChangeGdk: Object
@@ -190,7 +191,7 @@ namespace Khovsgol.Client.GTK
                 _api = api
                 _position_in_playlist = position_in_playlist
                 _old_position_in_playlist = old_position_in_playlist
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -199,7 +200,7 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.position_in_playlist_change_gdk(_position_in_playlist, _old_position_in_playlist)
-                unref()
+                _api._queue.remove(self)
                 return false
 
         class private PositionInTrackChangeGdk: Object
@@ -208,7 +209,7 @@ namespace Khovsgol.Client.GTK
                 _position_in_track = position_in_track
                 _old_position_in_track = old_position_in_track
                 _track_duration = track_duration
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -218,7 +219,7 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.position_in_track_change_gdk(_position_in_track, _old_position_in_track, _track_duration)
-                unref()
+                _api._queue.remove(self)
                 return false
 
         class private PlaylistChangeGdk: Object
@@ -230,7 +231,7 @@ namespace Khovsgol.Client.GTK
                 _old_version = old_version
                 _tracks = tracks
                 _albums = albums
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -243,7 +244,7 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.playlist_change_gdk(_id, _version, _old_id, _old_version, _tracks, _albums)
-                unref()
+                _api._queue.remove(self)
                 return false
 
         class private TrackChangeGdk: Object
@@ -251,7 +252,7 @@ namespace Khovsgol.Client.GTK
                 _api = api
                 _track = track
                 _old_track = old_track
-                ref()
+                _api._queue.add(self)
                 Gdk.threads_add_idle(idle)
 
             _api: API
@@ -260,5 +261,5 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.track_change_gdk(_track, _old_track)
-                unref()
+                _api._queue.remove(self)
                 return false

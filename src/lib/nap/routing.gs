@@ -23,7 +23,7 @@ namespace Nap
                 conversation.status_code = StatusCode.NOT_FOUND
 
         def add_node(pattern: string, node: Node)
-            _ownerships.add(node)
+            _nodes.add(node)
             add_handler(pattern, node.handle)
 
         def add_handler(pattern: string, handler: Handler)
@@ -37,7 +37,7 @@ namespace Nap
                     _trivial_routes.set(pattern, new TrivialRoute(handler))
                 
         def add_regex_node(regex: Regex, node: Node) raises RegexError
-            _ownerships.add(node)
+            _nodes.add(node)
             add_regex_handler(regex, node.handle)
 
         def add_regex_handler(regex: Regex, handler: Handler) raises RegexError
@@ -45,7 +45,7 @@ namespace Nap
         
         _trivial_routes: dict of string, TrivialRoute = new dict of string, TrivialRoute
         _template_routes: list of TemplateRoute = new list of TemplateRoute
-        _ownerships: list of GLib.Object = new list of GLib.Object
+        _nodes: list of Node = new list of Node
 
         class static private TrivialRoute
             construct(handler: Handler)

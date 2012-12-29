@@ -269,7 +269,12 @@ namespace Nap._Soup
                 _soup_message.set_request(_request_media_type, Soup.MemoryUse.COPY, _request_text.data)
                 
             if asynchronous
-                ref()
+                // Note: We need to kill our instance *after* this callback returns,
+                // otherwise, if we are the only reference to it, the Soup session
+                // might be destroyed. This is why we are attaching ourselves to the
+                // Soup message instance.
+                
+                _soup_message.set_data("Nap.Conversation", self)
                 _soup_session.queue_message(_soup_message, on_message_handled)
             else
                 var timer = new Timer()
@@ -295,15 +300,6 @@ namespace Nap._Soup
             _status_code = message.status_code
             _logger.debugf("Async done: %s %u", message.uri.to_string(false), message.status_code)
             committed(self)
-            
-            // We need to kill our instance *after* this callback returns,
-            // otherwise, if we are the only reference to it, the Soup session
-            // might be destroyed
-            Soup.add_idle(_soup_session.async_context, kill)
-        
-        def private kill(): bool
-            unref()
-            return false
 
         _logger: static Logging.Logger
 
