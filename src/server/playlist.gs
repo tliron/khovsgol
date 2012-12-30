@@ -178,6 +178,12 @@ namespace Khovsgol.Server
                 var tracks = new list of Track
                 var albums = new list of Album
                 last_album_path: string? = null
+                
+                var library = _crucible.create_library()
+                var directory = new Filesystem.Directory()
+                directory.crucible = _crucible
+                directory.library = library
+                var sortables = new Sortables()
 
                 var args = new IterateForAlbumArgs()
                 args.album = _album_path
@@ -200,8 +206,10 @@ namespace Khovsgol.Server
                         // Get track
                         track = libraries.get_track(path)
                         if track is null
-                            _logger.warningf("Unknown track: %s", path)
-                            continue
+                            track = directory.create_track(path, sortables)
+                            if track is null
+                                _logger.warningf("Track not found: %s", path)
+                                continue
                     
                     // Fit track in playlist
                     track.position_in_playlist = track_pointer.position

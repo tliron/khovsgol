@@ -50,8 +50,9 @@ namespace Khovsgol.Client
             stream.put_string("<playlist version=\"1\" xmlns=\"http://xspf.org/ns/0/\">\r\n")
             stream.put_string("  <trackList>\r\n")
             for var path in paths
-                path = path.replace("<", "&lt;").replace(">", "&gt;")
-                stream.put_string("    <track><location>%s</location></track>\r\n".printf(path))
+                var uri = File.new_for_path(path).get_uri()
+                uri = uri.replace("<", "&lt;").replace(">", "&gt;")
+                stream.put_string("    <track><location>%s</location></track>\r\n".printf(uri))
             stream.put_string("  </trackList>\r\n")
             stream.put_string("</playlist>\r\n")
             
@@ -84,7 +85,7 @@ namespace Khovsgol.Client
                 else if in_location and (token == MarkupTokenType.END_ELEMENT) and (reader.name == "location")
                     in_location = false
                 else if in_location and (token == MarkupTokenType.TEXT)
-                    var path = reader.content
+                    var path = File.new_for_uri(reader.content).get_path()
                     paths.add(path)
 
                 token = reader.read_token(out begin, out end)

@@ -206,7 +206,9 @@ namespace GstUtil
     class private Snip: GLib.Object
         construct(src: Pad)
             // Block the src
-            _probe_id = src.add_probe(PadProbeType.BLOCK, on_blocked)
+            // BLOCK_DOWNSTREAM = BLOCK|DATA_DOWNSTREAM
+            // DATA_DOWNSTREAM = TYPE_BUFFER|TYPE_BUFFER_LIST|EVENT_DOWNSTREAM
+            _probe_id = src.add_probe(PadProbeType.BLOCK|PadProbeType.BUFFER|PadProbeType.BUFFER_LIST|PadProbeType.EVENT_DOWNSTREAM, on_blocked)
             
         event drain(element: Element)
     
