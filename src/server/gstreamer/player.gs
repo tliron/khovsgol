@@ -26,6 +26,7 @@ namespace Khovsgol.Server.GStreamer
                         pipeline.state = State.NULL
                     if _path is not null
                         if validate_pipeline()
+                            pipeline = self.pipeline
                             source: dynamic Element = pipeline.get_by_name("Source")
                             if source is not null
                                 source.location = _path
@@ -134,7 +135,9 @@ namespace Khovsgol.Server.GStreamer
                 return double.MIN
         
         def override validate_spec(spec: string, default_host: string?): string?
-            if spec == "pulse"
+            if spec == "fake"
+                return spec
+            else if spec == "pulse"
                 return spec
             else if spec.has_prefix("pulse:")
                 var specs = spec.substring(6).split(":")
@@ -170,7 +173,11 @@ namespace Khovsgol.Server.GStreamer
             return plug
 
         def override remove_plug(spec: string, default_host: string?): bool
-            _pipeline_container = null // for fun :)
+            var pipeline = self.pipeline
+            if pipeline is not null
+                var branch = pipeline.get_by_name(spec)
+                if branch is not null
+                    pipeline.remove_safely(branch)
             return super.remove_plug(spec, default_host)
 
         def private validate_pipeline(): bool
@@ -189,13 +196,13 @@ namespace Khovsgol.Server.GStreamer
 
             var source = ElementFactory.make("filesrc", "Source")
             var decode = ElementFactory.make("decodebin", "Decode")
-            var convert = ElementFactory.make("audioconvert", "Convert")
-            var tee = ElementFactory.make("tee", "Tee")
+            tee: dynamic Element = ElementFactory.make("tee", "Tee")
             
-            pipeline.add_many(source, decode, convert, tee)
+            //tee.silent = false // ??
+            
+            pipeline.add_many(source, decode, tee)
             source.link(decode)
-            link_on_demand(decode, convert)
-            convert.link(tee)
+            link_on_demand(decode, tee)
             
             has_branches: bool = false
             for var plug in plugs
@@ -209,28 +216,29 @@ namespace Khovsgol.Server.GStreamer
                 return true
             else
                 // Don't allow pipelines with no sinks
-                _pipeline_container = null
                 return false
         
         /*
          * Supported specs:
          * 
+         * fake
          * pulse
          * pulse:[host]
          * alsa
          * jack
-         * 
-         * rtpL16:udp:[http_port]
+         * rtpL16:udp:[http_port]:[host]
          */
         def private create_branch(plug: Plug): Bin?
             var spec = plug.spec
-            if spec == "pulse"
-                return create_pulse_branch(spec)
+            if spec == "fake"
+                return new FakeBranch(spec)
+            else if spec == "pulse"
+                return new PulseAudioBranch(spec)
             else if spec.has_prefix("pulse:")
                 var specs = spec.substring(6).split(":")
                 if specs.length > 0
                     var server = specs[0]
-                    return create_pulse_branch(spec, server)
+                    return new PulseAudioBranch(spec, server)
             else if spec == "alsa"
                 pass
             else if spec == "jack"
@@ -244,43 +252,74 @@ namespace Khovsgol.Server.GStreamer
                             var http_port = int.parse(specs[1])
                             if specs.length > 2
                                 var host = specs[2]
-                                return create_rtpL16_branch(spec, host, http_port, http_port + 1)
+                                return new RtpL16Branch(spec, host, http_port, http_port + 1)
             return null
-
-        def private create_pulse_branch(name: string, server: string? = null): Bin
-            valve: dynamic Element = ElementFactory.make("valve", "Valve")
-            var queue = ElementFactory.make("queue", "Queue")
-            var resample = ElementFactory.make("audioresample", "Resample")
-            var volume = ElementFactory.make("volume", "Volume")
-            sink: dynamic Element = ElementFactory.make("pulsesink", "Sink")
-
-            valve.drop = true
-            sink.client_name = "Khövgsöl"
-            if server is not null
-                sink.server = server
-
-            var bin = new Bin(name)
-            bin.add_many(valve, queue, resample, volume, sink)
-            valve.link_many(queue, resample, volume, sink)
-            bin.add_pad(new GhostPad("sink", valve.get_static_pad("sink")))
-            return bin
         
-        def private create_rtpL16_branch(name: string, host: string, http_port: uint, udp_port: uint): Bin
-            valve: dynamic Element = ElementFactory.make("valve", "Valve")
-            var queue = ElementFactory.make("queue", "Queue")
-            var pay = ElementFactory.make("rtpL16pay", "Pay")
-            sink: dynamic Element = ElementFactory.make("udpsink", "RemoteSink:%s:%u:rtpL16:udp:%u".printf(host, http_port, udp_port))
-            
-            valve.drop = true
-            sink.host = host
-            sink.port = udp_port
-            //sink.sync = false // this can cause CPU to spike?
+        /*
+         * Base class for branches.
+         */
+        class abstract Branch: Bin
+            construct(name: string)
+                GLib.Object(name: name)
 
-            var bin = new Bin(name)
-            bin.add_many(valve, queue, pay, sink)
-            valve.link_many(queue, pay, sink)
-            bin.add_pad(new GhostPad("sink", valve.get_static_pad("sink")))
-            return bin
+            def initialize(first: Element, ...)
+                var queue = ElementFactory.make("queue", "Queue")
+                add_many(queue, first)
+                queue.link(first)
+                
+                var previous = first
+                var args = va_list()
+                element: Element? = args.arg()
+                while element is not null
+                    add(element)
+                    previous.link(element)
+                    previous = element
+                    element = args.arg()
+                
+                add_pad(new GhostPad("sink", queue.get_static_pad("sink")))
+
+        /*
+         * Fake branch.
+         */
+        class FakeBranch: Branch
+            construct(name: string)
+                super(name)
+                sink: dynamic Element = ElementFactory.make("fakesink", "Sink")
+                sink.sync = true // without this, we would empty out the pipeline at full speed!
+                initialize(sink)
+
+        /*
+         * PulseAudio branch.
+         */
+        class PulseAudioBranch: Branch
+            construct(name: string, server: string? = null)
+                super(name)
+                var convert = ElementFactory.make("audioconvert", "Convert")
+                var resample = ElementFactory.make("audioresample", "Resample")
+                var volume = ElementFactory.make("volume", "Volume")
+                sink: dynamic Element = ElementFactory.make("pulsesink", "Sink")
+
+                sink.client_name = "Khövgsöl"
+                if server is not null
+                    sink.server = server
+
+                initialize(convert, resample, volume, sink)
+        
+        /*
+         * Raw audio RTP over UDP branch.
+         */
+        class RtpL16Branch: Branch
+            construct(name: string, host: string, http_port: uint, udp_port: uint)
+                super(name)
+                var convert = ElementFactory.make("audioconvert", "Convert")
+                var pay = ElementFactory.make("rtpL16pay", "Pay")
+                sink: dynamic Element = ElementFactory.make("udpsink", "RemoteSink:%s:%u:rtpL16:udp:%u".printf(host, http_port, udp_port))
+                
+                sink.host = host
+                sink.port = udp_port
+                //sink.sync = false // this can cause CPU to spike?
+
+                initialize(convert, pay, sink)
         
         def private put_receiver(host: string, http_port: uint, spec: string)
             var client = new Nap._Soup.Client()

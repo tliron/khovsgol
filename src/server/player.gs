@@ -99,6 +99,7 @@ namespace Khovsgol.Server
         def get_or_create_player(name: string): Player
             var player = _players[name]
             if player is null
+                _logger.messagef("Creating player: %s", name)
                 _players[name] = player = crucible.create_player()
                 player.crucible = _crucible
                 player.configuration = _configuration

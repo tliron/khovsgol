@@ -22,6 +22,13 @@ namespace GstUtil
     def link_on_demand(element: Element, next: Element, pad_type: string = "audio/x-raw", once: bool = false)
         new LinkOnDemand(element, next, pad_type, once)
     
+    def link_new(element: Element, next: Element)
+        var src = element.get_request_pad("src_%u")
+        if src is not null
+            var sink = next.get_static_pad("sink")
+            if sink is not null
+                src.link(sink)
+    
     /*
      * Enhanced Pipeline class.
      * 
@@ -101,22 +108,23 @@ namespace GstUtil
         event tag(tag_list: TagList)
         event error(source: Gst.Object, error: GLib.Error, text: string)
         
-        def add_branch(branch: Bin)
+        def add_branch(branch: Element)
             add(branch)
             
-            // Link
+            // Link to tee
             var tee = get_by_name("Tee")
-            var src = tee.get_request_pad("src_%u")
-            var sink = branch.get_static_pad("sink")
-            src.link(sink)
-
-            // Branch must be in same state as pipeline
-            if branch.set_state(state) == StateChangeReturn.SUCCESS
-                // Open valve
-                valve: dynamic Element = branch.get_by_name("Valve")
-                valve.drop = false
-            /*else
-                _logger.warningf("Could could not set branch status: %s to %d", branch.name, state)*/
+            if tee is not null
+                link_new(tee, branch)
+                branch.set_state(state)
+            
+        def remove_safely(element: Element)
+            var src = element.get_static_pad("sink").get_peer()
+            var snip = new Snip(src)
+            snip.drain.connect(on_drained)
+            
+        def private on_drained(element: Element)
+            // Safe to remove now
+            remove(element)
         
         def private on_message(message: Message)
             // See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html
@@ -184,6 +192,49 @@ namespace GstUtil
         _next: Element
         _pad_type: string
         _once: bool
+
+    // See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/manual/html/section-dynamic-pipelines.html
+    class private Snip: GLib.Object
+        construct(src: Pad)
+            // Block the src
+            _probe_id = src.add_probe(PadProbeType.BLOCK, on_blocked)
+            src.set_data("GstUtil.Snip", self)
+            
+        event drain(element: Element)
+    
+        _probe_id: ulong
+        
+        def private on_blocked(pad: Pad, info: PadProbeInfo): PadProbeReturn
+            _logger.debug("Pad blocked")
+            pad.remove_probe(_probe_id)
+
+            var sink = pad.get_peer()
+            var next = sink.get_parent_element()
+            
+            var src = next.get_static_pad("src")
+            if src is not null
+                // Wait for EOS event at next src (if we have one)
+                _logger.debug("Sending EOS and waiting for it to arrive at the other side")
+                _probe_id = src.add_probe(PadProbeType.BLOCK|PadProbeType.EVENT_DOWNSTREAM, on_event)
+                sink.send_event(new Event.eos())
+            else
+                _logger.debug("Sending EOS, but how will we know it arrived?")
+                sink.send_event(new Event.eos())
+                // TODO: don't we need to wait for this to complete?
+                drain(next)
+
+            return PadProbeReturn.OK
+
+        def private on_event(pad: Pad, info: PadProbeInfo): PadProbeReturn
+            _logger.debug("Event on pad")
+            var @event = (Event) info.data // Uhm... is this right?
+            if @event.type == EventType.EOS
+                _logger.debug("EOS arrived")
+                pad.remove_probe(_probe_id)
+                drain(pad.get_parent_element())
+                return PadProbeReturn.DROP
+            else
+                return PadProbeReturn.OK
         
     _logger: Logging.Logger
 
