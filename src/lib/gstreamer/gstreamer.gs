@@ -237,8 +237,8 @@ namespace GstUtil
 
         def private on_event(pad: Pad, info: PadProbeInfo): PadProbeReturn
             _logger.debug("Event on pad")
-            var @event = (Event) info.data // Uhm... is this right?
-            if @event.type == EventType.EOS
+            var @event = gst_pad_probe_info_get_event(&info)
+            if (@event is not null) and (@event->type == EventType.EOS)
                 _logger.debug("EOS arrived")
                 pad.remove_probe(_probe_id)
                 drain(pad.get_parent_element())
@@ -249,3 +249,5 @@ namespace GstUtil
     _logger: Logging.Logger
 
     _initialized: private bool = false
+
+def extern gst_pad_probe_info_get_event(info: PadProbeInfo*): Event*
