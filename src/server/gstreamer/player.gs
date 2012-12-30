@@ -48,6 +48,9 @@ namespace Khovsgol.Server.GStreamer
                     if volume is not null
                         var converted = StreamVolume.convert_volume(StreamVolumeFormat.CUBIC, StreamVolumeFormat.LINEAR, value)
                         volume.volume = converted
+                        if value != configuration.get_volume(name)
+                            configuration.set_volume(name, value)
+                            configuration.save()
 
         prop override play_mode: PlayMode
             get
@@ -196,13 +199,15 @@ namespace Khovsgol.Server.GStreamer
 
             var source = ElementFactory.make("filesrc", "Source")
             var decode = ElementFactory.make("decodebin", "Decode")
+            var volume = ElementFactory.make("volume", "Volume")
             tee: dynamic Element = ElementFactory.make("tee", "Tee")
             
             //tee.silent = false // ??
             
-            pipeline.add_many(source, decode, tee)
+            pipeline.add_many(source, decode, volume, tee)
             source.link(decode)
-            link_on_demand(decode, tee)
+            link_on_demand(decode, volume)
+            volume.link(tee)
             
             has_branches: bool = false
             for var plug in plugs
@@ -296,14 +301,13 @@ namespace Khovsgol.Server.GStreamer
                 super(name)
                 var convert = ElementFactory.make("audioconvert", "Convert")
                 var resample = ElementFactory.make("audioresample", "Resample")
-                var volume = ElementFactory.make("volume", "Volume")
                 sink: dynamic Element = ElementFactory.make("pulsesink", "Sink")
 
                 sink.client_name = "Khövgsöl"
                 if server is not null
                     sink.server = server
 
-                initialize(convert, resample, volume, sink)
+                initialize(convert, resample, sink)
         
         /*
          * Raw audio RTP over UDP branch.

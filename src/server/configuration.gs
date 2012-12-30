@@ -168,6 +168,24 @@ namespace Khovsgol.Server
                     pass
 
         /*
+         * Player's volume.
+         */
+        def get_volume(player: string): double
+            try
+                return _key_file.get_double("player." + player, "volume")
+            except e: KeyFileError
+                return double.MIN
+
+        def set_volume(player: string, volume: double)
+            if volume != double.MIN
+                _key_file.set_double("player." + player, "volume", volume)
+            else
+                try
+                    _key_file.remove_key("player." + player, "volume")
+                except e: KeyFileError
+                    pass
+
+        /*
          * Player's play mode.
          */
         def get_play_mode(player: string): string?

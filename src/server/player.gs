@@ -180,6 +180,10 @@ namespace Khovsgol.Server
             else if _position_in_playlist > 0
                 var track = tracks[_position_in_playlist - 1]
                 path = track.path
+                
+            var volume = _configuration.get_volume(name)
+            if volume != double.MIN
+                self.volume = volume
 
             var play_mode = _configuration.get_play_mode(_name)
             if play_mode is not null

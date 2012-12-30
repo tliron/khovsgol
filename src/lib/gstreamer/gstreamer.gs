@@ -120,6 +120,7 @@ namespace GstUtil
         def remove_safely(element: Element)
             var src = element.get_static_pad("sink").get_peer()
             var snip = new Snip(src)
+            element.set_data("GstUtil.Snip", snip)
             snip.drain.connect(on_drained)
             
         def private on_drained(element: Element)
@@ -193,12 +194,19 @@ namespace GstUtil
         _pad_type: string
         _once: bool
 
-    // See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/manual/html/section-dynamic-pipelines.html
+    /*
+     * Blocks the pad, sends an EOS to the element downstream, and waits for
+     * the EOS to arrive at the other side, signifying that the element
+     * is properly drained.
+     * 
+     * This is necessary in order to dynamically remove elements.
+     * 
+     * See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/manual/html/section-dynamic-pipelines.html
+     */
     class private Snip: GLib.Object
         construct(src: Pad)
             // Block the src
             _probe_id = src.add_probe(PadProbeType.BLOCK, on_blocked)
-            src.set_data("GstUtil.Snip", self)
             
         event drain(element: Element)
     
