@@ -367,23 +367,23 @@ namespace Khovsgol.Client.GTK
                         _instance.api.create_album(album_path, title, "main", paths)
         
         def private on_import_xspf()
-            pass
+            import_playlist(new Xspf())
         
         def private on_import_pls()
-            pass
+            import_playlist(new Pls())
         
         def private on_import_m3u()
-            pass
+            import_playlist(new M3u())
         
         def private on_export_xspf()
-            pass
+            export_playlist(new Xspf())
         
         def private on_export_pls()
-            pass
+            export_playlist(new Pls())
         
         def private on_export_m3u()
-            pass
-            
+            export_playlist(new M3u())
+        
         def private on_cursor_mode_changed(cursor_mode: string?, old_cursor_mode: string?)
             SignalHandler.block(_mode_box.combo_box, _on_cursor_mode_id)
             _mode_box.active = cursor_mode
@@ -513,6 +513,57 @@ namespace Khovsgol.Client.GTK
             item = new Gtk.MenuItem.with_mnemonic("_Export playlist...")
             item.submenu = submenu
             return item
+
+        def private import_playlist(playlist: PlaylistFile)
+            var extension = playlist.extension
+            var dialog = new FileChooserDialog("Select .%s import file".printf(extension), _instance.window, FileChooserAction.OPEN, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.OK)
+            var filter = new FileFilter()
+            filter.set_filter_name("%s files".printf(extension))
+            filter.add_pattern("*%s".printf(extension))
+            dialog.add_filter(filter)
+            dialog.show_hidden = false
+            var response = dialog.run()
+            if response == ResponseType.OK
+                var filename = dialog.get_filename()
+                playlist.file = File.new_for_path(filename)
+            dialog.destroy()
+
+            if playlist.file is not null
+                try
+                    playlist.load()
+                    var paths = new Json.Array.sized(playlist.paths.size)
+                    for var path in playlist.paths
+                        paths.add_string_element(path)
+                    _instance.api.set_playlist_paths(paths, null, true)
+                except e: GLib.Error
+                    _logger.exception(e)
+
+        def private export_playlist(playlist: PlaylistFile)
+            var extension = playlist.extension
+            var dialog = new FileChooserDialog("Select .%s export file".printf(extension), _instance.window, FileChooserAction.SAVE, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.OK)
+            var filter = new FileFilter()
+            filter.set_filter_name("%s files".printf(extension))
+            filter.add_pattern("*%s".printf(extension))
+            dialog.add_filter(filter)
+            dialog.show_hidden = false
+            dialog.create_folders = true
+            dialog.do_overwrite_confirmation = true
+            var response = dialog.run()
+            if response == ResponseType.OK
+                var filename = dialog.get_filename()
+                var suffix = "." + extension
+                if not filename.has_suffix(suffix)
+                    filename += suffix
+                playlist.file = File.new_for_path(filename)
+            dialog.destroy()
+            
+            if playlist.file is not null
+                for var track in _tracks
+                    playlist.paths.add(track.path)
+                try
+                    playlist.save()
+                except e: GLib.Error
+                    _logger.exception(e)
         
         _instance: Instance
         _store: ListStore

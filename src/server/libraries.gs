@@ -100,6 +100,8 @@ namespace Khovsgol.Server
                     if position > destination
                         destination = position
                 destination++
+            else if destination <= 0
+                destination = 1
 
             if transaction
                 write_begin()

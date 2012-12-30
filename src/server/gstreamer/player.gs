@@ -110,6 +110,7 @@ namespace Khovsgol.Server.GStreamer
                     if position < 0
                         position = 0
                     pipeline.position = position
+                    pipeline.state = State.PLAYING
         
         prop override ratio_in_track: double
             get
@@ -127,6 +128,7 @@ namespace Khovsgol.Server.GStreamer
                     var duration = pipeline.duration
                     if duration != int64.MIN
                         pipeline.position = (int64) (value * duration)
+                        pipeline.state = State.PLAYING
         
         prop override readonly track_duration: double
             get
@@ -217,7 +219,7 @@ namespace Khovsgol.Server.GStreamer
                     has_branches = true
             
             if has_branches
-                _pipeline_container = new GstUtil.PipelineContainer(pipeline)
+                _pipeline_container = new PipelineContainer(pipeline)
                 return true
             else
                 // Don't allow pipelines with no sinks
@@ -382,7 +384,7 @@ namespace Khovsgol.Server.GStreamer
         def private on_error(source: Gst.Object, error: GLib.Error, text: string)
             _logger.warning(text)
             
-        _pipeline_container: GstUtil.PipelineContainer?
+        _pipeline_container: PipelineContainer?
         _path: string?
 
         _logger: static Logging.Logger

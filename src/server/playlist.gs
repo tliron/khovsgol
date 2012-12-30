@@ -42,7 +42,7 @@ namespace Khovsgol.Server
             try
                 _crucible.libraries.delete_track_pointers(_album_path)
                 stable_position: int = int.MIN
-                _crucible.libraries.add_to_album(_album_path, 0, paths, ref stable_position, false)
+                _crucible.libraries.add_to_album(_album_path, 1, paths, ref stable_position, false)
                 update_stored_version()
             except e: GLib.Error
                 _crucible.libraries.write_rollback()

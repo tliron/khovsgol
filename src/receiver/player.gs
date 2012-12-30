@@ -3,6 +3,7 @@
 uses
     Gst
     Gst.Audio
+    GstUtil
     JsonUtil
 
 namespace Khovsgol.Receiver
@@ -32,52 +33,56 @@ namespace Khovsgol.Receiver
      * Player base.
      */
     class abstract Player
-        final
-            if _pipeline is not null
-                _pipeline.kill()
-    
         prop spec: string?
 
         prop pipeline: GstUtil.Pipeline?
             get
-                return _pipeline
+                if _pipeline_container is not null
+                    return _pipeline_container.pipeline
+                else
+                    return null
             set
-                if _pipeline != value
-                    if _pipeline is not null
-                        _pipeline.kill()
-                    _pipeline = value
-                    if _pipeline is not null
-                        _pipeline.error.connect(on_error)
+                var pipeline = pipeline
+                if pipeline != value
+                    if value is not null
+                        _pipeline_container = new PipelineContainer(value)
+                        value.error.connect(on_error)
+                    else
+                        _pipeline_container = null
 
         prop volume: double
             get
-                if _pipeline is not null
-                    volume: dynamic Element =_pipeline.get_by_name("Volume")
+                var pipeline = pipeline
+                if pipeline is not null
+                    volume: dynamic Element = pipeline.get_by_name("Volume")
                     if volume is not null
                         value: double = volume.volume
                         var converted = StreamVolume.convert_volume(StreamVolumeFormat.LINEAR, StreamVolumeFormat.CUBIC, value)
                         return converted
                 return double.MIN
             set
-                if _pipeline is not null
-                    volume: dynamic Element =_pipeline.get_by_name("Volume")
+                var pipeline = pipeline
+                if pipeline is not null
+                    volume: dynamic Element = pipeline.get_by_name("Volume")
                     if volume is not null
                         var converted = StreamVolume.convert_volume(StreamVolumeFormat.CUBIC, StreamVolumeFormat.LINEAR, value)
                         volume.volume = converted
                         
         def play()
-            if _pipeline is not null
-                _pipeline.state = State.PLAYING
+            var pipeline = pipeline
+            if pipeline is not null
+                pipeline.state = State.PLAYING
         
         def to_json(): Json.Object
             var json = new Json.Object()
             set_string_member_not_null(json, "spec", _spec)
+            //set_string_member_not_null(json, "state", state)
             return json
 
         def private on_error(source: Gst.Object, error: GLib.Error, text: string)
             _logger.warning(text)
 
-        _pipeline: GstUtil.Pipeline?
+        _pipeline_container: PipelineContainer?
 
     /*
      * RTPL16 player.
@@ -91,7 +96,7 @@ namespace Khovsgol.Receiver
             var depay = ElementFactory.make("rtpL16depay", "Depay")
             var convert = ElementFactory.make("audioconvert", "AudioConvert")
             var resample = ElementFactory.make("audioresample", "AudioResample")
-            var rate = ElementFactory.make("audiorate", "AudioRate") // will create a perfect stream for us, but do we really need this if we are not, say, saving to a WAV?
+            var rate = ElementFactory.make("audiorate", "AudioRate") // will create a perfect stream for us; but do we really need this if we are not, say, saving to a WAV?
             var volume = ElementFactory.make("volume", "Volume")
             sink: dynamic Element = ElementFactory.make(configuration.player_sink, "Sink")
 
@@ -106,6 +111,6 @@ namespace Khovsgol.Receiver
             pipeline.add_many(source, buffer, depay, convert, resample, rate, volume, sink)
             source.link_many(buffer, depay, convert, resample, rate, volume, sink)
             
-            _logger.messagef("Created RTPL16 player: %u, caps: %s", port, caps)
+            _logger.messagef("Created RTPL16 player: port %u, caps: %s", port, caps)
 
             self.pipeline = pipeline

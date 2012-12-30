@@ -149,7 +149,7 @@ khovsgolc.ccode:
 KHOVSGOL_SOURCES=\
 	$(call find-sources,client/gtk) \
 	$(call find-sources,client/features) \
-	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs $(SRC)/server/configuration.gs $(SRC)/receiver/configuration.gs \
+	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs $(SRC)/client/playlist.gs $(SRC)/server/configuration.gs $(SRC)/receiver/configuration.gs \
 	$(SRC)/version.gs $(SRC)/models.gs $(SRC)/iterators.gs \
 	$(call find-sources,lib/logging) \
 	$(call find-sources,lib/console) \
@@ -158,6 +158,7 @@ KHOVSGOL_SOURCES=\
 	$(call find-sources,lib/dbus) \
 	$(call find-sources,lib/gtk) \
 	$(call find-sources,lib/avahi) \
+	$(call find-sources,lib/xml) \
 	$(call find-sources,lib/scrobbling)
 
 KHOVSGOL_PACKAGES=\
