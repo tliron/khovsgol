@@ -16,7 +16,7 @@ namespace Khovsgol.Client.GTK
             about.use_markup = true
             about.wrap = true
 
-            var active = new FeatureButton(_instance, feature, "My Khövsgöl receiver currently _on")
+            var active = new FeatureButton(_instance, feature, "My Khövsgöl receiver is currently _on")
             var latency = new ConnectedEntryBox("_Latency (in milliseconds)", _instance.receiver_configuration, null, "player_latency", true)
             // TOD: if the latency changes, we should ask the user if they want to restart the receiver
 

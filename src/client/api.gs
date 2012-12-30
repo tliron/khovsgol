@@ -1283,18 +1283,21 @@ namespace Khovsgol.Client
                 _watching_lock.unlock()
 
         def private on_committed(conversation: Conversation)
-            var player_object = conversation.response_json_object
-                if player_object is not null
-                    watch(player_object)
+            watch(conversation.response_json_object)
         
         def private on_error(e: GLib.Error)
             // TODO: special handling for network errors
             _logger.exception(e)
             error(e)
         
-        def private watch(player: Json.Object? = null)
+        def private watch(the_player: Json.Object? = null)
             if not is_watching
                 return
+
+            var player = the_player
+            if player is null
+                player = new Json.Object()
+                reset_watch()
             
             _watching_lock.lock()
             try
@@ -1304,11 +1307,8 @@ namespace Khovsgol.Client
                     _last_port = _port
                     _last_watching_player = _watching_player
             
-                if player is null
-                    return
-
                 var name = get_string_member_or_null(player, "name")
-                if name != _watching_player
+                if (name is not null) and (name != _watching_player)
                     return
                     
                 var playlist = get_object_member_or_null(player, "playList")
@@ -1322,6 +1322,11 @@ namespace Khovsgol.Client
                         _last_playlist_id = id
                         _last_playlist_version = version
                         _last_tracks = tracks
+                else
+                    playlist_change(null, int64.MIN, _last_playlist_id, _last_playlist_version, new JsonTracks(), new JsonAlbums())
+                    _last_playlist_id = null
+                    _last_playlist_version = int64.MIN
+                    _last_tracks = null
 
                 var volume = get_double_member_or_min(player, "volume")
                 if volume != double.MIN

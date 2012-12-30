@@ -16,7 +16,7 @@ namespace Khovsgol.Client.GTK
             about.use_markup = true
             about.wrap = true
 
-            var active = new FeatureButton(_instance, feature, "My Khövsgöl server currently _on")
+            var active = new FeatureButton(_instance, feature, "My Khövsgöl server is currently _on")
 
             var auto_label = new Label.with_mnemonic("A_uto-start my Khövsgöl server:")
             auto_label.set_alignment(0, 0)
@@ -31,7 +31,7 @@ namespace Khovsgol.Client.GTK
             var disable_auto = new ConnectedRadioButton("Don\'t auto-start my server", with_client, _instance.configuration, "server", "autostart", true)
             auto_label.mnemonic_widget = with_client
 
-            var advertise = new ConnectedCheckButton("A_dvertise my server in the local network (when it's on)", null, _instance.server_configuration, null, "advertise")
+            var advertise = new ConnectedCheckButton("Make my server _visible in the local network (when it's on)", null, _instance.server_configuration, null, "advertise")
 
             var box = new Box(Orientation.VERTICAL, 10)
             box.pack_start(about, false)

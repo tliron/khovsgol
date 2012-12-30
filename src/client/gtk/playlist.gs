@@ -563,8 +563,8 @@ namespace Khovsgol.Client.GTK
                 destroy_with_parent = true
                 modal = true
                 
-                _name = new EntryBox("Playlist _name:")
-                _name.entry.activate.connect(on_activate)
+                _name_box = new EntryBox("Playlist _name:")
+                _name_box.entry.activate.connect(on_activate)
                 var library = new SimpleComboBox()
                 //for l in libraries:
                 //    library.append_text(l['name'])
@@ -575,7 +575,7 @@ namespace Khovsgol.Client.GTK
                 library_box.pack_start(library_label)
                 library_box.pack_start(library)
                 var box = new Box(Orientation.VERTICAL, 10)
-                box.pack_start(_name)
+                box.pack_start(_name_box)
                 box.pack_start(library_box)
                 var alignment = new Alignment(0, 0, 1, 0)
                 alignment.set_padding(20, 20, 20, 20)
@@ -593,11 +593,11 @@ namespace Khovsgol.Client.GTK
                 show_all()
                 var response = run()
                 if response == ResponseType.OK
-                    _playlist_name = _name.entry.text.strip()
+                    _playlist_name = _name_box.entry.text.strip()
                 destroy()
                 return response == ResponseType.OK
             
             def private on_activate()
                 response(ResponseType.OK)
 
-            _name: EntryBox
+            _name_box: EntryBox

@@ -93,7 +93,7 @@ namespace Khovsgol.Client.GTK
             bottom_box.pack_start(tree_frame)
             bottom_box.pack_start(button_box, false)
 
-            var label = new Label("This is a map of the Khövsgöl servers in your local network.\n\nYou can start and stop your own server here, though note that you do not have to run one: you can use Khövsgöl purely as a client for other servers in the network. Indeed, a single Khövsgöl server can provide music for many listeners.\n\nThe server and player you\'re currently connected to is marked in bold. Double-click or click \"Connect\" on any other server to use it instead. Use \"Connect other\" for hidden servers, or for servers outside your local network.")
+            var label = new Label("This is a map of the Khövsgöl servers visible in your local network.\n\nThe server and player which you\'re currently controlling is marked in bold. Double-click or click \"Connect\" on any other server to control it instead. Use \"Connect other\" for hidden servers, or for servers outside your local network.\n\nEach server may have one or more players, and each player may have one or more plugs. You may connect to an already existing player. Otherwise, if you connect to the server itself, a player will be created for you.")
             label.wrap = true
             label.set_alignment(0, 0)
             
@@ -175,7 +175,13 @@ namespace Khovsgol.Client.GTK
                         destroy()
 
         def private on_connect_other()
-            pass
+            var dialog = new ConnectOther(_instance.window)
+            if dialog.@do()
+                var host = dialog.host
+                if (host is not null) and (host.length > 0)
+                    var port = dialog.port
+                    _instance.@connect(host, port)
+                destroy()
             
         def private on_start()
             var feature = _instance.get_feature("server")
@@ -244,27 +250,6 @@ namespace Khovsgol.Client.GTK
                 
                 fill_players(node, iter, is_current)
                 
-        def private fill_players(server_node: ServerNode, server_iter: TreeIter, is_current: bool)
-            var api = new API()
-            api.@connect(server_node.host, server_node.port, null)
-            for var player in api.get_players()
-                var name = get_string_member_or_null(player, "name")
-                if name is not null
-                    var play_mode = get_string_member_or_null(player, "playMode")
-                
-                    if is_current
-                        is_current = _instance.api.watching_player == name
-                            
-                    iter: TreeIter
-                    _store.append(out iter, server_iter)
-                    var node = new PlayerNode(name, server_node, self, iter, is_current)
-                    _store.@set(iter, Column.NODE, node)
-                    node.render(play_mode)
-            
-            var path = _store.get_path(server_iter)
-            if path is not null
-                _tree_view.expand_row(path, true)
-                
         def private on_avahi_removed(info: ServiceInfo)
             var id = info.to_id()
             iter: TreeIter
@@ -279,6 +264,36 @@ namespace Khovsgol.Client.GTK
                     if not _store.iter_next(ref iter)
                         break
 
+        def private fill_players(server_node: ServerNode, server_iter: TreeIter, is_current: bool)
+            var api = new API()
+            api.@connect(server_node.host, server_node.port, null)
+            for var player in api.get_players()
+                var name = get_string_member_or_null(player, "name")
+                if name is not null
+                    var play_mode = get_string_member_or_null(player, "playMode")
+                
+                    if is_current
+                        is_current = _instance.api.watching_player == name
+                            
+                    player_iter: TreeIter
+                    _store.append(out player_iter, server_iter)
+                    var player_node = new PlayerNode(name, server_node, self, player_iter, is_current)
+                    _store.@set(player_iter, Column.NODE, player_node)
+                    player_node.render(play_mode)
+                    
+                    plug_iter: TreeIter
+                    for var plug in new JsonObjects(get_array_member_or_null(player, "plugs"))
+                        var spec = get_string_member_or_null(plug, "spec")
+                        if spec is not null
+                            var plug_node = new PlugNode(spec, player_node)
+                            var markup = "<i>%s</i>".printf(Markup.escape_text(spec))
+                            _store.append(out plug_iter, player_iter)
+                            _store.@set(plug_iter, Column.NODE, plug_node, Column.ICON, _plug_icon, Column.MARKUP, markup)
+            
+            var path = _store.get_path(server_iter)
+            if path is not null
+                _tree_view.expand_row(path, true)
+                
         _instance: Instance
         _store: TreeStore
         _tree_view: TreeView
@@ -354,12 +369,55 @@ namespace Khovsgol.Client.GTK
                 render(play_mode)
 
         class private PlugNode: Object
-            construct(name: string, player_node: PlayerNode)
-                self.name = name
+            construct(spec: string, player_node: PlayerNode)
+                self.spec = spec
                 self.player_node = player_node
             
-            name: string
+            spec: string
             player_node: PlayerNode
+
+        class private ConnectOther: Dialog
+            construct(parent: Window)
+                title = "Connect to Server"
+                transient_for = parent
+                destroy_with_parent = true
+                modal = true
+                
+                _host_box = new EntryBox("_Hostname or IP address:")
+                _host_box.entry.activate.connect(on_activate)
+                _port_box = new EntryBox("_Port:")
+                _port_box.entry.text = "8185"
+                _port_box.entry.activate.connect(on_activate)
+                var box = new Box(Orientation.VERTICAL, 10)
+                box.pack_start(_host_box)
+                box.pack_start(_port_box)
+                var alignment = new Alignment(0, 0, 1, 0)
+                alignment.set_padding(20, 20, 20, 20)
+                alignment.add(box)
+                get_content_area().pack_start(alignment)
+                set_default_size(400, -1)
+                
+                add_button(Stock.CANCEL, ResponseType.CANCEL)
+                add_button(Stock.OK, ResponseType.OK)
+                set_default_response(ResponseType.OK)
+                
+            prop readonly host: string
+            prop readonly port: uint
+
+            def @do(): bool
+                show_all()
+                var response = run()
+                if response == ResponseType.OK
+                    _host = _host_box.entry.text.strip()
+                    _port = int.parse(_port_box.entry.text.strip())
+                destroy()
+                return response == ResponseType.OK
+            
+            def private on_activate()
+                response(ResponseType.OK)
+
+            _host_box: EntryBox
+            _port_box: EntryBox
 
         _logger: static Logging.Logger
         
