@@ -54,23 +54,24 @@ namespace GstUtil
             bus.add_signal_watch()
             bus.message.connect(on_message)
         
-        def kill()
-            if state != State.NULL
-                var result = set_state(State.NULL)
-                if result == StateChangeReturn.ASYNC
-                    // We'll have to do it later
-                    _logger.infof("Killing pipeline: %s", name)
-                    ref()
-                    _dying = true
-                else if result == StateChangeReturn.SUCCESS
-                    _logger.infof("Killed pipeline: %s", name)
+        def kill(element: Element)
+            element.ref()
+            element.set_data("GstUtil.dying", new GLib.Object())
+            if element.current_state != State.NULL
+                var result = element.set_state(State.NULL)
+                if result == StateChangeReturn.SUCCESS
+                    element.unref()
+                    _logger.infof("Killed element: %s", element.name)
+                else if result == StateChangeReturn.ASYNC
+                    // The unref will happen in on_message()
+                    _logger.infof("Killing element: %s", element.name)
                 else
-                    // This is bad! We'll keep the pipeline in memory to avoid
+                    // This is bad! We'll keep the element in memory to avoid
                     // failure, but it is a memory leak...
-                    _logger.warningf("Could not kill pipeline: %s", name)
-                    ref()
+                    _logger.warningf("Could not kill element: %s", element.name)
             else
-                _logger.infof("Killed pipeline: %s", name)
+                element.unref()
+                _logger.infof("Killed element: %s", element.name)
 
         prop state: State
             get
@@ -126,7 +127,8 @@ namespace GstUtil
         def private on_drained(element: Element)
             // Safe to remove now
             remove(element)
-        
+            kill(element)
+
         def private on_message(message: Message)
             // See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html
             var type = message.type
@@ -135,10 +137,10 @@ namespace GstUtil
                 old_state: State
                 pending_state: State
                 message.parse_state_changed(out old_state, out new_state, out pending_state)
-                if _dying and (new_state == State.NULL)
-                    _logger.infof("Pipeline died: %s", name)
-                    _dying = false
-                    unref()
+                dying: GLib.Object? = message.src.get_data("GstUtil.dying")
+                if (dying is not null) and (new_state == State.NULL)
+                    _logger.infof("Element died: %s", message.src.name)
+                    message.src.unref()
                     return
                 state_change(message.src, old_state, new_state, pending_state)
             else if type == MessageType.STREAM_START
@@ -155,8 +157,6 @@ namespace GstUtil
                 message.parse_error(out e, out text)
                 error(message.src, e, text)
 
-        _dying: bool
-
     /*
      * Makes sure to kill() the pipeline when finalized.
      */
@@ -165,7 +165,7 @@ namespace GstUtil
             _pipeline = pipeline
     
         final
-            _pipeline.kill()
+            _pipeline.kill(_pipeline)
     
         prop readonly pipeline: Pipeline
 
@@ -228,9 +228,8 @@ namespace GstUtil
                 _probe_id = src.add_probe(PadProbeType.BLOCK|PadProbeType.EVENT_DOWNSTREAM, on_event)
                 sink.send_event(new Event.eos())
             else
-                _logger.debug("Sending EOS, but how will we know it arrived?")
+                _logger.debug("Sending EOS")
                 sink.send_event(new Event.eos())
-                // TODO: don't we need to wait for this to complete?
                 drain(next)
 
             return PadProbeReturn.OK
