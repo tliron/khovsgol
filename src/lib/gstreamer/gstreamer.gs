@@ -14,31 +14,46 @@ namespace GstUtil
             _logger = Logging.get_logger("gstreamer")
             _logger.messagef("Initialized %s", Gst.version_string())
 
-    def list_element_factories()
+    def print_avilable_element_factories()
         var l = ElementFactory.list_get_elements(ElementFactoryType.ANY, Rank.PRIMARY)
         for var e in l
             print e.get_name()
 
+    /*
+     * Links the element only when a specific src pad type appears on it.
+     * Useful for decodebin and similarly dynamic elements.
+     * 
+     * The link is handled via the pad_added signal.
+     */
     def link_on_demand(element: Element, next: Element, pad_type: string = "audio/x-raw", once: bool = false)
         new LinkOnDemand(element, next, pad_type, once)
     
-    def link_new(element: Element, next: Element)
+    /*
+     * Requests a new src pad and links it to the next element.
+     * Useful for tee elements.
+     */
+    def link_new(element: Element, next: Element): bool
         var src = element.get_request_pad("src_%u")
-        if src is not null
-            var sink = next.get_static_pad("sink")
-            if sink is not null
-                src.link(sink)
+        if src is null
+            _logger.warningf("Could not request src pad: %s", element.name)
+            return false
+        var sink = next.get_static_pad("sink")
+        if sink is null
+            _logger.warningf("Could not get sink pad: %s", next.name)
+            return false
+        return src.link(sink) == PadLinkReturn.OK
     
     /*
      * Enhanced Pipeline class.
      * 
-     * Important: pipelines are not allowed to be detroyed if their state is not null,
-     * and unfortunately setting the state is not necessarily synchronous. The correct
-     * way to derefence a pipeline is:
+     * Important: pipelines are not allowed to be detroyed if their state is not NULL,
+     * and unfortunately setting the state may not happen synchronously. To make sure
+     * that the pipline stays referenced until it is NULL, use the drain() method.
+     * Example:
      * 
      *  var pipeline = new Pipeline("Player")
      *  ...
-     *  pipeline.drain()
+     *  pipeline.drain(pipeline) // after this call, we can safely unref
      *  pipline = null
      * 
      * Or, just use the PipelineContainer class, which will make sure to call drain().
@@ -114,15 +129,19 @@ namespace GstUtil
         event tag(tag_list: TagList)
         event error(source: Gst.Object, error: GLib.Error, text: string)
         
-        def add_branch(branch: Element)
-            if add(branch)
-                // Link to tee element
-                var tee = get_by_name("Tee")
-                if tee is not null
-                    link_new(tee, branch)
-                    branch.set_state(state)
-            else
+        def add_branch(branch: Element): bool
+            if not add(branch)
                 _logger.warningf("Could not add branch: %s", branch.name)
+                return false
+                
+            // Link to tee element
+            var tee = get_by_name("Tee")
+            if tee is not null
+                if not link_new(tee, branch)
+                    _logger.warningf("Could not link elements: %s, %s", tee.name, branch.name)
+
+            branch.set_state(state)
+            return true
             
         def remove_safely(element: Element)
             // Snip
@@ -196,7 +215,12 @@ namespace GstUtil
                 if structure is not null
                     var name = structure.get_name()
                     if name == _pad_type
-                        pad.link(_next.get_static_pad("sink"))
+                        var sink = _next.get_static_pad("sink")
+                        if sink is not null
+                            if pad.link(sink) != PadLinkReturn.OK
+                                _logger.warningf("Could not link elements: %s, %s", element.name, _next.name)
+                        else
+                            _logger.warningf("Could not link elements: %s", element.name)
                 
                         if _once
                             element.pad_added.disconnect(on_pad_added)
@@ -233,7 +257,13 @@ namespace GstUtil
             pad.remove_probe(_probe_id)
 
             var sink = pad.get_peer()
+            if sink is null
+                _logger.warningf("Could not get pad's peer: %s", pad.name)
+                return PadProbeReturn.DROP
             var next = sink.get_parent_element()
+            if next is null
+                _logger.warningf("Could not get pad's parent: %s", sink.name)
+                return PadProbeReturn.DROP
             
             var src = next.get_static_pad("src")
             if src is not null
@@ -254,7 +284,11 @@ namespace GstUtil
             if (@event is not null) and (@event->type == EventType.EOS)
                 _logger.debug("EOS arrived")
                 pad.remove_probe(_probe_id)
-                drain(pad.get_parent_element())
+                var element = pad.get_parent_element()
+                if element is null
+                    _logger.warningf("Could not get pad's parent: %s", pad.name)
+                    return PadProbeReturn.DROP
+                drain(element)
                 return PadProbeReturn.DROP
             else
                 return PadProbeReturn.OK

@@ -223,13 +223,15 @@ namespace Khovsgol.Server.GStreamer
             link_on_demand(decode, volume)
             volume.link(tee)
             
-            pipeline.add_branch(new FakeBranch("fake"))
+            if not pipeline.add_branch(new FakeBranch("fake"))
+                return false
             
             var has_branches = false
             for var plug in plugs
                 var branch = create_branch(plug)
                 if branch is not null
-                    pipeline.add_branch(branch)
+                    if not pipeline.add_branch(branch)
+                        return false
                     has_branches = true
             
             if has_branches
@@ -283,23 +285,43 @@ namespace Khovsgol.Server.GStreamer
             construct(name: string)
                 GLib.Object(name: name)
 
-            def initialize(first: Element, ...)
+            def initialize(first: Element, ...): bool
                 var queue = ElementFactory.make("queue", "Queue")
-                add_many(queue, first)
-                queue.link(first)
+                if queue is null
+                    _logger.warningf("Could not create queue")
+                    return false
+                if not add(queue)
+                    _logger.warningf("Could not add element: %s", queue.name)
+                    return false
+                if not add(first)
+                    _logger.warningf("Could not add element: %s", first.name)
+                    return false
+                if not queue.link(first)
+                    _logger.warningf("Could not link elements: %s, %s", queue.name, first.name)
+                    return false
                 
                 var previous = first
                 var args = va_list()
                 element: Element? = args.arg()
                 while element is not null
-                    if add(element)
-                        previous.link(element)
-                        previous = element
-                    else
+                    if not add(element)
                         _logger.warningf("Could not add element: %s", element.name)
+                        return false
+                    if not previous.link(element)
+                        _logger.warningf("Could not link elements: %s, %s", previous.name, element.name)
+                        return false
+                    previous = element
                     element = args.arg()
                 
-                add_pad(new GhostPad("sink", queue.get_static_pad("sink")))
+                var sink = queue.get_static_pad("sink")
+                if sink is null
+                    _logger.warningf("Could not get sink pad: %s", queue.name)
+                    return false
+                
+                if not add_pad(new GhostPad("sink", sink))
+                    _logger.warningf("Could not add ghost pad: %s", name)
+                    return false
+                return true
 
         /*
          * Fake branch.
@@ -308,6 +330,9 @@ namespace Khovsgol.Server.GStreamer
             construct(name: string)
                 super(name)
                 sink: dynamic Element = ElementFactory.make("fakesink", "Sink")
+                if sink is null
+                    _logger.warningf("Could not create fakesink")
+                    return
                 sink.sync = true // without this, we would empty out the pipeline at full speed!
                 initialize(sink)
 
@@ -318,8 +343,17 @@ namespace Khovsgol.Server.GStreamer
             construct(name: string, server: string? = null)
                 super(name)
                 var convert = ElementFactory.make("audioconvert", "Convert")
+                if convert is null
+                    _logger.warningf("Could not create audioconvert")
+                    return
                 var resample = ElementFactory.make("audioresample", "Resample")
+                if resample is null
+                    _logger.warningf("Could not create audioresample")
+                    return
                 sink: dynamic Element = ElementFactory.make("pulsesink", "Sink")
+                if sink is null
+                    _logger.warningf("Could not create pulsesink")
+                    return
 
                 sink.client_name = "Khövgsöl"
                 if server is not null
@@ -334,8 +368,17 @@ namespace Khovsgol.Server.GStreamer
             construct(name: string, host: string, http_port: uint, udp_port: uint)
                 super(name)
                 var convert = ElementFactory.make("audioconvert", "Convert")
+                if convert is null
+                    _logger.warningf("Could not create audioconvert")
+                    return
                 var pay = ElementFactory.make("rtpL16pay", "Pay")
+                if pay is null
+                    _logger.warningf("Could not create rtpL16pay")
+                    return
                 sink: dynamic Element = ElementFactory.make("udpsink", "RemoteSink:%s:%u:rtpL16:udp:%u".printf(host, http_port, udp_port))
+                if sink is null
+                    _logger.warningf("Could not create udpsink")
+                    return
                 
                 sink.host = host
                 sink.port = udp_port

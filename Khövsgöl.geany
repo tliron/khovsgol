@@ -23,7 +23,7 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=3
+current_page=74
 FILE_NAME_0=3157;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fcli%2Finstance.gs;0;4
 FILE_NAME_1=145;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fapi.gs;0;4
 FILE_NAME_2=13830;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Ffilesystem%2Fdirectory.gs;0;4
@@ -98,7 +98,7 @@ FILE_NAME_70=9021;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fcli
 FILE_NAME_71=9192;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-manager.gs;0;4
 FILE_NAME_72=8508;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Fcontrol-bar.gs;0;4
 FILE_NAME_73=9326;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Fpreferences.gs;0;4
-FILE_NAME_74=442;None;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fdebian%2Fkhovsgol%2Fdebian%2Fchangelog.template;0;4
+FILE_NAME_74=195;None;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fdebian%2Fkhovsgol%2Fdebian%2Fchangelog.template;0;4
 FILE_NAME_75=0;None;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2FLICENSE;0;4
 FILE_NAME_76=811;Make;0;16;1;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fdebianized.mk;0;4
 FILE_NAME_77=57;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fversion.gs;0;4
