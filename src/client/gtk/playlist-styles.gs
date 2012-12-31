@@ -47,6 +47,8 @@ namespace Khovsgol.Client.GTK
                             show_artist = compilation != 0
                         
                         var title = album.title
+                        if title is null
+                            title = album.path
                         if title is not null
                             var file_type = album.file_type
 
@@ -77,6 +79,8 @@ namespace Khovsgol.Client.GTK
                             first = false
                         
                 var title = track.title
+                if title is null
+                    title = track.path
                 if title is not null
                     var path = track.path
                     var position = track.position_in_playlist
@@ -197,6 +201,8 @@ namespace Khovsgol.Client.GTK
             var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
+                if title is null
+                    title = track.path
                 if title is not null
                     var position = track.position_in_playlist
                     var duration = track.duration
@@ -230,6 +236,8 @@ namespace Khovsgol.Client.GTK
             var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
+                if title is null
+                    title = track.path
                 if title is not null
                     var position_in_playlist = track.position_in_playlist
                     var position_in_album = track.position_in_album

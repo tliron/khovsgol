@@ -52,9 +52,9 @@ namespace Khovsgol.Server._Sqlite
             track.album = row.get_text("album")
             track.album_sort = row.get_text("album_sort")
             track.album_type = (AlbumType) row.get_int("album_type")
-            track.position_in_album = row.get_int("position")
-            track.duration = row.get_double("duration")
-            track.date = row.get_int("date")
+            track.position_in_album = row.get_int_or_min("position")
+            track.duration = row.get_double_or_min("duration")
+            track.date = row.get_int_or_min("date")
             track.file_type = row.get_text("file_type")
             if _album_path
                 track.album_path = row.get_text("album_path")
@@ -102,7 +102,7 @@ namespace Khovsgol.Server._Sqlite
             var row = _iterator.@get()
             var track_pointer = new TrackPointer()
             track_pointer.path = row.get_text("path")
-            track_pointer.position = row.get_int("position")
+            track_pointer.position = row.get_int_or_min("position")
             track_pointer.album = row.get_text("album")
             return track_pointer
         
@@ -152,7 +152,7 @@ namespace Khovsgol.Server._Sqlite
             album.title_sort = row.get_text("title_sort")
             album.artist = row.get_text("artist")
             album.artist_sort = row.get_text("artist_sort")
-            album.date = row.get_int("date")
+            album.date = row.get_int_or_min("date")
             album.album_type = (AlbumType) row.get_int("album_type")
             album.file_type = row.get_text("file_type")
             return album

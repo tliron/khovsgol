@@ -54,8 +54,16 @@ namespace SqliteUtil
         def get_int(name: string): int
             return _iterator.statement->column_int(_iterator.column_names[name])
 
+        def get_int_or_min(name: string): int
+            var value = get_int(name)
+            return value != 0 ? value : int.MIN
+
         def get_double(name: string): double
             return _iterator.statement->column_double(_iterator.column_names[name])
+
+        def get_double_or_min(name: string): double
+            var value = get_int(name)
+            return value != 0 ? value : double.MIN
     
         _iterator: RowIterator
     

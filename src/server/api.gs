@@ -83,7 +83,7 @@ namespace Khovsgol.Server
                 json: Json.Array
                 if album.has_prefix("*")
                     // Custom compilation magic prefix
-                    json = _crucible.libraries.iterate_track_pointers_in_album(args).to_json()
+                    json = tracks_to_full_json(_crucible.libraries.iterate_track_pointers_in_album(args), _crucible)
                 else
                     json = _crucible.libraries.iterate_tracks_in_album(args).to_json()
                     

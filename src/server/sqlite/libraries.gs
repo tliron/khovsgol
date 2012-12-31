@@ -406,17 +406,15 @@ namespace Khovsgol.Server._Sqlite
         def override iterate_track_pointers_in_album(args: IterateForAlbumArgs): IterableOfTrack raises GLib.Error
             var q = new QueryBuilder()
             q.table = "track_pointer LEFT JOIN track ON track_pointer.path=track.path INNER JOIN album ON track_pointer.album=album.path"
-            q.add_fields("track.path", "track.library", "track.title", "track.title_sort", "track.artist", "track.artist_sort", "album.title AS album", "album.title_sort AS album_sort", "track.album_type", "track_pointer.position", "track.duration", "track.date", "track.file_type")
+            q.add_fields("track_pointer.path", "track.library", "track.title", "track.title_sort", "track.artist", "track.artist_sort", "album.title AS album", "album.title_sort AS album_sort", "track.album_type", "track_pointer.position", "track.duration", "track.date", "track.file_type")
             q.requirements.add("track_pointer.album=?")
             q.bindings.add(args.album)
             
             // Fix sort
             var fixed_sort = new list of string
             for s in args.sort
-                if s == "position"
-                    s = "track_pointer.position"
-                else if s == "album"
-                    s = "track_pointer.album"
+                if (s == "position") or (s == "album") or (s == "path")
+                    s = "track_pointer." + s
                 else
                     s = "track." + s
                 fixed_sort.add(s)
@@ -427,7 +425,7 @@ namespace Khovsgol.Server._Sqlite
         def override iterate_track_pointers(args: IterateTracksArgs): IterableOfTrack raises GLib.Error
             var q = new QueryBuilder()
             q.table = "track_pointer LEFT JOIN track ON track_pointer.path=track.path INNER JOIN album ON track_pointer.album=album.path"
-            q.add_fields("track.path", "track.library", "track.title", "track.title_sort", "track.artist", "track.artist_sort", "album.title AS album", "album.title_sort AS album_sort", "track.album_type", "track_pointer.position", "track.duration", "track.date", "track.file_type", "track_pointer.album AS album_path")
+            q.add_fields("track_pointer.path", "track.library", "track.title", "track.title_sort", "track.artist", "track.artist_sort", "album.title AS album", "album.title_sort AS album_sort", "track.album_type", "track_pointer.position", "track.duration", "track.date", "track.file_type", "track_pointer.album AS album_path")
             parse_libraries(q, "track.", args.libraries)
 
             // All the LIKE requirements are OR-ed
@@ -447,8 +445,8 @@ namespace Khovsgol.Server._Sqlite
             // Fix sort
             var fixed_sort = new list of string
             for s in args.sort
-                if s == "position"
-                    s = "track_pointer.position"
+                if (s == "position") or (s == "path")
+                    s = "track_pointer." + s
                 else
                     s = "track." + s
                 fixed_sort.add(s)

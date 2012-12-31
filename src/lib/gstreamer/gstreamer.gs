@@ -181,9 +181,9 @@ namespace GstUtil
             _next = next
             _pad_type = pad_type
             _once = once
-            element.pad_added.connect(on_pad_added)
             element.set_data("GstUtil.LinkOnDemand", self)
-
+            element.pad_added.connect(on_pad_added)
+        
         def on_pad_added(element: dynamic Element, pad: Pad)
             var caps = pad.query_caps(null)
             if caps is not null

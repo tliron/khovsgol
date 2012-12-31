@@ -25,6 +25,20 @@ namespace Khovsgol.Server
         var track = new Track.from_json(obj)
         track.album_path = File.new_for_path(track.path).get_parent().get_path()
 
+    def tracks_to_full_json(tracks: IterableOfTrack, crucible: Crucible): Json.Array
+        var library = crucible.create_library()
+        var directory = new Filesystem.Directory()
+        directory.crucible = crucible
+        directory.library = library
+        var sortables = new Sortables()
+
+        var json = new Json.Array()
+        for var track in tracks
+            if track.title is null
+                track = directory.create_track(track.path, sortables)
+            json.add_object_element(track.to_json())
+        return json
+
     class AlbumPathConstant
         construct(album_path: string)
             _album_path = album_path

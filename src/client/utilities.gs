@@ -45,8 +45,8 @@ namespace Khovsgol.Client
     /*
      * True if the file type is known to be lossless.
      */
-    def is_lossless(file_type: string): bool
-        return (file_type == "flac") or (file_type == "ape") or (file_type == "wav") or (file_type == "wv") or (file_type == "tta")
+    def is_lossless(file_type: string?): bool
+        return (file_type is not null) and ((file_type == "flac") or (file_type == "ape") or (file_type == "wav") or (file_type == "wv") or (file_type == "tta"))
         
     /*
      * Format integer as an ordinal.

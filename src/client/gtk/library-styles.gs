@@ -678,6 +678,8 @@ namespace Khovsgol.Client.GTK
             
     def private fill_album_by(album: Album, node: LibraryNode, subdue_lossy: bool)
         var title = album.title
+        if title is null
+            title = album.path
         if title is not null
             var file_type = album.file_type
             var date = album.date
@@ -712,6 +714,8 @@ namespace Khovsgol.Client.GTK
 
     def private fill_album(album: Album, node: LibraryNode, subdue_lossy: bool)
         var title = album.title
+        if title is null
+            title = album.path
         if title is not null
             var file_type = album.file_type
             var artist = album.artist
@@ -732,6 +736,8 @@ namespace Khovsgol.Client.GTK
                 
     def private fill_track_in_album(track: Track, is_compilation: bool, node: LibraryNode, subdue_lossy: bool, show_duration: bool)
         var title = track.title
+        if title is null
+            title = track.path
         if title is not null
             var file_type = track.file_type
             var position = track.position_in_album
@@ -779,6 +785,8 @@ namespace Khovsgol.Client.GTK
 
     def private fill_track(track: Track, node: LibraryNode, subdue_lossy: bool, show_duration: bool)
         var title = track.title
+        if title is null
+            title = track.path
         if title is not null
             var album = track.album
             var file_type = track.file_type
