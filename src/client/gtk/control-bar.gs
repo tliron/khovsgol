@@ -101,6 +101,7 @@ namespace Khovsgol.Client.GTK
             
             var api = (API) _instance.api
             api.connection_change_gdk.connect(on_connection_changed)
+            api.plugs_change_gdk.connect(on_plugs_changed)
             api.volume_change_gdk.connect(on_volume_changed)
             api.play_mode_change_gdk.connect(on_play_mode_changed)
             api.position_in_track_change_gdk.connect(on_position_in_track_changed)
@@ -110,6 +111,7 @@ namespace Khovsgol.Client.GTK
         def private on_unrealized()
             var api = (API) _instance.api
             api.connection_change_gdk.disconnect(on_connection_changed)
+            api.plugs_change_gdk.disconnect(on_plugs_changed)
             api.volume_change_gdk.disconnect(on_volume_changed)
             api.play_mode_change_gdk.disconnect(on_play_mode_changed)
             api.position_in_track_change_gdk.disconnect(on_position_in_track_changed)
@@ -127,20 +129,34 @@ namespace Khovsgol.Client.GTK
             new Connector(_instance).show_all()
 
         def private on_previous()
+            API.in_gdk = true
+            _instance.validate_plugs(_plugs)
             _instance.api.set_position_in_playlist_string("prev")
+            API.in_gdk = false
             
         def private on_play()
+            API.in_gdk = true
+            _instance.validate_plugs(_plugs)
             _instance.api.set_play_mode("playing")
+            API.in_gdk = false
         
         _on_pause_toggled_id: ulong
         def private on_pause_toggled()
+            API.in_gdk = true
+            _instance.validate_plugs(_plugs)
             _instance.api.set_play_mode("toggle_paused")
+            API.in_gdk = false
             
         def private on_stop()
+            API.in_gdk = true
             _instance.api.set_play_mode("stopped")
+            API.in_gdk = false
             
         def private on_next()
+            API.in_gdk = true
+            _instance.validate_plugs(_plugs)
             _instance.api.set_position_in_playlist_string("next")
+            API.in_gdk = false
 
         def private on_info_clicked(e: Gdk.EventButton): bool
             on_connector()
@@ -149,7 +165,9 @@ namespace Khovsgol.Client.GTK
         def private on_progress_clicked(e: Gdk.EventButton): bool
             var w = _progress.get_allocated_width()
             var ratio = (double) e.x / w
+            API.in_gdk = true
             _instance.api.set_ratio_in_track(ratio)
+            API.in_gdk = false
             return true // returning false would cause window dragging
             
         def private on_progress_scrolled(e: Gdk.EventScroll): bool
@@ -164,12 +182,16 @@ namespace Khovsgol.Client.GTK
                     position = 0
                 else if (_track_duration != double.MIN) and (position > _track_duration)
                     position = _track_duration
+                API.in_gdk = true
                 _instance.api.set_position_in_track(position)
+                API.in_gdk = false
             return false
         
         _on_volume_id: ulong
         def private on_volume(value: double)
+            API.in_gdk = true
             _instance.api.set_volume(value)
+            API.in_gdk = false
             
         _on_toggle_visualization_id: ulong
         def private on_visualization_toggled()
@@ -194,6 +216,9 @@ namespace Khovsgol.Client.GTK
                 _info.label = "<b>%s@%s:%u</b>".printf(Markup.escape_text(player), Markup.escape_text(host), port)
             else
                 _info.label = "<b>Not connected</b>"
+        
+        def private on_plugs_changed(plugs: Plugs?, old_plugs: Plugs?)
+            _plugs = plugs
 
         def private on_volume_changed(volume: double, old_volume: double)
             SignalHandler.block(_volume_button, _on_volume_id)
@@ -224,3 +249,4 @@ namespace Khovsgol.Client.GTK
         _position_in_track: double = double.MIN
         _track_duration: double = double.MIN
         _visualization: Feature?
+        _plugs: Plugs?

@@ -6,6 +6,10 @@ uses
 
 namespace Khovsgol.Client
 
+    class Plugs: Gee.HashSet of string
+        construct()
+            super()
+
     /*
      * Unified client-side API. Internally uses a Nap client to access
      * the server remotely over HTTP. The instance can be reconnected
@@ -40,8 +44,9 @@ namespace Khovsgol.Client
         prop readonly is_watching: bool
             get
                 return AtomicInt.@get(ref _is_watching) == 1
-
+        
         event connection_change(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
+        event plugs_change(plugs: Plugs?, old_plugs: Plugs?)
         event volume_change(volume: double, old_volume: double)
         event play_mode_change(play_mode: string?, old_last_play_mode: string?)
         event cursor_mode_change(cursor_mode: string?, old_last_cursor_mode: string?)
@@ -1269,12 +1274,8 @@ namespace Khovsgol.Client
         _last_playlist_version: int64
         _last_tracks: IterableOfTrack?
         _last_track: Track?
+        _last_plugs: Plugs?
 
-        _logger: static Logging.Logger
-
-        init
-            _logger = Logging.get_logger("khovsgol.client.api")
-        
         def private get_client(): Nap.Client?
             _watching_lock.lock()
             try
@@ -1296,8 +1297,9 @@ namespace Khovsgol.Client
 
             var player = the_player
             if player is null
+                // This likely means that the request to the server failed;
+                // we will still send out signals
                 player = new Json.Object()
-                reset_watch()
             
             _watching_lock.lock()
             try
@@ -1311,6 +1313,38 @@ namespace Khovsgol.Client
                 if (name is not null) and (name != _watching_player)
                     return
                     
+                var plugs_array = get_array_member_or_null(player, "plugs")
+                if plugs_array is not null
+                    var plugs = new Plugs()
+                    for var plug in new JsonObjects(plugs_array)
+                        var spec = get_string_member_or_null(plug, "spec")
+                        if spec is not null
+                            plugs.add(spec)
+                    if plugs.is_empty
+                        plugs = null
+                        
+                    if _last_plugs is not null
+                        var different = plugs is null
+                        if not different
+                            for var plug in plugs
+                                if not _last_plugs.contains(plug)
+                                    different = true
+                                    break
+                        if not different
+                            for var plug in _last_plugs
+                                if not plugs.contains(plug)
+                                    different = true
+                                    break
+                        if different
+                            plugs_change(plugs, _last_plugs)
+                            _last_plugs = plugs
+                    else if plugs is not null
+                        plugs_change(plugs, _last_plugs)
+                        _last_plugs = plugs
+                else
+                    plugs_change(null, _last_plugs)
+                    _last_plugs = null
+                    
                 var playlist = get_object_member_or_null(player, "playList")
                 if playlist is not null
                     var id = get_string_member_or_null(playlist, "id")
@@ -1322,7 +1356,7 @@ namespace Khovsgol.Client
                         _last_playlist_id = id
                         _last_playlist_version = version
                         _last_tracks = tracks
-                else
+                else if _last_playlist_id is not null
                     playlist_change(null, int64.MIN, _last_playlist_id, _last_playlist_version, new JsonTracks(), new JsonAlbums())
                     _last_playlist_id = null
                     _last_playlist_version = int64.MIN
@@ -1389,3 +1423,8 @@ namespace Khovsgol.Client
             AtomicInt.@set(ref _is_watching, 0)
             AtomicInt.@set(ref _is_poll_stopping, 0)
             return true
+
+        _logger: static Logging.Logger
+
+        init
+            _logger = Logging.get_logger("khovsgol.client.api")

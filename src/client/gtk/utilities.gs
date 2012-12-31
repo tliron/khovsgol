@@ -12,28 +12,6 @@ namespace Khovsgol.Client.GTK
         else
             return null
 
-    def validate_plugs(instance: Instance, window: Window)
-        var player = instance.api.get_player()
-        if player is not null
-            var plugs = get_string_member_or_null(player, "plugs")
-            if plugs is not null
-                var host = "local"
-                port: uint = 1234
-                var dialog = new MessageDialog.with_markup(window, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "You're connecting to \"%s\", a computer in your network. Do you want the sound to come out <i>here</i>?\n\n(Answering no will make the sound come out at \"%s\")", host, host)
-                dialog.title = "Connecting to %s:%u".printf(host, port)
-                dialog.set_default_response(Gtk.ResponseType.YES)
-                var response = dialog.run()
-                dialog.destroy()
-                if response == ResponseType.YES
-                    // Make sure receiver is running
-                    var feature = instance.get_feature("receiver")
-                    if feature is not null
-                        feature.start()
-                        instance.api.set_plug("rtpL16:udp:%u".printf(instance.receiver_configuration.port))
-                    else
-                        // TODO: error! no receiver!
-                        pass
- 
     enum TargetInfo
         UNKNOWN = 0
         JSON_ARRAY = 1
@@ -92,7 +70,7 @@ namespace Khovsgol.Client.GTK
             return _albums_dict[path]
 
         def append(node: Json.Node?, position: int, search: string? = null, title_markup: string? = null, duration_markup: string? = null)
-            rtl: bool = false
+            var rtl = false
             if search is not null
                 var direction = Pango.find_base_dir(search, -1)
                 rtl = (direction == Pango.Direction.RTL) or (direction == Pango.Direction.WEAK_RTL)
@@ -176,7 +154,7 @@ namespace Khovsgol.Client.GTK
                 return ((Json.Node) value).get_node_type()
 
         def append(node: Json.Node?, search: string? = null, title_markup: string? = null, duration_markup: string? = null, is_expandable: bool = false)
-            rtl: bool = false
+            var rtl = false
             if search is not null
                 var direction = Pango.find_base_dir(search, -1)
                 rtl = (direction == Pango.Direction.RTL) or (direction == Pango.Direction.WEAK_RTL)
@@ -399,7 +377,7 @@ namespace Khovsgol.Client.GTK
             get_path_at_pos((int) e.x, (int) e.y, out clicked_path, null, null, null)
             
             // Did the user click in the selection?
-            in_selection: bool = false
+            var in_selection = false
             if clicked_path is not null
                 for var selected_path in selected_paths
                     if selected_path.compare(clicked_path) == 0

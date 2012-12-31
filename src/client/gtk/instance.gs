@@ -3,6 +3,7 @@
 uses
     DBusUtil
     AvahiUtil
+    Gtk
 
 namespace Khovsgol.Client.GTK
 
@@ -41,21 +42,17 @@ namespace Khovsgol.Client.GTK
         prop readonly window: MainWindow
         prop readonly application: Application
 
-        def new @connect(host: string, port: uint, player: string? = null, plug: string? = null): bool
+        def new @connect(host: string, port: uint, is_local: bool, player: string? = null, plug: string? = null): bool
             if player is null
                 player = Environment.get_user_name()
-            if plug is null
-                plug = "pulse"
 
             _api.@connect(host, port, player)
-            var success = _api.set_plug(plug, null, true) is not null
-            
-            if success
-                if (host != _configuration.connection_host) or (port != _configuration.connection_port) or (player != _configuration.connection_player) or (plug != _configuration.connection_plug)
+            if _api.get_player() is not null
+                if (host != _configuration.connection_host) or (port != _configuration.connection_port) or (is_local != _configuration.connection_is_local) or (player != _configuration.connection_player)
                     _configuration.connection_host = host
                     _configuration.connection_port = port
+                    _configuration.connection_is_local = is_local
                     _configuration.connection_player = player
-                    _configuration.connection_plug = plug
                     _configuration.save()
                 return true
             else
@@ -88,7 +85,7 @@ namespace Khovsgol.Client.GTK
                 else if _configuration.is_feature_boolean(feature.name, "autostart")
                     feature.start()
                     
-            Gdk.threads_add_idle(connect_first)
+            Gdk.threads_add_idle(connect_first_time)
 
             _api.start_watch_thread()
             
@@ -128,16 +125,41 @@ namespace Khovsgol.Client.GTK
                     return file
 
             return null
-        
+
+        def validate_plugs(plugs: Plugs?)
+            if plugs is null
+                if _configuration.connection_is_local
+                    _api.set_plug("pulse", null, true)
+                else
+                    host: string
+                    port: uint
+                    _api.get_connection(out host, out port)
+                    var dialog = new MessageDialog.with_markup(_window, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "You're playing music from \"%s\", a computer in your network. Do you want the sound to come out <i>here</i>?\n\n(Answering no will make the sound come out at \"%s\")", host, host)
+                    dialog.title = "Playing music from %s:%u".printf(host, port)
+                    dialog.set_default_response(Gtk.ResponseType.YES)
+                    var response = dialog.run()
+                    dialog.destroy()
+                    if response == ResponseType.YES
+                        // Make sure receiver is running
+                        var feature = get_feature("receiver")
+                        if feature is not null
+                            feature.start()
+                            _api.set_plug("rtpL16:udp:%u".printf(_receiver_configuration.port), null, true)
+                        else
+                            // TODO: error! no receiver!
+                            pass
+                    else
+                        _api.set_plug("pulse", null, true)
+
         _arguments: Arguments
         _features: dict of string, Feature = new dict of string, Feature
         _browser: Browser?
         _started: bool
         
-        def private connect_first(): bool
+        def private connect_first_time(): bool
             var host = _configuration.connection_host
             if host is not null
-                if not @connect(host, _configuration.connection_port, _configuration.connection_player, _configuration.connection_plug)
+                if not @connect(host, _configuration.connection_port, _configuration.connection_is_local, _configuration.connection_player)
                     connect_to_first_local_service()
             else
                 connect_to_first_local_service()
@@ -151,7 +173,7 @@ namespace Khovsgol.Client.GTK
         def private on_avahi_found(info: ServiceFoundInfo)
             // Connect to first local service found
             if (info.flags & Avahi.LookupResultFlags.LOCAL) != 0
-                @connect(info.hostname, info.port)
+                @connect(info.hostname, info.port, true)
                 _browser = null
         
     _logger: Logging.Logger

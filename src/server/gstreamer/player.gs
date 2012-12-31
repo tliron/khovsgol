@@ -104,8 +104,8 @@ namespace Khovsgol.Server.GStreamer
                         return position / 1000000000.0 // seconds to seconds
                 return double.MIN
             set
-                var pipeline = self.pipeline
-                if pipeline is not null
+                if validate_pipeline()
+                    var pipeline = self.pipeline
                     var position = (int64) (value * 1000000000.0) // seconds to nanoseconds
                     if position < 0
                         position = 0
@@ -113,7 +113,8 @@ namespace Khovsgol.Server.GStreamer
                         pipeline.position = position
                         pipeline.state = State.PLAYING
                     else
-                        // Forcing a restart; can help overcome pipeline problems
+                        // We will consider position 0 as a request to restart the pipeline
+                        pipeline = self.pipeline
                         pipeline.state = State.NULL
                         pipeline.state = State.PLAYING
         
@@ -128,8 +129,8 @@ namespace Khovsgol.Server.GStreamer
                             return position / duration
                 return double.MIN
             set
-                var pipeline = self.pipeline
-                if pipeline is not null
+                if validate_pipeline()
+                    var pipeline = self.pipeline
                     var duration = pipeline.duration
                     if duration != int64.MIN
                         pipeline.position = (int64) (value * duration)
@@ -175,7 +176,7 @@ namespace Khovsgol.Server.GStreamer
             var plug = get_plug(spec, default_host)
             if plug is null
                 plug = super.set_plug(spec, default_host)
-                if pipeline is not null
+                if (plug is not null) and (pipeline is not null)
                     var branch = create_branch(plug)
                     if branch is not null
                         pipeline.add_branch(branch)
@@ -204,11 +205,17 @@ namespace Khovsgol.Server.GStreamer
             pipeline.tag.connect(on_tag)
             pipeline.error.connect(on_error)
 
-            var source = ElementFactory.make("filesrc", "Source")
+            source: dynamic Element = ElementFactory.make("filesrc", "Source")
             var decode = ElementFactory.make("decodebin", "Decode")
             var volume = ElementFactory.make("volume", "Volume")
             tee: dynamic Element = ElementFactory.make("tee", "Tee")
             
+            if (source is null) or (decode is null) or (volume is null) or (tee is null)
+                return false
+            
+            if _path is not null
+                source.location = _path
+
             //tee.silent = false // ??
             
             pipeline.add_many(source, decode, volume, tee)
@@ -218,7 +225,7 @@ namespace Khovsgol.Server.GStreamer
             
             pipeline.add_branch(new FakeBranch("fake"))
             
-            has_branches: bool = false
+            var has_branches = false
             for var plug in plugs
                 var branch = create_branch(plug)
                 if branch is not null

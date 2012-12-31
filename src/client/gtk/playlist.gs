@@ -166,6 +166,7 @@ namespace Khovsgol.Client.GTK
             _instance.configuration.subdue_lossy_change.connect(on_subdue_lossy_changed)
             
             var api = (API) _instance.api
+            api.plugs_change_gdk.connect(on_plugs_changed)
             api.cursor_mode_change_gdk.connect(on_cursor_mode_changed)
             api.play_mode_change_gdk.connect(on_play_mode_changed)
             api.playlist_change_gdk.connect(on_playlist_changed)
@@ -182,6 +183,7 @@ namespace Khovsgol.Client.GTK
             _instance.configuration.subdue_lossy_change.disconnect(on_subdue_lossy_changed)
 
             var api = (API) _instance.api
+            api.plugs_change_gdk.disconnect(on_plugs_changed)
             api.cursor_mode_change_gdk.disconnect(on_cursor_mode_changed)
             api.play_mode_change_gdk.disconnect(on_play_mode_changed)
             api.playlist_change_gdk.disconnect(on_playlist_changed)
@@ -366,11 +368,14 @@ namespace Khovsgol.Client.GTK
             
         def private on_play()
             var position = get_first_selected_position()
+            API.in_gdk = true
+            _instance.validate_plugs(_plugs)
             if position != int.MIN
                 if _position_in_playlist != position
                     _instance.api.set_position_in_playlist(position)
                 else
                     _instance.api.set_position_in_track(0)
+            API.in_gdk = false
         
         def private on_move_to_cursor()
             pass
@@ -419,6 +424,9 @@ namespace Khovsgol.Client.GTK
         def private on_export_m3u()
             export_playlist(new M3u())
         
+        def private on_plugs_changed(plugs: Plugs?, old_plugs: Plugs?)
+            _plugs = plugs
+
         def private on_cursor_mode_changed(cursor_mode: string?, old_cursor_mode: string?)
             SignalHandler.block(_mode_box.combo_box, _on_cursor_mode_id)
             _mode_box.active = cursor_mode
@@ -615,6 +623,7 @@ namespace Khovsgol.Client.GTK
         _track_duration: double = double.MIN
         _tracks: IterableOfTrack?
         _albums: IterableOfAlbum?
+        _plugs: Plugs?
         
         _logger: static Logging.Logger
         

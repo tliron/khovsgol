@@ -4,7 +4,7 @@ namespace Khovsgol.Server
 
     class Arguments: Object
         construct(args: array of string)
-            restart_daemon: bool = false
+            var restart_daemon = false
             
             var options = new array of OptionEntry[10]
             options[0] = {"version", 0, 0, OptionArg.NONE,  ref _version,       "Show version", null}

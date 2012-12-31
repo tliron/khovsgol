@@ -152,7 +152,7 @@ namespace Khovsgol.Client.GTK
                         player = plug_node.player_node.name
                         
                     if server_node is not null
-                        if not server_node.is_local
+                        /*if not server_node.is_local
                             var dialog = new MessageDialog.with_markup(self, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "You're connecting to \"%s\", a computer in your network. Do you want the sound to come out <i>here</i>?\n\n(Answering no will make the sound come out at \"%s\")", server_node.host, server_node.host)
                             dialog.title = "Connecting to %s:%u".printf(server_node.host, server_node.port)
                             dialog.set_default_response(Gtk.ResponseType.YES)
@@ -166,11 +166,8 @@ namespace Khovsgol.Client.GTK
                                     _instance.@connect(server_node.host, server_node.port, player, "rtpL16:udp:%u".printf(_instance.receiver_configuration.port))
                                 else
                                     // TODO: error! no receiver!
-                                    pass
-                            else
-                                _instance.@connect(server_node.host, server_node.port, player)
-                        else
-                            _instance.@connect(server_node.host, server_node.port, player)
+                                    pass*/
+                        _instance.@connect(server_node.host, server_node.port, server_node.is_local, player)
                         
                         destroy()
 
@@ -180,7 +177,7 @@ namespace Khovsgol.Client.GTK
                 var host = dialog.host
                 if (host is not null) and (host.length > 0)
                     var port = dialog.port
-                    _instance.@connect(host, port)
+                    _instance.@connect(host, port, false)
                 destroy()
             
         def private on_start()

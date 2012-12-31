@@ -143,20 +143,14 @@ namespace Khovsgol.Client
             set
                 _key_file.set_integer("connection", "port", (int) value)
 
-        prop connection_plug: string?
-            owned get
+        prop connection_is_local: bool
+            get
                 try
-                    return _key_file.get_string("connection", "plug")
+                    return _key_file.get_boolean("connection", "is-local")
                 except e: KeyFileError
-                    return null
+                    return false
             set
-                if (value is not null) and (value.length > 0)
-                    _key_file.set_string("connection", "plug", value)
-                else
-                    try
-                        _key_file.remove_key("connection", "plug")
-                    except e: KeyFileError
-                        pass
+                _key_file.set_boolean("connection", "is-local", value)
 
         prop connection_player: string?
             owned get

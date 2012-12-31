@@ -13,6 +13,7 @@ namespace Khovsgol.Client.GTK
     class API: Client.API
         construct()
             connection_change.connect(on_connection_change)
+            plugs_change.connect(on_plugs_change)
             error.connect(on_error)
             volume_change.connect(on_volume_change)
             play_mode_change.connect(on_play_mode_change)
@@ -23,6 +24,7 @@ namespace Khovsgol.Client.GTK
             track_change.connect(on_track_change)
 
         event connection_change_gdk(host: string?, port: uint, player: string?, old_host: string?, old_port: uint, old_player: string?)
+        event plugs_change_gdk(plugs: Plugs?, old_plugs: Plugs?)
         event error_gdk(e: GLib.Error)
         event volume_change_gdk(volume: double, old_volume: double)
         event play_mode_change_gdk(play_mode: string?, old_play_mode: string?)
@@ -46,6 +48,12 @@ namespace Khovsgol.Client.GTK
                 connection_change_gdk(host, port, player, old_host, old_port, old_player)
             else
                 new ConnectionChangeGdk(self, host, port, player, old_host, old_port, old_player)
+
+        def private on_plugs_change(plugs: Plugs?, old_plugs: Plugs?)
+            if in_gdk
+                plugs_change_gdk(plugs, old_plugs)
+            else
+                new PlugsChangeGdk(self, plugs, old_plugs)
         
         def private on_error(e: GLib.Error)
             if in_gdk
@@ -117,6 +125,23 @@ namespace Khovsgol.Client.GTK
 
             def private idle(): bool
                 _api.connection_change_gdk(_host, _port, _player, _old_host, _old_port, _old_player)
+                _api._queue.remove(self)
+                return false
+
+        class private PlugsChangeGdk: Object
+            construct(api: API, plugs: Plugs?, old_plugs: Plugs?)
+                _api = api
+                _plugs = plugs
+                _old_plugs = old_plugs
+                _api._queue.add(self)
+                Gdk.threads_add_idle(idle)
+
+            _api: API
+            _plugs: Plugs?
+            _old_plugs: Plugs?
+
+            def private idle(): bool
+                _api.plugs_change_gdk(_plugs, _old_plugs)
                 _api._queue.remove(self)
                 return false
 

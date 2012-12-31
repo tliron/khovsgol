@@ -90,7 +90,7 @@ namespace Nap
             var p = pattern
             var regex = new StringBuilder("^")
             
-            wildcard: bool = false
+            var wildcard = false
             if p.has_suffix("*")
                 p = p.substring(0, -1)
                 wildcard = true

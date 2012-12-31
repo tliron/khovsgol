@@ -73,7 +73,7 @@ namespace Khovsgol.Client.Features
                 if interested_media_player == "khovsgol"
                     var new_interested_media_players = new array of string[interested_media_player.length - 1]
                     var i = 0
-                    found: bool = false
+                    var found = false
                     for var e in interested_media_players
                         if not found and (e == "khovsgol")
                             found = true

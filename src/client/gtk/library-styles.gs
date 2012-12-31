@@ -34,7 +34,7 @@ namespace Khovsgol.Client.GTK
                     node.append_string("playlists", "playlists", "<b>Playlists</b>", null, true)
                 else
                     // Album artists (with all albums and tracks cached inside each node)
-                    first: bool = true
+                    var first = true
                     current_album_path: string? = null
                     current_albums: Json.Array? = null
                     current_tracks: Json.Array? = null
@@ -258,7 +258,7 @@ namespace Khovsgol.Client.GTK
                     fill_artists(node.instance.api.get_artists(false, "artist_sort"), node)
                 else
                     // Artists (with all tracks cached inside each node)
-                    first: bool = true
+                    var first = true
                     current_tracks: Json.Array? = null
                     current_letter: unichar = 0
                     last_artist_name: string? = null
@@ -360,7 +360,7 @@ namespace Khovsgol.Client.GTK
                 if filter is null
                     // Dates
                     current_decade: int = int.MIN
-                    first: bool = true
+                    var first = true
                     for var date in node.instance.api.get_dates()
                         // Seperate by decade
                         var decade = date / 10
@@ -374,7 +374,7 @@ namespace Khovsgol.Client.GTK
                         first = false
                 else
                     // Dates (with all albums and tracks cached inside each node)
-                    first: bool = true
+                    var first = true
                     current_album_path: string? = null
                     current_albums: Json.Array? = null
                     current_tracks: Json.Array? = null
@@ -534,7 +534,7 @@ namespace Khovsgol.Client.GTK
                     fill_albums(node.instance.api.get_albums(args), node, subdue_lossy)
                 else
                     // Albums (with tracks cached inside each node)
-                    first: bool = true
+                    var first = true
                     current_album_path: string? = null
                     current_tracks: Json.Array? = null
                     current_letter: unichar = 0
@@ -644,7 +644,7 @@ namespace Khovsgol.Client.GTK
 
     def private fill_artists(artists: IterableOfArtist, node: LibraryNode): bool
         current_letter: unichar = 0
-        first: bool = true
+        var first = true
         for var artist in artists
             if artist.name is not null
                 var sort = artist.sort
@@ -694,7 +694,7 @@ namespace Khovsgol.Client.GTK
 
     def private fill_albums(albums: IterableOfAlbum, node: LibraryNode, subdue_lossy: bool)
         current_letter: unichar = 0
-        first: bool = true
+        var first = true
         for var album in albums
             var title = album.title
             if title is not null
@@ -765,7 +765,7 @@ namespace Khovsgol.Client.GTK
 
     def private fill_tracks(tracks: IterableOfTrack, node: LibraryNode, subdue_lossy: bool, show_duration: bool)
         current_letter: unichar = 0
-        first: bool = true
+        var first = true
         for var track in tracks
             var title = track.title
             if title is not null

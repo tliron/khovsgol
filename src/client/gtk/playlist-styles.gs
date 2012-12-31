@@ -29,8 +29,8 @@ namespace Khovsgol.Client.GTK
             current_album_path: string? = null
             current_album_positions: Json.Array? = null
             current_album_paths: Json.Array? = null
-            show_artist: bool = true
-            first: bool = true
+            var show_artist = true
+            var first = true
             var albums = new dict of string, Album
             for var track in node.tracks
                 if track.album_path != current_album_path

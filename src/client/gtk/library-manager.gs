@@ -197,7 +197,7 @@ namespace Khovsgol.Client.GTK
             var selection = _tree_view.get_selection()
             var tree_paths = selection.get_selected_rows(null)
             var has = tree_paths.length() > 0
-            on_directory: bool = false
+            var on_directory = false
             if has
                 iter: TreeIter
                 if _store.get_iter(out iter, tree_paths.data)

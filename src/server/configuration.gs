@@ -118,7 +118,7 @@ namespace Khovsgol.Server
                 var directories = _key_file.get_string_list(group, "directories")
                 var new_directories = new array of string[directories.length - 1]
                 var i = 0
-                found: bool = false
+                var found = false
                 for var e in directories
                     if not found and (e == directory)
                         found = true
@@ -235,7 +235,7 @@ namespace Khovsgol.Server
                 var plugs = _key_file.get_string_list(group, "plugs")
                 var new_plugs = new array of string[plugs.length - 1]
                 var i = 0
-                found: bool = false
+                var found = false
                 for var e in plugs
                     if not found and (e == plug)
                         found = true
