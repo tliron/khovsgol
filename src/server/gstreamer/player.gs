@@ -109,8 +109,13 @@ namespace Khovsgol.Server.GStreamer
                     var position = (int64) (value * 1000000000.0) // seconds to nanoseconds
                     if position < 0
                         position = 0
-                    pipeline.position = position
-                    pipeline.state = State.PLAYING
+                    if position != 0
+                        pipeline.position = position
+                        pipeline.state = State.PLAYING
+                    else
+                        // Forcing a restart; can help overcome pipeline problems
+                        pipeline.state = State.NULL
+                        pipeline.state = State.PLAYING
         
         prop override ratio_in_track: double
             get
@@ -211,6 +216,8 @@ namespace Khovsgol.Server.GStreamer
             link_on_demand(decode, volume)
             volume.link(tee)
             
+            pipeline.add_branch(new FakeBranch("fake"))
+            
             has_branches: bool = false
             for var plug in plugs
                 var branch = create_branch(plug)
@@ -278,9 +285,11 @@ namespace Khovsgol.Server.GStreamer
                 var args = va_list()
                 element: Element? = args.arg()
                 while element is not null
-                    add(element)
-                    previous.link(element)
-                    previous = element
+                    if add(element)
+                        previous.link(element)
+                        previous = element
+                    else
+                        _logger.warningf("Could not add element: %s", element.name)
                     element = args.arg()
                 
                 add_pad(new GhostPad("sink", queue.get_static_pad("sink")))

@@ -20,7 +20,7 @@ namespace Khovsgol.Server
         except e: RegexError
             Logging.get_logger("khovsgol.directory").warning(e.message)
             return text
-
+            
     def get_album_path_dynamic(obj: Json.Object)
         var track = new Track.from_json(obj)
         track.album_path = File.new_for_path(track.path).get_parent().get_path()

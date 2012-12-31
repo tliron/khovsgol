@@ -106,8 +106,8 @@ namespace Khovsgol.Client.GTK
             _tree_view.set_row_separator_func(on_row_separator)
             _tree_view.append_column(column)
             _tree_view.search_column = 1
-            _tree_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, DRAG_TARGETS, Gdk.DragAction.DEFAULT|Gdk.DragAction.MOVE|Gdk.DragAction.LINK)
-            _tree_view.enable_model_drag_dest(DROP_TARGETS, Gdk.DragAction.DEFAULT|Gdk.DragAction.MOVE)
+            _tree_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, DRAG_TARGETS, Gdk.DragAction.DEFAULT|Gdk.DragAction.COPY|Gdk.DragAction.LINK)
+            _tree_view.enable_model_drag_dest(DROP_TARGETS, Gdk.DragAction.DEFAULT)
             _tree_view.double_click.connect(on_double_clicked)
             _tree_view.right_click.connect(on_right_clicked)
             _tree_view.key_press_event.connect(on_key_pressed)
@@ -259,11 +259,34 @@ namespace Khovsgol.Client.GTK
                 // Playlist positions moved within the playlist
                 var data = get_selected_positions()
                 selection_data.@set(target, 8, array_to(data).data)
-                
-            else
+
+            else if info == TargetInfo.JSON_STRING_ARRAY
                 // Track paths, likely dragged to a playlist in the library pane
                 var data = get_selected_paths()
                 selection_data.@set(target, 8, array_to(data).data)
+
+            else if info == TargetInfo.URI_LIST
+                uris: array of string
+                if _tracks is not null
+                    var index = 0
+                    var i = _tracks.iterator()
+                    while i.next()
+                        index++
+                    uris = new array of string[index]
+                    index = 0
+                    for var track in _tracks
+                        uris[index++] = File.new_for_path(track.path).get_uri()
+                else
+                    uris = new array of string[0]
+                selection_data.set_uris(uris)
+
+            else
+                var text = new StringBuilder()
+                if _tracks is not null
+                    for var track in _tracks
+                        text.append(track.path)
+                        text.append("\n")
+                selection_data.@set(target, 8, text.str.data)
         
         def private on_dropped(context: Gdk.DragContext, x: int, y: int, selection_data: SelectionData, info: uint, time: uint)
             tree_path: TreePath
@@ -301,6 +324,18 @@ namespace Khovsgol.Client.GTK
                         Gdk.drop_finish(context, true, time)
                     except e: GLib.Error
                         _logger.exception(e)
+
+            else if info == TargetInfo.URI_LIST
+                var uris = selection_data.get_uris()
+                var paths = new Json.Array.sized(uris.length)
+                for var uri in uris
+                    var path = File.new_for_uri(uri).get_path()
+                    paths.add_string_element(path)
+                API.in_gdk = true
+                _instance.api.set_playlist_paths(paths, null, true)
+                API.in_gdk = false
+                Gdk.drop_finish(context, true, time)
+
             else
                 Gdk.drop_finish(context, false, time)
 
@@ -600,12 +635,14 @@ namespace Khovsgol.Client.GTK
             {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, TargetInfo.JSON_NUMBER_ARRAY},
             {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY},
             {"TEXT",              TargetFlags.OTHER_APP,   TargetInfo.TEXT},
-            {"STRING",            TargetFlags.OTHER_APP,   TargetInfo.STRING},
-            {"text/plain",        TargetFlags.OTHER_APP,   TargetInfo.TEXT_PLAIN}}
+            {"STRING",            TargetFlags.OTHER_APP,   TargetInfo.TEXT},
+            {"text/plain",        TargetFlags.OTHER_APP,   TargetInfo.TEXT},
+            {"text/uri-list",     TargetFlags.OTHER_APP,   TargetInfo.URI_LIST}}
 
         const private DROP_TARGETS: array of TargetEntry = {
             {"JSON_NUMBER_ARRAY", TargetFlags.SAME_WIDGET, TargetInfo.JSON_NUMBER_ARRAY},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY}}
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY},
+            {"text/uri-list",     TargetFlags.OTHER_APP,   TargetInfo.URI_LIST}}
         
         class private SavePlaylist: Dialog
             construct(parent: Window)

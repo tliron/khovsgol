@@ -115,16 +115,18 @@ namespace GstUtil
         event error(source: Gst.Object, error: GLib.Error, text: string)
         
         def add_branch(branch: Element)
-            add(branch)
-            
-            // Link to tee element
-            var tee = get_by_name("Tee")
-            if tee is not null
-                link_new(tee, branch)
-                branch.set_state(state)
+            if add(branch)
+                // Link to tee element
+                var tee = get_by_name("Tee")
+                if tee is not null
+                    link_new(tee, branch)
+                    branch.set_state(state)
+            else
+                _logger.warningf("Could not add branch: %s", branch.name)
             
         def remove_safely(element: Element)
             // Snip
+            _logger.infof("Removing element: %s", element.name)
             var snip = new Snip(element)
             element.set_data("GstUtil.Snip", snip)
             snip.drain.connect(on_drained)
@@ -132,8 +134,11 @@ namespace GstUtil
         def private on_drained(element: Element)
             // Safe to remove now
             element.set_data("GstUtil.Snip", null)
-            remove(element)
-            drain(element)
+            if ((Bin) element.parent).remove(element)
+                drain(element)
+                _logger.infof("Removed element: %s", element.name)
+            else
+                _logger.warningf("Could not remove element: %s", element.name)
 
         def private on_message(message: Message)
             // See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html

@@ -2,6 +2,7 @@
 
 uses
     Gtk
+    JsonUtil
 
 namespace Khovsgol.Client.GTK
 
@@ -11,17 +12,35 @@ namespace Khovsgol.Client.GTK
         else
             return null
 
-    //def get_stock_icon_pixbuf(window, name):
-      //  return window.render_icon(getattr(Gtk, 'STOCK_' + name), Gtk.IconSize.MENU, None)
-
+    def validate_plugs(instance: Instance, window: Window)
+        var player = instance.api.get_player()
+        if player is not null
+            var plugs = get_string_member_or_null(player, "plugs")
+            if plugs is not null
+                var host = "local"
+                port: uint = 1234
+                var dialog = new MessageDialog.with_markup(window, DialogFlags.DESTROY_WITH_PARENT, MessageType.QUESTION, ButtonsType.YES_NO, "You're connecting to \"%s\", a computer in your network. Do you want the sound to come out <i>here</i>?\n\n(Answering no will make the sound come out at \"%s\")", host, host)
+                dialog.title = "Connecting to %s:%u".printf(host, port)
+                dialog.set_default_response(Gtk.ResponseType.YES)
+                var response = dialog.run()
+                dialog.destroy()
+                if response == ResponseType.YES
+                    // Make sure receiver is running
+                    var feature = instance.get_feature("receiver")
+                    if feature is not null
+                        feature.start()
+                        instance.api.set_plug("rtpL16:udp:%u".printf(instance.receiver_configuration.port))
+                    else
+                        // TODO: error! no receiver!
+                        pass
+ 
     enum TargetInfo
         UNKNOWN = 0
         JSON_ARRAY = 1
         JSON_NUMBER_ARRAY = 2
         JSON_STRING_ARRAY = 3
         TEXT = 4
-        STRING = 5
-        TEXT_PLAIN = 6
+        URI_LIST = 5
 
     /*
      * Basic interface for library and playlist styles.

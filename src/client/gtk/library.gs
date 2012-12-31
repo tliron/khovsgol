@@ -58,8 +58,8 @@ namespace Khovsgol.Client.GTK
             _tree_view.set_row_separator_func(on_row_separator)
             _tree_view.append_column(column)
             _tree_view.search_column = 1
-            _tree_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, DRAG_TARGETS, Gdk.DragAction.LINK)
-            _tree_view.enable_model_drag_dest(DROP_TARGETS, Gdk.DragAction.LINK|Gdk.DragAction.MOVE)
+            _tree_view.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, DRAG_TARGETS, Gdk.DragAction.DEFAULT|Gdk.DragAction.COPY|Gdk.DragAction.LINK)
+            _tree_view.enable_model_drag_dest(DROP_TARGETS, Gdk.DragAction.DEFAULT)
             _tree_view.button_press_event.connect(on_clicked)
             _tree_view.double_click.connect(on_double_clicked)
             _tree_view.right_click.connect(on_right_clicked)
@@ -374,9 +374,11 @@ namespace Khovsgol.Client.GTK
             {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, TargetInfo.JSON_ARRAY},
             {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY}, // name, flags, id
             {"TEXT",              TargetFlags.OTHER_APP,   TargetInfo.TEXT},
-            {"STRING",            TargetFlags.OTHER_APP,   TargetInfo.STRING},
-            {"text/plain",        TargetFlags.OTHER_APP,   TargetInfo.TEXT_PLAIN}}
+            {"STRING",            TargetFlags.OTHER_APP,   TargetInfo.TEXT},
+            {"text/plain",        TargetFlags.OTHER_APP,   TargetInfo.TEXT},
+            {"text/uri-list",     TargetFlags.OTHER_APP,   TargetInfo.URI_LIST}}
 
         const private DROP_TARGETS: array of TargetEntry = {
             {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, TargetInfo.JSON_ARRAY},
-            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY}}
+            {"JSON_STRING_ARRAY", TargetFlags.SAME_APP,    TargetInfo.JSON_STRING_ARRAY},
+            {"text/uri-list",     TargetFlags.OTHER_APP,   TargetInfo.URI_LIST}}
