@@ -38,10 +38,10 @@ namespace GstUtil
      * 
      *  var pipeline = new Pipeline("Player")
      *  ...
-     *  pipeline.kill()
+     *  pipeline.drain()
      *  pipline = null
      * 
-     * Or, just use the PipelineContainer class, which will make sure to call kill().
+     * Or, just use the PipelineContainer class, which will make sure to call drain().
      */
     class Pipeline: Gst.Pipeline
         construct(name: string)
@@ -54,24 +54,29 @@ namespace GstUtil
             bus.add_signal_watch()
             bus.message.connect(on_message)
         
-        def kill(element: Element)
+        /*
+         * This should be called *before* you intend to dereference an active
+         * element for the last time. It will make sure to keep a dangling
+         * reference to the element until it is in the NULL state.
+         */
+        def drain(element: Element)
             element.ref()
-            element.set_data("GstUtil.dying", new GLib.Object())
+            element.set_data("GstUtil.draining", new GLib.Object())
             if element.current_state != State.NULL
                 var result = element.set_state(State.NULL)
                 if result == StateChangeReturn.SUCCESS
                     element.unref()
-                    _logger.infof("Killed element: %s", element.name)
+                    _logger.infof("Drained element: %s", element.name)
                 else if result == StateChangeReturn.ASYNC
                     // The unref will happen in on_message()
-                    _logger.infof("Killing element: %s", element.name)
+                    _logger.infof("Draining element: %s", element.name)
                 else
                     // This is bad! We'll keep the element in memory to avoid
                     // failure, but it is a memory leak...
-                    _logger.warningf("Could not kill element: %s", element.name)
+                    _logger.warningf("Could not drain element: %s", element.name)
             else
                 element.unref()
-                _logger.infof("Killed element: %s", element.name)
+                _logger.infof("Drained element: %s", element.name)
 
         prop state: State
             get
@@ -112,22 +117,23 @@ namespace GstUtil
         def add_branch(branch: Element)
             add(branch)
             
-            // Link to tee
+            // Link to tee element
             var tee = get_by_name("Tee")
             if tee is not null
                 link_new(tee, branch)
                 branch.set_state(state)
             
         def remove_safely(element: Element)
-            var src = element.get_static_pad("sink").get_peer()
-            var snip = new Snip(src)
+            // Snip
+            var snip = new Snip(element)
             element.set_data("GstUtil.Snip", snip)
             snip.drain.connect(on_drained)
             
         def private on_drained(element: Element)
             // Safe to remove now
+            element.set_data("GstUtil.Snip", null)
             remove(element)
-            kill(element)
+            drain(element)
 
         def private on_message(message: Message)
             // See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html
@@ -137,9 +143,10 @@ namespace GstUtil
                 old_state: State
                 pending_state: State
                 message.parse_state_changed(out old_state, out new_state, out pending_state)
-                dying: GLib.Object? = message.src.get_data("GstUtil.dying")
-                if (dying is not null) and (new_state == State.NULL)
-                    _logger.infof("Element died: %s", message.src.name)
+                draining: GLib.Object? = message.src.get_data("GstUtil.draining")
+                if (draining is not null) and (new_state == State.NULL)
+                    _logger.infof("Element drained: %s", message.src.name)
+                    message.src.set_data("GstUtil.draining", null)
                     message.src.unref()
                     return
                 state_change(message.src, old_state, new_state, pending_state)
@@ -158,14 +165,14 @@ namespace GstUtil
                 error(message.src, e, text)
 
     /*
-     * Makes sure to kill() the pipeline when finalized.
+     * Makes sure to drain() the pipeline when finalized.
      */
     class PipelineContainer: GLib.Object
         construct(pipeline: Pipeline)
             _pipeline = pipeline
     
         final
-            _pipeline.kill(_pipeline)
+            _pipeline.drain(_pipeline)
     
         prop readonly pipeline: Pipeline
 
@@ -204,8 +211,10 @@ namespace GstUtil
      * See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/manual/html/section-dynamic-pipelines.html
      */
     class private Snip: GLib.Object
-        construct(src: Pad)
-            // Block the src
+        construct(element: Element)
+            // Block the upstream src
+            var src = element.get_static_pad("sink").get_peer()
+
             // BLOCK_DOWNSTREAM = BLOCK|DATA_DOWNSTREAM
             // DATA_DOWNSTREAM = TYPE_BUFFER|TYPE_BUFFER_LIST|EVENT_DOWNSTREAM
             _probe_id = src.add_probe(PadProbeType.BLOCK|PadProbeType.BUFFER|PadProbeType.BUFFER_LIST|PadProbeType.EVENT_DOWNSTREAM, on_blocked)
