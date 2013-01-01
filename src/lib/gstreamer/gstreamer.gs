@@ -5,6 +5,8 @@ uses
 
 namespace GstUtil
 
+    PARTIAL: PadLinkCheck = PadLinkCheck.NOTHING
+
     def initialize()
         if not _initialized
             var arguments = new array of string[0]
@@ -22,6 +24,7 @@ namespace GstUtil
     /*
      * Links the element only when a specific src pad type appears on it.
      * Useful for decodebin and similarly dynamic elements.
+     * Uses fewer of the usual safety checks for linking.
      * 
      * The link is handled via the pad_added signal.
      */
@@ -31,6 +34,7 @@ namespace GstUtil
     /*
      * Requests a new src pad and links it to the next element.
      * Useful for tee elements.
+     * Uses fewer of the usual safety checks for linking.
      */
     def link_new(element: Element, next: Element): bool
         var src = element.get_request_pad("src_%u")
@@ -41,22 +45,28 @@ namespace GstUtil
         if sink is null
             _logger.warningf("Could not get sink pad: %s", next.name)
             return false
-        return src.link(sink) == PadLinkReturn.OK
+        return src.link(sink, PARTIAL) == PadLinkReturn.OK
+
+    /*
+     * Links two elements using fewer of the usual safety checks for linking.
+     */
+    def link_partial(element: Element, next: Element): bool
+        return element.link_pads("src", next, "sink", PARTIAL)
     
     /*
      * Enhanced Pipeline class.
      * 
      * Important: pipelines are not allowed to be detroyed if their state is not NULL,
      * and unfortunately setting the state may not happen synchronously. To make sure
-     * that the pipline stays referenced until it is NULL, use the drain() method.
+     * that the pipline stays referenced until it is NULL, use the nullify() method.
      * Example:
      * 
      *  var pipeline = new Pipeline("Player")
      *  ...
-     *  pipeline.drain(pipeline) // after this call, we can safely unref
+     *  pipeline.nullify(pipeline) // after this call, we can safely unref
      *  pipline = null
      * 
-     * Or, just use the PipelineContainer class, which will make sure to call drain().
+     * Or, just use the PipelineContainer class, which will make sure to call nullify().
      */
     class Pipeline: Gst.Pipeline
         construct(name: string)
@@ -74,24 +84,24 @@ namespace GstUtil
          * element for the last time. It will make sure to keep a dangling
          * reference to the element until it is in the NULL state.
          */
-        def drain(element: Element)
-            element.ref()
-            element.set_data("GstUtil.draining", new GLib.Object())
+        def nullify(element: Element)
+            element.ref_count++
+            element.set_data("GstUtil.nullify", new GLib.Object())
             if element.current_state != State.NULL
                 var result = element.set_state(State.NULL)
                 if result == StateChangeReturn.SUCCESS
+                    _logger.infof("Nullified element: %s", element.name)
                     element.unref()
-                    _logger.infof("Drained element: %s", element.name)
                 else if result == StateChangeReturn.ASYNC
                     // The unref will happen in on_message()
-                    _logger.infof("Draining element: %s", element.name)
+                    _logger.infof("Nullifying element: %s", element.name)
                 else
                     // This is bad! We'll keep the element in memory to avoid
                     // failure, but it is a memory leak...
-                    _logger.warningf("Could not drain element: %s", element.name)
+                    _logger.warningf("Could not nullify element: %s", element.name)
             else
+                _logger.infof("Nullified element: %s", element.name)
                 element.unref()
-                _logger.infof("Drained element: %s", element.name)
 
         prop state: State
             get
@@ -107,6 +117,8 @@ namespace GstUtil
 
         prop readonly duration: int64
             get
+                // Note: this will emit a warning if not all elements are linked,
+                // but it's safe
                 duration: int64
                 if query_duration(Gst.Format.TIME, out duration)
                     return duration
@@ -115,13 +127,16 @@ namespace GstUtil
 
         prop position: int64
             get
+                // Note: this will emit a warning if not all elements are linked,
+                // but it's safe
                 position: int64
                 if query_position(Format.TIME, out position)
                     return position
                 else
                     return int64.MIN
             set
-                seek_simple(Format.TIME, SeekFlags.FLUSH, value)
+                if state != State.NULL // avoids warnings
+                    seek_simple(Format.TIME, SeekFlags.FLUSH, value)
 
         event state_change(source: Gst.Object, old_state: State, new_state: State, pending_state: State)
         event stream_start(source: Gst.Object)
@@ -153,11 +168,31 @@ namespace GstUtil
         def private on_drained(element: Element)
             // Safe to remove now
             element.set_data("GstUtil.Snip", null)
-            if ((Bin) element.parent).remove(element)
-                drain(element)
-                _logger.infof("Removed element: %s", element.name)
-            else
+            
+            var sink = element.get_static_pad("sink")
+            if sink is null
+                _logger.warningf("Could not get sink pad: %s", element.name)
+                return
+            var src = sink.get_peer()
+            if src is null
+                _logger.warningf("Could not get sink's peer: %s", element.name)
+                return
+            if not src.unlink(sink)
+                _logger.warningf("Could not unlink pads: %s, %s", src.name, sink.name)
+                return
+            var previous = src.get_parent_element()
+            if previous is null
+                _logger.warningf("Could not get pad's parent: %s", src.name)
+                return
+            // TODO: make sure it's a request pad!
+            previous.release_request_pad(src)
+                
+            if not ((Bin) element.parent).remove(element)
                 _logger.warningf("Could not remove element: %s", element.name)
+                return
+            
+            nullify(element)
+            _logger.infof("Removed element: %s", element.name)
 
         def private on_message(message: Message)
             // See: http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer/html/gstreamer-GstMessage.html
@@ -167,21 +202,27 @@ namespace GstUtil
                 old_state: State
                 pending_state: State
                 message.parse_state_changed(out old_state, out new_state, out pending_state)
-                draining: GLib.Object? = message.src.get_data("GstUtil.draining")
-                if (draining is not null) and (new_state == State.NULL)
-                    _logger.infof("Element drained: %s", message.src.name)
-                    message.src.set_data("GstUtil.draining", null)
+                
+                nullify: GLib.Object? = message.src.get_data("GstUtil.nullify")
+                if (nullify is not null) and (new_state == State.NULL)
+                    _logger.infof("Element nullified: %s", message.src.name)
+                    message.src.set_data("GstUtil.nullify", null)
                     message.src.unref()
                     return
+
                 state_change(message.src, old_state, new_state, pending_state)
+                
             else if type == MessageType.STREAM_START
                 stream_start(message.src)
+                
             else if type == MessageType.EOS
                 eos(message.src)
+                
             else if type == MessageType.TAG
                 tag_list: TagList
                 message.parse_tag(out tag_list)
                 tag(tag_list)
+                
             else if type == MessageType.ERROR
                 e: GLib.Error
                 text: string
@@ -189,14 +230,14 @@ namespace GstUtil
                 error(message.src, e, text)
 
     /*
-     * Makes sure to drain() the pipeline when finalized.
+     * Makes sure to nullify() the contained pipeline when finalized.
      */
     class PipelineContainer: GLib.Object
         construct(pipeline: Pipeline)
             _pipeline = pipeline
     
         final
-            _pipeline.drain(_pipeline)
+            _pipeline.nullify(_pipeline)
     
         prop readonly pipeline: Pipeline
 
@@ -217,10 +258,12 @@ namespace GstUtil
                     if name == _pad_type
                         var sink = _next.get_static_pad("sink")
                         if sink is not null
-                            if pad.link(sink) != PadLinkReturn.OK
+                            if pad.link(sink, PARTIAL) == PadLinkReturn.OK
+                                _logger.infof("Linked on demand: %s, %s", element.name, _next.name)
+                            else
                                 _logger.warningf("Could not link elements: %s, %s", element.name, _next.name)
                         else
-                            _logger.warningf("Could not link elements: %s", element.name)
+                            _logger.warningf("Could not get sink pad: %s", _next.name)
                 
                         if _once
                             element.pad_added.disconnect(on_pad_added)
@@ -242,7 +285,14 @@ namespace GstUtil
     class private Snip: GLib.Object
         construct(element: Element)
             // Block the upstream src
-            var src = element.get_static_pad("sink").get_peer()
+            var sink = element.get_static_pad("sink")
+            if sink is null
+                _logger.warningf("Could not get sink pad: %s", element.name)
+                return
+            var src = sink.get_peer()
+            if src is null
+                _logger.warningf("Could not get sink's peer: %s", sink.name)
+                return
 
             // BLOCK_DOWNSTREAM = BLOCK|DATA_DOWNSTREAM
             // DATA_DOWNSTREAM = TYPE_BUFFER|TYPE_BUFFER_LIST|EVENT_DOWNSTREAM

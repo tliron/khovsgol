@@ -15,7 +15,7 @@ namespace Khovsgol.Client.CLI
             _main_loop = main_loop
             _stdin_spy = new StdinSpy()
             Idle.add(exit_on_key_press)
-            ref()
+            ref_count++
         
         _main_loop: MainLoop
         _stdin_spy: StdinSpy

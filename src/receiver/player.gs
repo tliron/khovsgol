@@ -42,7 +42,7 @@ namespace Khovsgol.Receiver
                 else
                     return null
             set
-                var pipeline = pipeline
+                var pipeline = self.pipeline
                 if pipeline != value
                     if value is not null
                         _pipeline_container = new PipelineContainer(value)
@@ -52,7 +52,7 @@ namespace Khovsgol.Receiver
 
         prop volume: double
             get
-                var pipeline = pipeline
+                var pipeline = self.pipeline
                 if pipeline is not null
                     volume: dynamic Element = pipeline.get_by_name("Volume")
                     if volume is not null
@@ -61,7 +61,7 @@ namespace Khovsgol.Receiver
                         return converted
                 return double.MIN
             set
-                var pipeline = pipeline
+                var pipeline = self.pipeline
                 if pipeline is not null
                     volume: dynamic Element = pipeline.get_by_name("Volume")
                     if volume is not null
@@ -92,13 +92,37 @@ namespace Khovsgol.Receiver
             var pipeline = new GstUtil.Pipeline("Receiver")
 
             source: dynamic Element = ElementFactory.make("udpsrc", "Source")
+            if source is null
+                _logger.warning("Could not create udpsrc")
+                return
             buffer: dynamic Element = ElementFactory.make("rtpjitterbuffer", "Buffer")
+            if buffer is null
+                _logger.warning("Could not create rtpjitterbuffer")
+                return
             var depay = ElementFactory.make("rtpL16depay", "Depay")
+            if depay is null
+                _logger.warning("Could not create rtpL16depay")
+                return
             var convert = ElementFactory.make("audioconvert", "AudioConvert")
+            if convert is null
+                _logger.warning("Could not create audioconvert")
+                return
             var resample = ElementFactory.make("audioresample", "AudioResample")
+            if resample is null
+                _logger.warning("Could not create audioresample")
+                return
             var rate = ElementFactory.make("audiorate", "AudioRate") // will create a perfect stream for us; but do we really need this if we are not, say, saving to a WAV?
+            if rate is null
+                _logger.warning("Could not create audiorate")
+                return
             var volume = ElementFactory.make("volume", "Volume")
+            if volume is null
+                _logger.warning("Could not create volume")
+                return
             sink: dynamic Element = ElementFactory.make(configuration.player_sink, "Sink")
+            if sink is null
+                _logger.warningf("Could not create %s", configuration.player_sink)
+                return
 
             source.port = port
             source.caps = Caps.from_string(caps)
@@ -107,9 +131,53 @@ namespace Khovsgol.Receiver
             
             if configuration.player_sink == "pulsesink"
                 sink.client_name = "Khövgsöl"
-            
-            pipeline.add_many(source, buffer, depay, convert, resample, rate, volume, sink)
-            source.link_many(buffer, depay, convert, resample, rate, volume, sink)
+
+            if not pipeline.add(source)
+                _logger.warningf("Could not add element: %s", source.name)
+                return
+            if not pipeline.add(buffer)
+                _logger.warningf("Could not add element: %s", buffer.name)
+                return
+            if not pipeline.add(depay)
+                _logger.warningf("Could not add element: %s", depay.name)
+                return
+            if not pipeline.add(convert)
+                _logger.warningf("Could not add element: %s", convert.name)
+                return
+            if not pipeline.add(resample)
+                _logger.warningf("Could not add element: %s", resample.name)
+                return
+            if not pipeline.add(rate)
+                _logger.warningf("Could not add element: %s", rate.name)
+                return
+            if not pipeline.add(volume)
+                _logger.warningf("Could not add element: %s", volume.name)
+                return
+            if not pipeline.add(sink)
+                _logger.warningf("Could not add element: %s", sink.name)
+                return
+
+            if not link_partial(source, buffer)
+                _logger.warningf("Could not link elements: %s, %s", source.name, buffer.name)
+                return
+            if not link_partial(buffer, depay)
+                _logger.warningf("Could not link elements: %s, %s", buffer.name, depay.name)
+                return
+            if not link_partial(depay, convert)
+                _logger.warningf("Could not link elements: %s, %s", depay.name, convert.name)
+                return
+            if not link_partial(convert, resample)
+                _logger.warningf("Could not link elements: %s, %s", convert.name, resample.name)
+                return
+            if not link_partial(resample, rate)
+                _logger.warningf("Could not link elements: %s, %s", resample.name, rate.name)
+                return
+            if not link_partial(rate, volume)
+                _logger.warningf("Could not link elements: %s, %s", rate.name, volume.name)
+                return
+            if not link_partial(volume, sink)
+                _logger.warningf("Could not link elements: %s, %s", volume.name, sink.name)
+                return
             
             _logger.messagef("Created RTPL16 player: port %u, caps: %s", port, caps)
 

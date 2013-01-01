@@ -206,11 +206,20 @@ namespace Khovsgol.Server.GStreamer
             pipeline.error.connect(on_error)
 
             source: dynamic Element = ElementFactory.make("filesrc", "Source")
+            if source is null
+                _logger.warning("Could not create filesrc")
+                return false
             var decode = ElementFactory.make("decodebin", "Decode")
+            if decode is null
+                _logger.warning("Could not create decodebin")
+                return false
             var volume = ElementFactory.make("volume", "Volume")
+            if volume is null
+                _logger.warning("Could not create volume")
+                return false
             tee: dynamic Element = ElementFactory.make("tee", "Tee")
-            
-            if (source is null) or (decode is null) or (volume is null) or (tee is null)
+            if tee is null
+                _logger.warning("Could not create tee")
                 return false
             
             if _path is not null
@@ -218,19 +227,38 @@ namespace Khovsgol.Server.GStreamer
 
             //tee.silent = false // ??
             
-            pipeline.add_many(source, decode, volume, tee)
-            source.link(decode)
+            if not pipeline.add(source)
+                _logger.warningf("Could not add element: %s", source.name)
+                return false
+            if not pipeline.add(decode)
+                _logger.warningf("Could not add element: %s", decode.name)
+                return false
+            if not pipeline.add(volume)
+                _logger.warningf("Could not add element: %s", volume.name)
+                return false
+            if not pipeline.add(tee)
+                _logger.warningf("Could not add element: %s", tee.name)
+                return false
+
+            if not source.link(decode)
+                _logger.warningf("Could not link elements: %s, %s", source.name, decode.name)
+                return false
             link_on_demand(decode, volume)
-            volume.link(tee)
+            if not link_partial(volume, tee)
+                _logger.warningf("Could not link elements: %s, %s", volume.name, tee.name)
+                return false
             
-            if not pipeline.add_branch(new FakeBranch("fake"))
+            branch: Bin = new FakeBranch("fake")
+            if not pipeline.add_branch(branch)
+                _logger.warningf("Could not add branch: %s", branch.name)
                 return false
             
             var has_branches = false
             for var plug in plugs
-                var branch = create_branch(plug)
+                branch = create_branch(plug)
                 if branch is not null
                     if not pipeline.add_branch(branch)
+                        _logger.warningf("Could not add branch: %s", branch.name)
                         return false
                     has_branches = true
             
@@ -288,7 +316,7 @@ namespace Khovsgol.Server.GStreamer
             def initialize(first: Element, ...): bool
                 var queue = ElementFactory.make("queue", "Queue")
                 if queue is null
-                    _logger.warningf("Could not create queue")
+                    _logger.warning("Could not create queue")
                     return false
                 if not add(queue)
                     _logger.warningf("Could not add element: %s", queue.name)
@@ -296,7 +324,7 @@ namespace Khovsgol.Server.GStreamer
                 if not add(first)
                     _logger.warningf("Could not add element: %s", first.name)
                     return false
-                if not queue.link(first)
+                if not link_partial(queue, first)
                     _logger.warningf("Could not link elements: %s, %s", queue.name, first.name)
                     return false
                 
@@ -307,7 +335,7 @@ namespace Khovsgol.Server.GStreamer
                     if not add(element)
                         _logger.warningf("Could not add element: %s", element.name)
                         return false
-                    if not previous.link(element)
+                    if not link_partial(previous, element)
                         _logger.warningf("Could not link elements: %s, %s", previous.name, element.name)
                         return false
                     previous = element
@@ -331,7 +359,7 @@ namespace Khovsgol.Server.GStreamer
                 super(name)
                 sink: dynamic Element = ElementFactory.make("fakesink", "Sink")
                 if sink is null
-                    _logger.warningf("Could not create fakesink")
+                    _logger.warning("Could not create fakesink")
                     return
                 sink.sync = true // without this, we would empty out the pipeline at full speed!
                 initialize(sink)
@@ -344,15 +372,15 @@ namespace Khovsgol.Server.GStreamer
                 super(name)
                 var convert = ElementFactory.make("audioconvert", "Convert")
                 if convert is null
-                    _logger.warningf("Could not create audioconvert")
+                    _logger.warning("Could not create audioconvert")
                     return
                 var resample = ElementFactory.make("audioresample", "Resample")
                 if resample is null
-                    _logger.warningf("Could not create audioresample")
+                    _logger.warning("Could not create audioresample")
                     return
                 sink: dynamic Element = ElementFactory.make("pulsesink", "Sink")
                 if sink is null
-                    _logger.warningf("Could not create pulsesink")
+                    _logger.warning("Could not create pulsesink")
                     return
 
                 sink.client_name = "Khövgsöl"
@@ -369,15 +397,15 @@ namespace Khovsgol.Server.GStreamer
                 super(name)
                 var convert = ElementFactory.make("audioconvert", "Convert")
                 if convert is null
-                    _logger.warningf("Could not create audioconvert")
+                    _logger.warning("Could not create audioconvert")
                     return
                 var pay = ElementFactory.make("rtpL16pay", "Pay")
                 if pay is null
-                    _logger.warningf("Could not create rtpL16pay")
+                    _logger.warning("Could not create rtpL16pay")
                     return
                 sink: dynamic Element = ElementFactory.make("udpsink", "RemoteSink:%s:%u:rtpL16:udp:%u".printf(host, http_port, udp_port))
                 if sink is null
-                    _logger.warningf("Could not create udpsink")
+                    _logger.warning("Could not create udpsink")
                     return
                 
                 sink.host = host
@@ -419,6 +447,9 @@ namespace Khovsgol.Server.GStreamer
                             if specs.length > 4
                                 var udp_port = int.parse(specs[4])
                                 var sink = source.get_static_pad("sink")
+                                if sink is null
+                                    _logger.warningf("Could not get sink pad: %s", source.name)
+                                    return
                                 var caps = sink.caps.to_string()
                                 put_receiver(host, http_port, "rtpL16:udp:%u:%s".printf(udp_port, caps))
         
