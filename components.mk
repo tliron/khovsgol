@@ -59,7 +59,7 @@ VALAC.C=valac \
 
 KHOVSGOLD_SOURCES=\
 	$(call find-sources,server) \
-	$(SRC)/version.gs $(SRC)/models.gs $(SRC)/iterators.gs \
+	$(SRC)/version.gs $(SRC)/models.gs $(SRC)/iterators.gs $(SRC)/utilities.gs \
 	$(call find-sources,lib/logging) \
 	$(call find-sources,lib/console) \
 	$(call find-sources,lib/nap) \
@@ -149,8 +149,10 @@ khovsgolc.ccode:
 KHOVSGOL_SOURCES=\
 	$(call find-sources,client/gtk) \
 	$(call find-sources,client/features) \
-	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs $(SRC)/client/playlist.gs $(SRC)/server/configuration.gs $(SRC)/receiver/configuration.gs \
-	$(SRC)/version.gs $(SRC)/models.gs $(SRC)/iterators.gs \
+	$(SRC)/client/client.gs $(SRC)/client/configuration.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs $(SRC)/client/playlist.gs \
+	$(SRC)/server/configuration.gs \
+	$(SRC)/receiver/configuration.gs \
+	$(SRC)/version.gs $(SRC)/models.gs $(SRC)/iterators.gs $(SRC)/utilities.gs \
 	$(call find-sources,lib/logging) \
 	$(call find-sources,lib/console) \
 	$(call find-sources,lib/nap) \

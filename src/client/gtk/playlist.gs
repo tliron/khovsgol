@@ -7,6 +7,14 @@ uses
 namespace Khovsgol.Client.GTK
 
     class Playlist: Alignment
+        enum private Column
+            NODE = 0     // Json.Node
+            POSITION = 1 // int
+            SEARCH = 2   // string
+            TITLE = 3    // string
+            DURATION = 4 // string
+            RTL = 5      // bool
+
         construct(instance: Instance)
             _instance = instance
             _accel_group = new AccelGroup()
@@ -132,9 +140,9 @@ namespace Khovsgol.Client.GTK
             _on_cursor_mode_id = _mode_box.combo_box.changed.connect(on_cursor_mode)
 
             _style_box = new StyleComboBox()
-            _style_box.append(new GroupByAlbums())
-            _style_box.append(new Compact())
-            _style_box.append(new Extended())
+            _style_box.append(new Styles.GroupByAlbums())
+            _style_box.append(new Styles.Compact())
+            _style_box.append(new Styles.Extended())
             var style = _instance.configuration.playlist_style
             if style is not null
                 _style_box.active_style_name = style
@@ -462,9 +470,9 @@ namespace Khovsgol.Client.GTK
             _tree_view.model = null
             _store.clear()
             if _tracks is not null
-                var style = (PlaylistStyle) _style_box.active_style
+                var style = (Styles.PlaylistStyle) _style_box.active_style
                 if style is not null
-                    var node = new PlaylistNode(_instance, _tree_view, _store, _tracks, _albums)
+                    var node = new Styles.PlaylistNode(_instance, _tree_view, _store, _tracks, _albums)
                     style.fill(node)
             _tree_view.model = _store
             _tree_view.thaw_child_notify()
@@ -485,27 +493,27 @@ namespace Khovsgol.Client.GTK
 
         def private get_selected_positions(): Json.Array
             var positions = new Json.Array()
-            var style = (PlaylistStyle) _style_box.active_style
+            var style = (Styles.PlaylistStyle) _style_box.active_style
             if style is not null
                 var selection = _tree_view.get_selection()
                 var tree_paths = selection.get_selected_rows(null)
                 iter: TreeIter
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
-                        var node = new PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
+                        var node = new Styles.PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                         style.gather_positions(node, ref positions)
             return positions
 
         def private get_selected_paths(): Json.Array
             var paths = new Json.Array()
-            var style = (PlaylistStyle) _style_box.active_style
+            var style = (Styles.PlaylistStyle) _style_box.active_style
             if style is not null
                 var selection = _tree_view.get_selection()
                 var tree_paths = selection.get_selected_rows(null)
                 iter: TreeIter
                 for var tree_path in tree_paths
                     if _store.get_iter(out iter, tree_path)
-                        var node = new PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
+                        var node = new Styles.PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                         style.gather_paths(node, ref paths)
             return paths
 
@@ -519,9 +527,9 @@ namespace Khovsgol.Client.GTK
             return int.MIN
 
         def private get_first_position(iter: TreeIter): int
-            var style = (PlaylistStyle) _style_box.active_style
+            var style = (Styles.PlaylistStyle) _style_box.active_style
             if style is not null
-                var node = new PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
+                var node = new Styles.PlaylistNode(_instance, _tree_view, _store, _tracks, _albums, iter)
                 var position = style.get_first_position(node)
                 if position != int.MIN
                     return position
@@ -630,14 +638,6 @@ namespace Khovsgol.Client.GTK
         init
             _logger = Logging.get_logger("khovsgol.client.playlist")
             
-        enum private Column
-            NODE = 0     // Json.Node
-            POSITION = 1 // int
-            SEARCH = 2   // string
-            TITLE = 3    // string
-            DURATION = 4 // string
-            RTL = 5      // bool
-
         const private SEPARATOR_POSITION: int = -1
 
         const private DRAG_TARGETS: array of TargetEntry = {

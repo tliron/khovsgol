@@ -7,6 +7,13 @@ uses
 namespace Khovsgol.Client.GTK
 
     class Library: Alignment
+        enum private Column
+            NODE = 0     // Json.Node
+            SEARCH = 1   // string
+            TITLE = 2    // string
+            DURATION = 3 // string
+            RTL = 4      // bool
+
         construct(instance: Instance)
             _instance = instance
             _accel_group = new AccelGroup()
@@ -75,11 +82,11 @@ namespace Khovsgol.Client.GTK
             // Bottom
             
             _style_box = new StyleComboBox()
-            _style_box.append(new ArtistsAndTheirAlbums())
-            _style_box.append(new ArtistsAndTheirTracks())
-            _style_box.append(new YearsAndAlbums())
-            _style_box.append(new AllAlbums())
-            _style_box.append(new Playlists())
+            _style_box.append(new Styles.ArtistsAndTheirAlbums())
+            _style_box.append(new Styles.ArtistsAndTheirTracks())
+            _style_box.append(new Styles.YearsAndAlbums())
+            _style_box.append(new Styles.AllAlbums())
+            _style_box.append(new Styles.Playlists())
             var style = _instance.configuration.library_style
             if style is not null
                 _style_box.active_style_name = style
@@ -278,9 +285,9 @@ namespace Khovsgol.Client.GTK
             _fill(true, true, null)
             
         def private _fill(is_frozen: bool, can_filter: bool, iter: TreeIter?): bool
-            var style = (LibraryStyle) _style_box.active_style
+            var style = (Styles.LibraryStyle) _style_box.active_style
             if style is not null
-                var node = new LibraryNode(_instance, _tree_view, _store, iter)
+                var node = new Styles.LibraryNode(_instance, _tree_view, _store, iter)
                 node.is_frozen = is_frozen
                 filter: string? = can_filter ? _filter_box.entry.text : null
                 if filter is not null
@@ -292,7 +299,7 @@ namespace Khovsgol.Client.GTK
             return false
         
         def private gather_selected_tracks(): Json.Array?
-            var style = (LibraryStyle) _style_box.active_style
+            var style = (Styles.LibraryStyle) _style_box.active_style
             if style is not null
                 var selection = _tree_view.get_selection()
                 var tree_paths = selection.get_selected_rows(null)
@@ -301,7 +308,7 @@ namespace Khovsgol.Client.GTK
                     var data = new Json.Array()
                     for var tree_path in tree_paths
                         if _store.get_iter(out iter, tree_path)
-                            var node = new LibraryNode(_instance, _tree_view, _store, iter)
+                            var node = new Styles.LibraryNode(_instance, _tree_view, _store, iter)
                             style.gather_tracks(node, ref data)
                     return data
             return null
@@ -362,13 +369,6 @@ namespace Khovsgol.Client.GTK
                     return true
                 else
                     return false
-
-        enum private Column
-            NODE = 0     // Json.Node
-            SEARCH = 1   // string
-            TITLE = 2    // string
-            DURATION = 3 // string
-            RTL = 4      // bool
 
         const private DRAG_TARGETS: array of TargetEntry = {
             {"JSON_ARRAY",        TargetFlags.SAME_WIDGET, TargetInfo.JSON_ARRAY},
