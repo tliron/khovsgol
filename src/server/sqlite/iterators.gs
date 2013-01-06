@@ -9,7 +9,9 @@ namespace Khovsgol.Server._Sqlite
     def private static parse_libraries(builder: QueryBuilder, prefix: string, libraries: list of string)
         if not libraries.is_empty
             builder.requirements.add("%slibrary IN (%s)".printf(prefix, join_same(",", "?", libraries.size)))
-            builder.bindings.add_all(libraries)
+            for var library in libraries
+                builder.bindings.add(library)
+            print builder.sql
         else
             builder.requirements.add("%slibrary IS NOT NULL".printf(prefix))
 

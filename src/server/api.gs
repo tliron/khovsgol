@@ -36,7 +36,7 @@ namespace Khovsgol.Server
             libraries.add(library)
             return libraries
         else
-            return get_list_of_string(conversation.query["library"])
+            return get_list_of_string(conversation.query["libraries"])
 
     /*
      * Unified server-side API.

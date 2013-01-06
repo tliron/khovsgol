@@ -9,6 +9,7 @@ namespace Khovsgol.Client.GTK
     class LibraryManager: Window
         construct(instance: Instance)
             _instance = instance
+            _libraries = _instance.libraries
 
             unrealize.connect(on_unrealized)
 
@@ -134,6 +135,8 @@ namespace Khovsgol.Client.GTK
             
         def private on_unrealized()
             Source.remove(_update_id)
+            _instance.libraries = _libraries
+            _instance.window.library.update()
 
         def private on_key_pressed(e: Gdk.EventKey): bool
             var keyval = e.keyval
@@ -226,8 +229,14 @@ namespace Khovsgol.Client.GTK
             if _store.get_iter(out iter, new TreePath.from_string(path))
                 value: Value
                 _store.get_value(iter, Column.ACTIVE, out value)
-                var active = (bool) value
-                _store.@set(iter, Column.ACTIVE, !active, -1)
+                var active = not (bool) value
+                _store.@set(iter, Column.ACTIVE, active, -1)
+                _store.get_value(iter, Column.NODE, out value)
+                var node = (Node) value
+                if active
+                    _libraries.add(node.library)
+                else
+                    _libraries.remove(node.library)
         
         _update_id: uint
         def private update(): bool
@@ -242,8 +251,9 @@ namespace Khovsgol.Client.GTK
                 
                     library_iter: TreeIter? = null
                     if not get_library(name, out library_iter)
+                        var active = _libraries.is_empty or _libraries.contains(name)
                         _store.append(out library_iter, null)
-                        _store.@set(library_iter, Column.NODE, node, Column.ICON, _library_icon, Column.TITLE, Markup.escape_text(name), Column.ACTIVE, true, -1)
+                        _store.@set(library_iter, Column.NODE, node, Column.ICON, _library_icon, Column.TITLE, Markup.escape_text(name), Column.ACTIVE, active, -1)
                     
                     directory_iter: TreeIter? = null
                     for var directory in new JsonObjects(get_array_member_or_null(library, "directories"))
@@ -325,6 +335,7 @@ namespace Khovsgol.Client.GTK
             return false
 
         _instance: Instance
+        _libraries: list of string
         _store: TreeStore
         _tree_view: TreeView
         _add_library_button: Button

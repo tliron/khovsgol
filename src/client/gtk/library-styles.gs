@@ -26,7 +26,11 @@ namespace Khovsgol.Client.GTK
             if level == 0
                 if filter is null
                     // Album artists
-                    if fill_artists(node.instance.api.get_artists(true, "artist_sort"), node)
+                    var args = new Client.API.GetArtistsArgs()
+                    args.album_artists = true
+                    args.sort.add("artist_sort")
+                    args.libraries.add_all(node.instance.libraries)
+                    if fill_artists(node.instance.api.get_artists(args), node)
                         node.append_separator()
         
                     // Compilation section
@@ -52,6 +56,7 @@ namespace Khovsgol.Client.GTK
                     args.sort.add("artist_sort")
                     args.sort.add("album") // we will later sort albums by date
                     args.sort.add("position")
+                    args.libraries.add_all(node.instance.libraries)
                     for var track in node.instance.api.get_tracks(args)
                         var artist_name = track.artist
                         var album_path = track.album_path
@@ -147,6 +152,7 @@ namespace Khovsgol.Client.GTK
                             args.by_artist = name
                             args.sort.add("date")
                             args.sort.add("title_sort")
+                            args.libraries.add_all(node.instance.libraries)
                             fill_albums_by(node.instance.api.get_albums(args), node, subdue_lossy)
                 else
                     // Compilations
@@ -154,6 +160,7 @@ namespace Khovsgol.Client.GTK
                     args.album_type = node.as_string == "playlist" ? AlbumType.SAVED_PLAYLIST : AlbumType.COMPILATION
                     args.sort.add("date")
                     args.sort.add("title_sort")
+                    args.libraries.add_all(node.instance.libraries)
                     fill_albums_by(node.instance.api.get_albums(args), node, subdue_lossy)
 
             else if level == 2
@@ -211,6 +218,7 @@ namespace Khovsgol.Client.GTK
                             args.by_artist = name
                             args.sort.add("date")
                             args.sort.add("title_sort")
+                            args.libraries.add_all(node.instance.libraries)
                             gather_from_albums(node.instance.api.get_albums(args), node, ref paths)
                 else
                     // All paths by compilation type, one album at a time
@@ -218,6 +226,7 @@ namespace Khovsgol.Client.GTK
                     args.album_type = node.as_string == "playlist" ? 2 : 1
                     args.sort.add("date")
                     args.sort.add("title_sort")
+                    args.libraries.add_all(node.instance.libraries)
                     gather_from_albums(node.instance.api.get_albums(args), node, ref paths)
 
             else if level == 2
@@ -255,7 +264,11 @@ namespace Khovsgol.Client.GTK
             if level == 0
                 if filter is null
                     // Artists
-                    fill_artists(node.instance.api.get_artists(false, "artist_sort"), node)
+                    var args = new Client.API.GetArtistsArgs()
+                    args.album_artists = false
+                    args.sort.add("artist_sort")
+                    args.libraries.add_all(node.instance.libraries)
+                    fill_artists(node.instance.api.get_artists(args), node)
                 else
                     // Artists (with all tracks cached inside each node)
                     var first = true
@@ -271,6 +284,7 @@ namespace Khovsgol.Client.GTK
                     args.album_type = AlbumType.ARTIST
                     args.sort.add("artist_sort")
                     args.sort.add("title_sort")
+                    args.libraries.add_all(node.instance.libraries)
                     for var track in node.instance.api.get_tracks(args)
                         var artist_name = track.artist
                         
@@ -319,6 +333,7 @@ namespace Khovsgol.Client.GTK
                         var args = new Client.API.GetTracksArgs()
                         args.by_artist = name
                         args.sort.add("title_sort")
+                        args.libraries.add_all(node.instance.libraries)
                         fill_tracks(node.instance.api.get_tracks(args), node, subdue_lossy, show_duration)
         
         def gather_tracks(node: LibraryNode, ref paths: Json.Array)
@@ -338,6 +353,7 @@ namespace Khovsgol.Client.GTK
                         var args = new Client.API.GetTracksArgs()
                         args.by_artist = name
                         args.sort.add("title_sort")
+                        args.libraries.add_all(node.instance.libraries)
                         gather_from_tracks(node.instance.api.get_tracks(args), node, ref paths)
 
             else if level == 2
@@ -361,7 +377,10 @@ namespace Khovsgol.Client.GTK
                     // Dates
                     current_decade: int = int.MIN
                     var first = true
-                    for var date in node.instance.api.get_dates()
+                    var args = new Client.API.GetDatesArgs()
+                    args.by_album = true
+                    args.libraries.add_all(node.instance.libraries)
+                    for var date in node.instance.api.get_dates(args)
                         // Seperate by decade
                         var decade = date / 10
                         if decade != current_decade
@@ -390,6 +409,7 @@ namespace Khovsgol.Client.GTK
                     args.sort.add("date")
                     args.sort.add("album") // we will later sort albums by date
                     args.sort.add("position")
+                    args.libraries.add_all(node.instance.libraries)
                     for var track in node.instance.api.get_tracks(args)
                         var date = track.date
                         var album_path = track.album_path
@@ -449,6 +469,7 @@ namespace Khovsgol.Client.GTK
                         var args = new Client.API.GetAlbumsArgs()
                         args.at_date = date
                         args.sort.add("title_sort")
+                        args.libraries.add_all(node.instance.libraries)
                         fill_albums(node.instance.api.get_albums(args), node, subdue_lossy)
 
             else if level == 2
@@ -487,6 +508,7 @@ namespace Khovsgol.Client.GTK
                         var args = new Client.API.GetAlbumsArgs()
                         args.at_date = date
                         args.sort.add("title_sort")
+                        args.libraries.add_all(node.instance.libraries)
                         gather_from_albums(node.instance.api.get_albums(args), node, ref paths)
 
             else if level == 2
@@ -531,6 +553,7 @@ namespace Khovsgol.Client.GTK
                     if _album_type != AlbumType.ANY
                         args.album_type = _album_type
                     args.sort.add("title_sort")
+                    args.libraries.add_all(node.instance.libraries)
                     fill_albums(node.instance.api.get_albums(args), node, subdue_lossy)
                 else
                     // Albums (with tracks cached inside each node)
@@ -548,6 +571,7 @@ namespace Khovsgol.Client.GTK
                         args.album_type = _album_type
                     args.sort.add("album_sort")
                     args.sort.add("position")
+                    args.libraries.add_all(node.instance.libraries)
                     for var track in node.instance.api.get_tracks(args)
                         var album_path = track.album_path
                         

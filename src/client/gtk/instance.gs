@@ -42,6 +42,15 @@ namespace Khovsgol.Client.GTK
         prop readonly window: MainWindow
         prop readonly application: Application
 
+        prop libraries: list of string
+            get
+                if _libraries is null
+                    _libraries = _configuration.connection_libraries
+                return _libraries
+            set
+                _configuration.connection_libraries = _libraries = value
+                _configuration.save()
+
         def new @connect(host: string, port: uint, is_local: bool, player: string? = null, plug: string? = null): bool
             if player is null
                 player = Environment.get_user_name()
@@ -155,6 +164,7 @@ namespace Khovsgol.Client.GTK
         _features: dict of string, Feature = new dict of string, Feature
         _browser: Browser?
         _started: bool
+        _libraries: list of string
         
         def private connect_first_time(): bool
             var host = _configuration.connection_host

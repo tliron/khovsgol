@@ -167,6 +167,36 @@ namespace Khovsgol.Client
                     except e: KeyFileError
                         pass
 
+        prop connection_libraries: list of string
+            owned get
+                var libraries = new list of string
+                try
+                    for var library in _key_file.get_string_list("connection", "libraries")
+                        libraries.add(library)
+                except e: KeyFileError
+                    pass
+                return libraries
+            set
+                var libraries = new array of string[value.size]
+                var i = 0
+                for var e in value
+                    libraries[i++] = e
+                _key_file.set_string_list("connection", "libraries", libraries)
+
+        def add_directory(library: string, directory: string)
+            var group = "library." + library
+            directories: array of string
+            try
+                directories = _key_file.get_string_list(group, "directories")
+            except e: KeyFileError
+                directories = new array of string[0]
+            var new_directories = new array of string[directories.length + 1]
+            var i = 0
+            for var e in directories
+                new_directories[i++] = e
+            new_directories[i] = directory
+            _key_file.set_string_list(group, "directories", new_directories)
+
         def is_feature_active(name: string): bool
             try
                 return _key_file.get_boolean("features", name)

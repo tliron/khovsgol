@@ -158,6 +158,7 @@ namespace Khovsgol.Client
             prop search_album: string?
             prop album_type: int = int.MIN
             prop sort: list of string = new list of string
+            prop libraries: list of string = new list of string
 
         /*
          * receive [=get_track, ...]
@@ -188,6 +189,8 @@ namespace Khovsgol.Client
                         conversation.query["type"] = args.album_type.to_string()
                 if not args.sort.is_empty
                     conversation.query["sort"] = join(",", args.sort)
+                if not args.libraries.is_empty
+                    conversation.query["libraries"] = join(",", args.libraries)
                 conversation.commit()
                 return new JsonTracks(conversation.response_json_array)
             except e: GLib.Error
@@ -200,6 +203,7 @@ namespace Khovsgol.Client
             prop at_date: int = int.MIN
             prop album_type: int = int.MIN
             prop sort: list of string = new list of string
+            prop libraries: list of string = new list of string
 
         /*
          * receive [=get_album, ...]
@@ -223,11 +227,18 @@ namespace Khovsgol.Client
                         conversation.query["type"] = args.album_type.to_string()
                     if not args.sort.is_empty
                         conversation.query["sort"] = join(",", args.sort)
+                    if not args.libraries.is_empty
+                        conversation.query["libraries"] = join(",", args.libraries)
                 conversation.commit()
                 return new JsonAlbums(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
                 return new JsonAlbums()
+
+        class GetArtistsArgs
+            prop album_artists: bool
+            prop sort: list of string = new list of string
+            prop libraries: list of string = new list of string
 
         /*
          * receive [
@@ -238,7 +249,7 @@ namespace Khovsgol.Client
          *  ...
          * ]
          */
-        def get_artists(album_artists: bool = false, sort: string? = null): IterableOfArtist
+        def get_artists(args: GetArtistsArgs): IterableOfArtist
             var client = get_client()
             if client is null
                 return new JsonArtists()
@@ -246,20 +257,27 @@ namespace Khovsgol.Client
                 var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/artists/"
-                if album_artists
+                if args.album_artists
                     conversation.query["album"] = "true"
-                if sort is not null
-                    conversation.query["sort"] = sort
+                if not args.sort.is_empty
+                    conversation.query["sort"] = join(",", args.sort)
+                if not args.libraries.is_empty
+                    conversation.query["libraries"] = join(",", args.libraries)
                 conversation.commit()
                 return new JsonArtists(conversation.response_json_array)
             except e: GLib.Error
                 on_error(e)
                 return new JsonArtists()
 
+        class GetDatesArgs
+            prop by_album: bool
+            prop sort: list of string = new list of string
+            prop libraries: list of string = new list of string
+
         /*
          * receive [int, ...]
          */
-        def get_dates(by_album: bool = true): IterableOfInt
+        def get_dates(args: GetDatesArgs): IterableOfInt
             var client = get_client()
             if client is null
                 return new JsonInts()
@@ -267,8 +285,12 @@ namespace Khovsgol.Client
                 var conversation = client.create_conversation()
                 conversation.method = Method.GET
                 conversation.path = "/libraries/dates/"
-                if by_album
+                if args.by_album
                     conversation.query["album"] = "true"
+                if not args.sort.is_empty
+                    conversation.query["sort"] = join(",", args.sort)
+                if not args.libraries.is_empty
+                    conversation.query["libraries"] = join(",", args.libraries)
                 conversation.commit()
                 return new JsonInts(conversation.response_json_array)
             except e: GLib.Error
