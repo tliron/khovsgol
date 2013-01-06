@@ -11,7 +11,6 @@ namespace Khovsgol.Server._Sqlite
             builder.requirements.add("%slibrary IN (%s)".printf(prefix, join_same(",", "?", libraries.size)))
             for var library in libraries
                 builder.bindings.add(library)
-            print builder.sql
         else
             builder.requirements.add("%slibrary IS NOT NULL".printf(prefix))
 
