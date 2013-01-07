@@ -113,25 +113,22 @@ namespace Khovsgol.Client.GTK.Styles
         current_letter: unichar = 0
         var first = true
         for var artist in artists
-            if artist.name is not null
-                var sort = artist.sort
-                
+            var sort = artist.sort
+            if (sort is not null) and (sort.length > 0)
                 // Separate by first letter
-                if (sort is not null) and (sort.length > 0)
-                    var letter = sort.get_char(0)
-                    if letter != current_letter
-                        current_letter = letter
-                        if not first
-                            node.append_separator()
+                var letter = sort.get_char(0)
+                if letter != current_letter
+                    current_letter = letter
+                    if not first
+                        node.append_separator()
                             
-                fill_artist(artist, node)
-                
-                first = false
+                if fill_artist(artist, node) is not null
+                    first = false
         return not first
     
     def private fill_artist(artist: Artist, node: LibraryNode): Json.Object?
         var name = artist.name
-        if name is not null
+        if (name is not null) and (name.length > 0)
             var markup = Markup.escape_text(name)
             var json = artist.to_json()
             node.append_object(json, name, markup, null, true)
@@ -145,8 +142,8 @@ namespace Khovsgol.Client.GTK.Styles
             
     def private fill_album_by(album: Album, node: LibraryNode, subdue_lossy: bool)
         var title = album.title
-        if title is null
-            title = album.path
+        if (title is null) or (title.length == 0)
+            title = get_title_from_path(album.path)
         if title is not null
             var file_type = album.file_type
             var date = album.date
@@ -155,7 +152,7 @@ namespace Khovsgol.Client.GTK.Styles
             title = format_annotation(title)
             if subdue_lossy and not is_lossless(file_type)
                 title = format_washed_out(title)
-            var markup = ((date != int64.MIN) && (date != 0)) ? "%lld: %s".printf(date, title) : title
+            var markup = ((date != int64.MIN) and (date != 0)) ? "%lld: %s".printf(date, title) : title
             
             node.append_object(album.to_json(), album.title, markup, null, true)
 
@@ -163,26 +160,22 @@ namespace Khovsgol.Client.GTK.Styles
         current_letter: unichar = 0
         var first = true
         for var album in albums
-            var title = album.title
-            if title is not null
-                var title_sort = album.title_sort
-
+            var sort = album.title_sort
+            if (sort is not null) and (sort.length > 0)
                 // Separate by first letter
-                if (title_sort is not null) and (title_sort.length > 0)
-                    var letter = title_sort.get_char(0)
-                    if letter != current_letter
-                        current_letter = letter
-                        if not first
-                            node.append_separator()
+                var letter = sort.get_char(0)
+                if letter != current_letter
+                    current_letter = letter
+                    if not first
+                        node.append_separator()
                 
-                fill_album(album, node, subdue_lossy)
-                
-                first = false
+                if fill_album(album, node, subdue_lossy)
+                    first = false
 
-    def private fill_album(album: Album, node: LibraryNode, subdue_lossy: bool)
+    def private fill_album(album: Album, node: LibraryNode, subdue_lossy: bool): bool
         var title = album.title
-        if title is null
-            title = album.path
+        if (title is null) or (title.length == 0)
+            title = get_title_from_path(album.path)
         if title is not null
             var file_type = album.file_type
             var artist = album.artist
@@ -191,11 +184,18 @@ namespace Khovsgol.Client.GTK.Styles
             title = format_annotation(title)
             if subdue_lossy and not is_lossless(file_type)
                 title = format_washed_out(title)
-            if artist is not null
+            markup: string
+            if (artist is not null) and (artist.length > 0)
                 artist = Markup.escape_text(artist)
-            var markup = artist is not null ? "%s - <i>%s</i>".printf(title, artist) : title
+                markup = "%s - <i>%s</i>".printf(title, artist)
+            else
+                markup = title
             
             node.append_object(album.to_json(), album.title, markup, null, true)
+            
+            return true
+        else
+            return false
 
     def private fill_tracks_in_album(tracks: IterableOfTrack, is_compilation: bool, node: LibraryNode, subdue_lossy: bool, show_duration: bool)
         for var track in tracks
@@ -203,8 +203,8 @@ namespace Khovsgol.Client.GTK.Styles
                 
     def private fill_track_in_album(track: Track, is_compilation: bool, node: LibraryNode, subdue_lossy: bool, show_duration: bool)
         var title = track.title
-        if title is null
-            title = track.path
+        if (title is null) or (title.length == 0)
+            title = get_title_from_path(track.path)
         if title is not null
             var file_type = track.file_type
             var position = track.position_in_album
@@ -215,8 +215,10 @@ namespace Khovsgol.Client.GTK.Styles
             title = format_annotation(title)
             if subdue_lossy and not is_lossless(file_type)
                 title = format_washed_out(title)
-            if artist is not null
+            if (artist is not null) and (artist.length > 0)
                 artist = Markup.escape_text(artist)
+            else
+                artist = null
             title_markup: string
             if (position != int.MIN) and (artist is not null)
                 title_markup = "%d\t%s - <i>%s</i>".printf(position, title, artist)
@@ -234,26 +236,22 @@ namespace Khovsgol.Client.GTK.Styles
         current_letter: unichar = 0
         var first = true
         for var track in tracks
-            var title = track.title
-            if title is not null
-                var title_sort = track.title_sort
-
+            var sort = track.title_sort
+            if (sort is not null) and (sort.length > 0)
                 // Separate by first letter
-                if (title_sort is not null) and (title_sort.length > 0)
-                    var letter = title_sort.get_char(0)
-                    if letter != current_letter
-                        current_letter = letter
-                        if not first
-                            node.append_separator()
+                var letter = sort.get_char(0)
+                if letter != current_letter
+                    current_letter = letter
+                    if not first
+                        node.append_separator()
                             
-                fill_track(track, node, subdue_lossy, show_duration)
-                
-                first = false
+                if fill_track(track, node, subdue_lossy, show_duration)
+                    first = false
 
-    def private fill_track(track: Track, node: LibraryNode, subdue_lossy: bool, show_duration: bool)
+    def private fill_track(track: Track, node: LibraryNode, subdue_lossy: bool, show_duration: bool): bool
         var title = track.title
-        if title is null
-            title = track.path
+        if (title is null) or (title.length == 0)
+            title = get_title_from_path(track.path)
         if title is not null
             var album = track.album
             var file_type = track.file_type
@@ -265,7 +263,7 @@ namespace Khovsgol.Client.GTK.Styles
                 title = format_washed_out(title)
             
             title_markup: string
-            if album is not null
+            if (album is not null) and (album.length > 0)
                 album = Markup.escape_text(album)
                 album = format_annotation(album)
                 title_markup = "%s - %s".printf(title, album)
@@ -274,6 +272,10 @@ namespace Khovsgol.Client.GTK.Styles
             var duration_markup = get_duration_markup(duration, show_duration)
             
             node.append_object(track.to_json(), track.title, title_markup, duration_markup)
+            
+            return true
+        else
+            return false
 
     def private gather_from_albums(albums: IterableOfAlbum, node: LibraryNode, ref paths: Json.Array)
         for var album in albums

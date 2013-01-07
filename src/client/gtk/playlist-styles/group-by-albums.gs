@@ -41,8 +41,8 @@ namespace Khovsgol.Client.GTK.Styles
                             show_artist = compilation != 0
                         
                         var title = album.title
-                        if title is null
-                            title = album.path
+                        if (title is null) or (title.length == 0)
+                            title = get_title_from_path(album.path)
                         if title is not null
                             var file_type = album.file_type
 
@@ -53,7 +53,7 @@ namespace Khovsgol.Client.GTK.Styles
                             var artist = album.artist
 
                             title_markup: string
-                            if artist is not null
+                            if (artist is not null) and (artist.length > 0)
                                 artist = Markup.escape_text(artist)
                                 title_markup = "%s - <i>%s</i>".printf(title, artist)
                             else
@@ -73,8 +73,8 @@ namespace Khovsgol.Client.GTK.Styles
                             first = false
                         
                 var title = track.title
-                if title is null
-                    title = track.path
+                if (title is null) or (title.length == 0)
+                    title = get_title_from_path(track.path)
                 if title is not null
                     var path = track.path
                     var position = track.position_in_playlist
@@ -89,7 +89,7 @@ namespace Khovsgol.Client.GTK.Styles
                     title_markup: string
                     if show_artist
                         var artist = track.artist
-                        if artist is not null
+                        if (artist is not null) and (artist.length > 0)
                             artist = Markup.escape_text(artist)
                             title_markup = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                         else

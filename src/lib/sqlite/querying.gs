@@ -48,18 +48,38 @@ namespace SqliteUtil
         def get_text(name: string): string
             var value = _iterator.builder.constants[name]
             if value is null
-                value = _iterator.statement->column_text(_iterator.column_names[name])
-            return value
+                return _iterator.statement->column_text(_iterator.column_names[name])
+            else
+                return (string) value
+
+        def get_int64(name: string): int64
+            var value = _iterator.builder.constants[name]
+            if value is null
+                return _iterator.statement->column_int64(_iterator.column_names[name])
+            else
+                return (int64) value
+
+        def get_int64_or_min(name: string): int64
+            var value = get_int64(name)
+            return value != 0 ? value : int64.MIN
 
         def get_int(name: string): int
-            return _iterator.statement->column_int(_iterator.column_names[name])
+            var value = _iterator.builder.constants[name]
+            if value is null
+                return _iterator.statement->column_int(_iterator.column_names[name])
+            else
+                return (int) value
 
         def get_int_or_min(name: string): int
             var value = get_int(name)
             return value != 0 ? value : int.MIN
 
         def get_double(name: string): double
-            return _iterator.statement->column_double(_iterator.column_names[name])
+            var value = _iterator.builder.constants[name]
+            if value is null
+                return _iterator.statement->column_double(_iterator.column_names[name])
+            else
+                return (double) value
 
         def get_double_or_min(name: string): double
             var value = get_int(name)
@@ -81,8 +101,12 @@ namespace SqliteUtil
             for var binding in builder.bindings
                 if binding.holds(typeof(string))
                     _statement->bind_text(index++, (string) binding)
+                else if binding.holds(typeof(int64))
+                    _statement->bind_int64(index++, (int64) binding)
                 else if binding.holds(typeof(int))
                     _statement->bind_int(index++, (int) binding)
+                else if binding.holds(typeof(double))
+                    _statement->bind_double(index++, (double) binding)
 
             var columns = _statement->column_count()
             if columns > 0
@@ -131,7 +155,7 @@ namespace SqliteUtil
     
         prop table: string
         prop readonly fields: list of string = new list of string
-        prop readonly constants: dict of string, string = new dict of string, string
+        prop readonly constants: dict of string, GLib.Value? = new dict of string, GLib.Value?
         prop readonly requirements: list of string = new list of string
         prop readonly bindings: list of GLib.Value? = new list of GLib.Value?
         prop readonly sort: list of string = new list of string

@@ -18,8 +18,8 @@ namespace Khovsgol.Client.GTK.Styles
             var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
-                if title is null
-                    title = track.path
+                if (title is null) or (title.length == 0)
+                    title = get_title_from_path(track.path)
                 if title is not null
                     var position = track.position_in_playlist
                     var duration = track.duration
@@ -32,7 +32,7 @@ namespace Khovsgol.Client.GTK.Styles
                         title = format_washed_out(title)
 
                     title_markup: string
-                    if artist is not null
+                    if (artist is not null) and (artist.length > 0)
                         artist = Markup.escape_text(artist)
                         title_markup = "%d\t%s - <i>%s</i>".printf(position, title, artist)
                     else

@@ -18,8 +18,8 @@ namespace Khovsgol.Client.GTK.Styles
             var show_duration = node.instance.configuration.show_duration
             for var track in node.tracks
                 var title = track.title
-                if title is null
-                    title = track.path
+                if (title is null) or (title.length == 0)
+                    title = get_title_from_path(track.path)
                 if title is not null
                     var position_in_playlist = track.position_in_playlist
                     var position_in_album = track.position_in_album
@@ -32,11 +32,15 @@ namespace Khovsgol.Client.GTK.Styles
                     title = format_annotation(title)
                     if subdue_lossy and not is_lossless(file_type)
                         title = format_washed_out(title)
-                    if artist is not null
+                    if (artist is not null) and (artist.length > 0)
                         artist = Markup.escape_text(artist)
-                    if album is not null
+                    else
+                        artist = null
+                    if (album is not null) and (album.length > 0)
                         album = Markup.escape_text(album)
                         album = format_annotation(album)
+                    else
+                        album = null
 
                     title_markup: string
                     if (artist is not null) and (album is not null) and (position_in_album != int.MIN)

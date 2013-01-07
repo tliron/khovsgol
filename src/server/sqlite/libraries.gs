@@ -461,14 +461,17 @@ namespace Khovsgol.Server._Sqlite
         def override iterate_albums(args: IterateAlbumsArgs): IterableOfAlbum raises GLib.Error
             var q = new QueryBuilder()
             q.table = "album"
-            q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "album_type", "file_type")
             q.sort.add_all(args.sort)
             parse_libraries(q, "", args.libraries)
             
             // Album type
             if args.album_type != AlbumType.ANY
+                q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "file_type")
                 q.requirements.add("album_type=?")
                 q.bindings.add((int) args.album_type)
+                q.constants["album_type"] = (int) args.album_type
+            else
+                q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "album_type", "file_type")
 
             return new SqlAlbums(q.execute(_read_db, _statement_cache))
 
@@ -503,15 +506,22 @@ namespace Khovsgol.Server._Sqlite
             q.sort.add_all(args.sort)
             parse_libraries(q, "", args.libraries)
             
-            if args.like
-                q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "album_type", "file_type")
-                q.requirements.add("artist LIKE ? ESCAPE \"\\\"")
-            else
-                // Optimized handling using a constant in case of strict equality
-                q.add_fields("path", "library", "title", "title_sort", "artist_sort", "date", "album_type", "file_type")
-                q.requirements.add("artist=?")
+            if (args.artist is null) or (args.artist.length == 0)
+                q.add_fields("path", "library", "title", "title_sort", "artist_sort", "date", "file_type")
+                q.requirements.add("album_type=?")
+                q.bindings.add((int) AlbumType.ARTIST)
                 q.constants["artist"] = args.artist
-            q.bindings.add(args.artist)
+                q.constants["album_type"] = (int) AlbumType.ARTIST
+            else
+                if args.like
+                    q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "album_type", "file_type")
+                    q.requirements.add("artist LIKE ? ESCAPE \"\\\"")
+                else
+                    // Optimized handling using a constant in case of strict equality
+                    q.add_fields("path", "library", "title", "title_sort", "artist_sort", "date", "album_type", "file_type")
+                    q.requirements.add("artist=?")
+                    q.constants["artist"] = args.artist
+                q.bindings.add(args.artist)
             
             return new SqlAlbums(q.execute(_read_db, _statement_cache))
         

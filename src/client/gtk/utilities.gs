@@ -7,8 +7,19 @@ uses
 namespace Khovsgol.Client.GTK
 
     def get_duration_markup(duration: double, show_duration: bool): string?
-        if show_duration and duration != double.MIN
+        if show_duration and (duration != double.MIN)
             return Markup.escape_text("(%s)".printf(format_duration(duration)))
+        else
+            return null
+            
+    def get_title_from_path(path: string?): string?
+        if path is not null
+            var filename = File.new_for_path(path).get_basename()
+            var last = filename.last_index_of_char('.')
+            if last != -1
+                return filename.slice(0, last)
+            else
+                return filename
         else
             return null
 

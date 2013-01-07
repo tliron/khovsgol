@@ -58,15 +58,17 @@ namespace Khovsgol.Client.Features
                 return
         
             message: string? = null
-            if (track is not null) and (track.title is not null)
-                if (track.artist is not null) and (track.album is not null)
+            if (track is not null) and (track.title is not null) and (track.title.length > 0)
+                if (track.artist is not null) and (track.artist.length > 0) and (track.album is not null) and (track.album.length > 0)
                     message = "♪ %s by %s on %s".printf(track.title, track.artist, track.album)
-                else if track.artist is not null
+                else if (track.artist is not null) and (track.artist.length > 0)
                     message = "♪ %s by %s".printf(track.title, track.artist)
-                else if track.album is not null
+                else if (track.album is not null) and (track.album.length > 0)
                     message = "♪ %s on %s".printf(track.title, track.album)
                 else
                     message = "♪ %s".printf(track.title)
+            else
+                return
         
             try
                 var accounts = _purple.purple_accounts_get_all_active()

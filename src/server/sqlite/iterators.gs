@@ -153,7 +153,7 @@ namespace Khovsgol.Server._Sqlite
             album.title_sort = row.get_text("title_sort")
             album.artist = row.get_text("artist")
             album.artist_sort = row.get_text("artist_sort")
-            album.date = row.get_int_or_min("date")
+            album.date = row.get_int64_or_min("date")
             album.album_type = (AlbumType) row.get_int("album_type")
             album.file_type = row.get_text("file_type")
             return album

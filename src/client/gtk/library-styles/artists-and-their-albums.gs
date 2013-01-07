@@ -29,7 +29,8 @@ namespace Khovsgol.Client.GTK.Styles
                     if fill_artists(node.instance.api.get_artists(args), node)
                         node.append_separator()
         
-                    // Compilation section
+                    // Special section
+                    node.append_string("unknownartists", "unknownartists", "<b>Unknown Artists</b>", null, true)
                     node.append_string("compilations", "compilations", "<b>Compilations</b>", null, true)
                     node.append_string("playlists", "playlists", "<b>Playlists</b>", null, true)
                 else
@@ -40,6 +41,7 @@ namespace Khovsgol.Client.GTK.Styles
                     current_tracks: Json.Array? = null
                     current_letter: unichar = 0
                     last_artist_name: string? = null
+                    var unknown = new Json.Array()
                     var compilations = new Json.Array()
                     var playlists = new Json.Array()
 
@@ -71,17 +73,19 @@ namespace Khovsgol.Client.GTK.Styles
                                     if not first
                                         node.append_separator()
 
-                            var artist = new Artist()
-                            artist.name = artist_name
-                            artist.sort = sort
-                            var artist_node = fill_artist(artist, node)
-                            if artist_node is not null
-                                current_albums = new Json.Array()
-                                artist_node.set_array_member("_albums", current_albums)
-                                
-                                first = false
+                                var artist = new Artist()
+                                artist.name = artist_name
+                                artist.sort = sort
+                                var artist_node = fill_artist(artist, node)
+                                if artist_node is not null
+                                    current_albums = new Json.Array()
+                                    artist_node.set_array_member("_albums", current_albums)
+                                    
+                                    first = false
+                                else
+                                    current_albums = null
                             else
-                                current_albums = null
+                                current_albums = unknown
 
                         if (album_path is not null) and (current_album_path != album_path)
                             // New album
@@ -102,9 +106,14 @@ namespace Khovsgol.Client.GTK.Styles
                         if current_tracks is not null
                             current_tracks.add_object_element(track.to_json())
 
-                    if not first and ((compilations.get_length() > 0) or (playlists.get_length() > 0))
+                    if not first and ((unknown.get_length() > 0) or (compilations.get_length() > 0) or (playlists.get_length() > 0))
                         node.append_separator()
                     
+                    if unknown.get_length() > 0
+                        var special = new Json.Object()
+                        special.set_array_member("_albums", unknown)
+                        node.append_object(special, "unknownartists", "<b>Unknown Artists</b>", null, true)
+
                     if compilations.get_length() > 0
                         var special = new Json.Object()
                         special.set_array_member("_albums", compilations)
@@ -151,13 +160,26 @@ namespace Khovsgol.Client.GTK.Styles
                             args.libraries.add_all(node.instance.libraries)
                             fill_albums_by(node.instance.api.get_albums(args), node, subdue_lossy)
                 else
-                    // Compilations
-                    var args = new Client.API.GetAlbumsArgs()
-                    args.album_type = node.as_string == "playlist" ? AlbumType.SAVED_PLAYLIST : AlbumType.COMPILATION
-                    args.sort.add("date")
-                    args.sort.add("title_sort")
-                    args.libraries.add_all(node.instance.libraries)
-                    fill_albums_by(node.instance.api.get_albums(args), node, subdue_lossy)
+                    // Special
+                    var special_type = node.as_string
+                    if special_type == "unknownartists"
+                        // Unknown artists
+                        var args = new Client.API.GetAlbumsArgs()
+                        args.by_artist = ""
+                        args.album_type = AlbumType.ARTIST
+                        args.sort.add("date")
+                        args.sort.add("title_sort")
+                        args.libraries.add_all(node.instance.libraries)
+                        fill_albums_by(node.instance.api.get_albums(args), node, subdue_lossy)
+                        pass
+                    else
+                        // Compilations
+                        var args = new Client.API.GetAlbumsArgs()
+                        args.album_type = special_type == "playlists" ? AlbumType.SAVED_PLAYLIST : AlbumType.COMPILATION
+                        args.sort.add("date")
+                        args.sort.add("title_sort")
+                        args.libraries.add_all(node.instance.libraries)
+                        fill_albums_by(node.instance.api.get_albums(args), node, subdue_lossy)
 
             else if level == 2
                 var album_node = node.as_object

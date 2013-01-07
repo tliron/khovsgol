@@ -94,11 +94,12 @@ namespace Khovsgol.Client.Features
                 _track = null
                 
                 // Note: we are preferring the duration reported here rather than the one tagged in the track
-                try
-                    _session.track_scrobble((int) (_timestamp / 1000000L), track.title, track.artist, track.album, track.position_in_album, track_duration != double.MIN ? (int) track.duration : int.MIN)
-                    _logger.infof("Scrobbled: %s", track.path)
-                except e: GLib.Error
-                    _logger.exception(e)
+                if (track.title is not null) and (track.title.length > 0) and (track.artist is not null) and (track.artist.length > 0) and (track.album is not null) and (track.album.length > 0)
+                    try
+                        _session.track_scrobble((int) (_timestamp / 1000000L), track.title, track.artist, track.album, track.position_in_album, track_duration != double.MIN ? (int) track.duration : int.MIN)
+                        _logger.infof("Scrobbled: %s", track.path)
+                    except e: GLib.Error
+                        _logger.exception(e)
 
         _logger: static Logging.Logger
         
