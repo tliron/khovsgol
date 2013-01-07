@@ -138,9 +138,7 @@ namespace Khovsgol.Client.GTK.Styles
             node.append_object(json, name, markup, null, true)
             return json
         else
-            var json = artist.to_json()
-            node.append_object(json, null, "<b>Unknown Artist</b>", null, true)
-            return json
+            return null
  
     def private fill_albums_by(albums: IterableOfAlbum, node: LibraryNode, subdue_lossy: bool)
         for var album in albums

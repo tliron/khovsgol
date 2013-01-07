@@ -208,7 +208,7 @@ namespace Khovsgol.Server
                         if track is null
                             track = directory.create_track(path, sortables)
                             if track is null
-                                _logger.warningf("Track not found: %s", path)
+                                _logger.warningf("Not a track: %s", path)
                                 continue
                     
                     // Fit track in playlist

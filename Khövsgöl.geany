@@ -23,7 +23,7 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=26
+current_page=119
 FILE_NAME_0=671;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fcli%2Finstance.gs;0;4
 FILE_NAME_1=10517;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fapi.gs;0;4
 FILE_NAME_2=14871;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fserver%2Ffilesystem%2Fdirectory.gs;0;4
@@ -142,10 +142,10 @@ FILE_NAME_114=12;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclie
 FILE_NAME_115=17;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Fplaylist-styles%2Fgroup-by-albums.gs;0;4
 FILE_NAME_116=12;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Fplaylist-styles%2Fcommon.gs;0;4
 FILE_NAME_117=38;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Fplaylist-styles%2Futilities.gs;0;4
-FILE_NAME_118=1974;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Futilities.gs;0;4
-FILE_NAME_119=17;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Fartists-and-their-albums.gs;0;4
-FILE_NAME_120=17;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Fartists-and-their-tracks.gs;0;4
-FILE_NAME_121=17;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Fyears-and-albums.gs;0;4
+FILE_NAME_118=5807;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Futilities.gs;0;4
+FILE_NAME_119=930;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Fartists-and-their-albums.gs;0;4
+FILE_NAME_120=2676;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Fartists-and-their-tracks.gs;0;4
+FILE_NAME_121=6084;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Fyears-and-albums.gs;0;4
 FILE_NAME_122=17;Genie;0;16;0;1;0;%2FDepot%2FProjects%2FKhövsgöl3%2Fsrc%2Fclient%2Fgtk%2Flibrary-styles%2Falbums-and-tracks.gs;0;4
 
 [VTE]
@@ -157,7 +157,7 @@ EX_00_LB=_Execute
 EX_00_CM=bin/khovsgol --console
 EX_00_WD=%p
 GenieFT_01_LB=_Build
-GenieFT_01_CM=make khovsgol
+GenieFT_01_CM=make khovsgold
 GenieFT_01_WD=%p
 GenieFT_00_LB=_Compile
 GenieFT_00_CM=valac -c "%f"

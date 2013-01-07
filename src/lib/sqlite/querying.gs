@@ -45,17 +45,23 @@ namespace SqliteUtil
         construct(iterator: RowIterator)
             _iterator = iterator
         
-        def get_text(name: string): string
+        def get_text(name: string): string?
             var value = _iterator.builder.constants[name]
             if value is null
-                return _iterator.statement->column_text(_iterator.column_names[name])
+                if _iterator.column_names.has_key(name)
+                    return _iterator.statement->column_text(_iterator.column_names[name])
+                else
+                    return null
             else
                 return (string) value
 
         def get_int64(name: string): int64
             var value = _iterator.builder.constants[name]
             if value is null
-                return _iterator.statement->column_int64(_iterator.column_names[name])
+                if _iterator.column_names.has_key(name)
+                    return _iterator.statement->column_int64(_iterator.column_names[name])
+                else
+                    return int64.MIN
             else
                 return (int64) value
 
@@ -66,7 +72,10 @@ namespace SqliteUtil
         def get_int(name: string): int
             var value = _iterator.builder.constants[name]
             if value is null
-                return _iterator.statement->column_int(_iterator.column_names[name])
+                if _iterator.column_names.has_key(name)
+                    return _iterator.statement->column_int(_iterator.column_names[name])
+                else
+                    return int.MIN
             else
                 return (int) value
 
@@ -77,12 +86,15 @@ namespace SqliteUtil
         def get_double(name: string): double
             var value = _iterator.builder.constants[name]
             if value is null
-                return _iterator.statement->column_double(_iterator.column_names[name])
+                if _iterator.column_names.has_key(name)
+                    return _iterator.statement->column_double(_iterator.column_names[name])
+                else
+                    return double.MIN
             else
                 return (double) value
 
         def get_double_or_min(name: string): double
-            var value = get_int(name)
+            var value = get_double(name)
             return value != 0 ? value : double.MIN
     
         _iterator: RowIterator

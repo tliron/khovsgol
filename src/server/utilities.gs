@@ -34,9 +34,11 @@ namespace Khovsgol.Server
 
         var json = new Json.Array()
         for var track in tracks
-            if track.title is null
-                track = directory.create_track(track.path, sortables)
-            json.add_object_element(track.to_json())
+            t: Track? = track
+            if t.title is null
+                t = directory.create_track(t.path, sortables)
+            if t is not null
+                json.add_object_element(t.to_json())
         return json
 
     class AlbumPathConstant
@@ -50,7 +52,9 @@ namespace Khovsgol.Server
         _album_path: string
 
     class Sortables
-        def @get(text: string): string
+        def @get(text: string?): string?
+            if (text is null) or (text.length == 0)
+                return null
             var sortable = _sortables[text]
             if sortable is null
                 sortable = to_sortable(text)

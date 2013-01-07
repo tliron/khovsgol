@@ -370,15 +370,20 @@ namespace Khovsgol.Server._Sqlite
             q.sort.add_all(args.sort)
             parse_libraries(q, "", args.libraries)
                 
-            if args.like
-                q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album", "album_sort", "album_type", "position", "duration", "date", "file_type")
-                q.requirements.add("artist LIKE ? ESCAPE \"\\\"")
+            if (args.artist is null) or (args.artist.length == 0)
+                // Tracks by unknown artist
+                q.add_fields("path", "library", "title", "title_sort", "album", "album_sort", "album_type", "position", "duration", "date", "file_type")
+                q.requirements.add("artist IS NULL OR artist=''")
             else
-                // Optimized handling using a constant in case of strict equality
-                q.add_fields("path", "library", "title", "title_sort", "artist_sort", "album", "album_sort", "album_type", "position", "duration", "date", "file_type")
-                q.requirements.add("artist=?")
-                q.constants["artist"] = args.artist
-            q.bindings.add(args.artist)
+                if args.like
+                    q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album", "album_sort", "album_type", "position", "duration", "date", "file_type")
+                    q.requirements.add("artist LIKE ? ESCAPE \"\\\"")
+                else
+                    // Optimized handling using a constant in case of strict equality
+                    q.add_fields("path", "library", "title", "title_sort", "artist_sort", "album", "album_sort", "album_type", "position", "duration", "date", "file_type")
+                    q.requirements.add("artist=?")
+                    q.constants["artist"] = args.artist
+                q.bindings.add(args.artist)
 
             return new SqlTracks(q.execute(_read_db, _statement_cache))
         
@@ -507,10 +512,11 @@ namespace Khovsgol.Server._Sqlite
             parse_libraries(q, "", args.libraries)
             
             if (args.artist is null) or (args.artist.length == 0)
-                q.add_fields("path", "library", "title", "title_sort", "artist_sort", "date", "file_type")
+                // Albums with unknown artist
+                q.add_fields("path", "library", "title", "title_sort", "date", "file_type")
+                q.requirements.add("artist IS NULL OR artist=''")
                 q.requirements.add("album_type=?")
                 q.bindings.add((int) AlbumType.ARTIST)
-                q.constants["artist"] = args.artist
                 q.constants["album_type"] = (int) AlbumType.ARTIST
             else
                 if args.like
@@ -533,7 +539,7 @@ namespace Khovsgol.Server._Sqlite
             
             if (args.date == int.MIN) or (args.date == 0)
                 q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album_type", "file_type")
-                q.requirements.add("date IS NULL or date=0")
+                q.requirements.add("date IS NULL OR date=0")
                 q.constants["date"] = int64.MIN
             else
                 if args.like

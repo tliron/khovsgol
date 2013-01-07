@@ -162,7 +162,7 @@ namespace Khovsgol.Server.Filesystem
 
                 enumerator = File.new_for_path(path).enumerate_children(FILE_ATTRIBUTES, FileQueryInfoFlags.NONE)
                 if _logger.can(LogLevelFlags.LEVEL_DEBUG)
-                    _logger.debugf("Moved into: %s", enumerator.get_container().get_path())
+                    _logger.debugf("Moved in to: %s", enumerator.get_container().get_path())
 
                 // Traverse tree
                 while true
@@ -187,7 +187,7 @@ namespace Khovsgol.Server.Filesystem
                             tracks = node.tracks
 
                             if _logger.can(LogLevelFlags.LEVEL_DEBUG)
-                                _logger.debugf("Moved out: %s", enumerator.get_container().get_path())
+                                _logger.debugf("Moved out to: %s", enumerator.get_container().get_path())
                             continue
                         else
                             // Nothing left on stack means we're done
@@ -222,7 +222,7 @@ namespace Khovsgol.Server.Filesystem
                             batch.add(new BatchNode(album, tracks))
                             
                             if _logger.can(LogLevelFlags.LEVEL_DEBUG)
-                                _logger.debugf("Moved into: %s", enumerator.get_container().get_path())
+                                _logger.debugf("Moved in to: %s", enumerator.get_container().get_path())
                             continue
                             
                         var track = create_track(file_path, sortables)
@@ -281,13 +281,26 @@ namespace Khovsgol.Server.Filesystem
             return true
 
         def create_track(file_path: string, sortables: Sortables): Track?
+            var last_dot = file_path.last_index_of_char('.')
+            if last_dot == -1
+                // No extension
+                return null
+                
+            file_path.get_next_char(ref last_dot, null)
+            var extension = file_path.substring(last_dot).down()
+            if not is_audio(extension)
+                // Not an audio file
+                return null
+
+            var track = new Track()
+            track.path = file_path
+            track.file_type = extension
+            track.library = library.name
+
             var taglib_file = new TagLib.File(file_path)
             if (taglib_file is not null) and taglib_file.is_valid()
                 tag: unowned TagLib.Tag = taglib_file.tag
                 
-                var track = new Track()
-                track.path = file_path
-                track.library = library.name
                 track.title = tag.title
                 track.title_sort = sortables.@get(track.title)
                 track.artist = tag.artist
@@ -297,13 +310,8 @@ namespace Khovsgol.Server.Filesystem
                 track.position_in_album = (int) tag.track
                 track.duration = (double) taglib_file.audioproperties.length
                 track.date = (int) tag.year
-                var last_dot = file_path.last_index_of_char('.')
-                if last_dot != -1
-                    file_path.get_next_char(ref last_dot, null)
-                    track.file_type = file_path.substring(last_dot)
-                return track
-            else
-                return null
+
+            return track
                 
         def private flush_batch(libraries: Libraries, ref batch: list of BatchNode) raises GLib.Error
             if not batch.is_empty
@@ -319,12 +327,6 @@ namespace Khovsgol.Server.Filesystem
                     
                     // Make sure the album has tracks
                     if (album is not null) and not tracks.is_empty
-                        // Ensure that artist albums have an artist
-                        if album.album_type == AlbumType.ARTIST
-                            var artist = album.artist
-                            if (artist is null) || (artist.length == 0)
-                                album.album_type = AlbumType.COMPILATION
-
                         // Save album
                         libraries.save_album(album)
                         if _logger.can(LogLevelFlags.LEVEL_INFO)
@@ -337,8 +339,8 @@ namespace Khovsgol.Server.Filesystem
                             libraries.save_track(track)
                             if _logger.can(LogLevelFlags.LEVEL_INFO)
                                 _logger.infof("Added track: %s", track.path)
-                batch.clear()
                 libraries.write_commit()
+                batch.clear()
             
         def private flush_timestamps(libraries: Libraries, ref timestamps: list of Timestamp) raises GLib.Error
             if not timestamps.is_empty
@@ -350,8 +352,8 @@ namespace Khovsgol.Server.Filesystem
                         break
 
                     libraries.set_timestamp(timestamp.path, timestamp.timestamp)
-                timestamps.clear()
                 libraries.write_commit()
+                timestamps.clear()
 
         class private TraverseNode
             construct(enumerator: FileEnumerator, album: Album, tracks: list of Track)
