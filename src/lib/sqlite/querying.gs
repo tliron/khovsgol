@@ -172,9 +172,13 @@ namespace SqliteUtil
                     query.append(join(",", fields))
                     query.append(" FROM ")
                     query.append(table)
-                    if not requirements.is_empty
-                        query.append(" WHERE ")
-                        query.append(join(" AND ", requirements))
+                    var size = requirements.size
+                    if size == 1
+                        query.append(" WHERE %s".printf(requirements.@get(0)))
+                    else if size > 1
+                        query.append(" WHERE (")
+                        query.append(join(") AND (", requirements))
+                        query.append(")")
                     if not sort.is_empty
                         query.append(" ORDER BY ")
                         query.append(join(",", sort))

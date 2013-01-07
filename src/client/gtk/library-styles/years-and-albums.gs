@@ -1,7 +1,6 @@
 [indent=4]
 
 uses
-    Gtk
     JsonUtil
 
 namespace Khovsgol.Client.GTK.Styles
@@ -35,8 +34,13 @@ namespace Khovsgol.Client.GTK.Styles
                                 node.append_separator()
                     
                         var date_string = date.to_string()
-                        node.append_int(date, date_string, date != 0 ? date_string : "Unknown", null, true)
+                        node.append_int(date, date_string, date_string, null, true)
                         first = false
+                    
+                    if not first
+                        node.append_separator()
+                        
+                    node.append_string("unknown", "unknown", "<b>Unknown Years</b>", null, true)
                 else
                     // Dates (with all albums and tracks cached inside each node)
                     var first = true
@@ -111,12 +115,13 @@ namespace Khovsgol.Client.GTK.Styles
                 else
                     // Albums at date
                     var date = node.as_int
-                    if date != int.MIN
-                        var args = new Client.API.GetAlbumsArgs()
-                        args.at_date = date
-                        args.sort.add("title_sort")
-                        args.libraries.add_all(node.instance.libraries)
-                        fill_albums(node.instance.api.get_albums(args), node, subdue_lossy)
+                    if date == int.MIN
+                        date = 0 // Unknown date
+                    var args = new Client.API.GetAlbumsArgs()
+                    args.at_date = date
+                    args.sort.add("title_sort")
+                    args.libraries.add_all(node.instance.libraries)
+                    fill_albums(node.instance.api.get_albums(args), node, subdue_lossy)
 
             else if level == 2
                 var album_node = node.as_object

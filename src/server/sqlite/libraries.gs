@@ -531,15 +531,20 @@ namespace Khovsgol.Server._Sqlite
             q.sort.add_all(args.sort)
             parse_libraries(q, "", args.libraries)
             
-            if args.like
-                q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "album_type", "file_type")
-                q.requirements.add("date LIKE ? ESCAPE \"\\\"")
-            else
-                // Optimized handling using a constant in case of strict equality
+            if (args.date == int.MIN) or (args.date == 0)
                 q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album_type", "file_type")
-                q.requirements.add("date=?")
-                q.constants["date"] = args.date.to_string()
-            q.bindings.add(args.date.to_string())
+                q.requirements.add("date IS NULL or date=0")
+                q.constants["date"] = int64.MIN
+            else
+                if args.like
+                    q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "date", "album_type", "file_type")
+                    q.requirements.add("date LIKE ? ESCAPE \"\\\"")
+                else
+                    // Optimized handling using a constant in case of strict equality
+                    q.add_fields("path", "library", "title", "title_sort", "artist", "artist_sort", "album_type", "file_type")
+                    q.requirements.add("date=?")
+                    q.constants["date"] = (int64) args.date
+                q.bindings.add(args.date.to_string())
 
             return new SqlAlbums(q.execute(_read_db, _statement_cache))
         
@@ -567,7 +572,7 @@ namespace Khovsgol.Server._Sqlite
             q.table = args.album_artist ? "album" : "track"
             q.add_fields("date")
             q.sort.add_all(args.sort)
-            q.requirements.add("date IS NOT NULL")
+            q.requirements.add("date IS NOT NULL and date != 0")
             q.constraint = "DISTINCT"
             parse_libraries(q, "", args.libraries)
 

@@ -39,13 +39,15 @@ namespace Khovsgol.Client.GTK.Styles
             get
                 value: Value
                 _store.get_value(_iter, Playlist.Column.NODE, out value)
-                return ((Json.Node) value).get_object()
+                var node = (Json.Node) value
+                return is_object(node) ? node.get_object() : null
 
         prop readonly as_array: Json.Array
             get
                 value: Value
                 _store.get_value(_iter, Playlist.Column.NODE, out value)
-                return ((Json.Node) value).get_array()
+                var node = (Json.Node) value
+                return is_array(node) ? node.get_array() : null
                 
         def get_album(path: string): Album?
             if _albums_dict is null

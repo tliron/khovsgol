@@ -1,7 +1,6 @@
 [indent=4]
 
 uses
-    Gtk
     JsonUtil
 
 namespace Khovsgol.Client.GTK.Styles

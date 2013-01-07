@@ -1,7 +1,6 @@
 [indent=4]
 
 uses
-    Gtk
     JsonUtil
 
 namespace Khovsgol.Client.GTK.Styles
@@ -64,10 +63,9 @@ namespace Khovsgol.Client.GTK.Styles
                             if json is not null
                                 current_tracks = new Json.Array()
                                 json.set_array_member("_tracks", current_tracks)
+                                first = false
                             else
                                 current_tracks = null
-                            
-                            first = false
 
                         if current_tracks is not null
                             current_tracks.add_object_element(track.to_json())

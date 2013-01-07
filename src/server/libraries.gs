@@ -284,7 +284,7 @@ namespace Khovsgol.Server
     
         def to_json(): Json.Object
             var json = new Json.Object()
-            set_string_member_not_null(json, "name", _name)
+            set_string_member_not_empty(json, "name", _name)
             json.set_array_member("directories", to_object_array(_directories.values))
             return json
 

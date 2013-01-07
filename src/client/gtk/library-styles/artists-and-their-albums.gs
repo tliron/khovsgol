@@ -1,7 +1,6 @@
 [indent=4]
 
 uses
-    Gtk
     JsonUtil
 
 namespace Khovsgol.Client.GTK.Styles
@@ -30,7 +29,7 @@ namespace Khovsgol.Client.GTK.Styles
                         node.append_separator()
         
                     // Special section
-                    node.append_string("unknownartists", "unknownartists", "<b>Unknown Artists</b>", null, true)
+                    node.append_string("unknownartist", "unknownartist", "<b>Unknown Artist</b>", null, true)
                     node.append_string("compilations", "compilations", "<b>Compilations</b>", null, true)
                     node.append_string("playlists", "playlists", "<b>Playlists</b>", null, true)
                 else
@@ -112,7 +111,7 @@ namespace Khovsgol.Client.GTK.Styles
                     if unknown.get_length() > 0
                         var special = new Json.Object()
                         special.set_array_member("_albums", unknown)
-                        node.append_object(special, "unknownartists", "<b>Unknown Artists</b>", null, true)
+                        node.append_object(special, "unknownartist", "<b>Unknown Artist</b>", null, true)
 
                     if compilations.get_length() > 0
                         var special = new Json.Object()
@@ -162,7 +161,7 @@ namespace Khovsgol.Client.GTK.Styles
                 else
                     // Special
                     var special_type = node.as_string
-                    if special_type == "unknownartists"
+                    if special_type == "unknownartist"
                         // Unknown artists
                         var args = new Client.API.GetAlbumsArgs()
                         args.by_artist = ""
@@ -239,13 +238,25 @@ namespace Khovsgol.Client.GTK.Styles
                             args.libraries.add_all(node.instance.libraries)
                             gather_from_albums(node.instance.api.get_albums(args), node, ref paths)
                 else
-                    // All paths by compilation type, one album at a time
-                    var args = new Client.API.GetAlbumsArgs()
-                    args.album_type = node.as_string == "playlist" ? AlbumType.SAVED_PLAYLIST : AlbumType.COMPILATION
-                    args.sort.add("date")
-                    args.sort.add("title_sort")
-                    args.libraries.add_all(node.instance.libraries)
-                    gather_from_albums(node.instance.api.get_albums(args), node, ref paths)
+                    // Special
+                    var special_type = node.as_string
+                    if special_type == "unknownartist"
+                        // All paths for unknown artists, one album at a time
+                        var args = new Client.API.GetAlbumsArgs()
+                        args.by_artist = ""
+                        args.album_type = AlbumType.ARTIST
+                        args.sort.add("date")
+                        args.sort.add("title_sort")
+                        args.libraries.add_all(node.instance.libraries)
+                        gather_from_albums(node.instance.api.get_albums(args), node, ref paths)
+                    else
+                        // All paths by compilation type, one album at a time
+                        var args = new Client.API.GetAlbumsArgs()
+                        args.album_type = node.as_string == "playlist" ? AlbumType.SAVED_PLAYLIST : AlbumType.COMPILATION
+                        args.sort.add("date")
+                        args.sort.add("title_sort")
+                        args.libraries.add_all(node.instance.libraries)
+                        gather_from_albums(node.instance.api.get_albums(args), node, ref paths)
 
             else if level == 2
                 var album_node = node.as_object

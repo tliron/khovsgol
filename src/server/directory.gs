@@ -17,6 +17,6 @@ namespace Khovsgol.Server
 
         def to_json(): Json.Object
             var json = new Json.Object()
-            set_string_member_not_null(json, "path", path)
+            set_string_member_not_empty(json, "path", path)
             json.set_boolean_member("scanning", is_scanning)
             return json

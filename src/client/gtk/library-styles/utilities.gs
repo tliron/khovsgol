@@ -35,25 +35,29 @@ namespace Khovsgol.Client.GTK.Styles
             get
                 value: Value
                 _store.get_value(_iter, Library.Column.NODE, out value)
-                return ((Json.Node) value).get_object()
+                var node = (Json.Node) value
+                return is_object(node) ? node.get_object() : null
 
-        prop readonly as_array: Json.Array
+        prop readonly as_array: Json.Array?
             get
                 value: Value
                 _store.get_value(_iter, Library.Column.NODE, out value)
-                return ((Json.Node) value).get_array()
+                var node = (Json.Node) value
+                return is_array(node) ? node.get_array() : null
 
-        prop readonly as_string: string
+        prop readonly as_string: string?
             get
                 value: Value
                 _store.get_value(_iter, Library.Column.NODE, out value)
-                return ((Json.Node) value).get_string()
+                var node = (Json.Node) value
+                return is_string(node) ? node.get_string() : null
 
         prop readonly as_int: int
             get
                 value: Value
                 _store.get_value(_iter, Library.Column.NODE, out value)
-                return (int) ((Json.Node) value).get_int()
+                var node = (Json.Node) value
+                return is_int64(node) ? (int) node.get_int() : int.MIN
 
         prop readonly node_type: Json.NodeType
             get
@@ -122,8 +126,8 @@ namespace Khovsgol.Client.GTK.Styles
                     if not first
                         node.append_separator()
                             
-                if fill_artist(artist, node) is not null
-                    first = false
+            if fill_artist(artist, node) is not null
+                first = false
         return not first
     
     def private fill_artist(artist: Artist, node: LibraryNode): Json.Object?
@@ -134,7 +138,9 @@ namespace Khovsgol.Client.GTK.Styles
             node.append_object(json, name, markup, null, true)
             return json
         else
-            return null
+            var json = artist.to_json()
+            node.append_object(json, null, "<b>Unknown Artist</b>", null, true)
+            return json
  
     def private fill_albums_by(albums: IterableOfAlbum, node: LibraryNode, subdue_lossy: bool)
         for var album in albums
@@ -169,8 +175,8 @@ namespace Khovsgol.Client.GTK.Styles
                     if not first
                         node.append_separator()
                 
-                if fill_album(album, node, subdue_lossy)
-                    first = false
+            if fill_album(album, node, subdue_lossy)
+                first = false
 
     def private fill_album(album: Album, node: LibraryNode, subdue_lossy: bool): bool
         var title = album.title
@@ -245,8 +251,8 @@ namespace Khovsgol.Client.GTK.Styles
                     if not first
                         node.append_separator()
                             
-                if fill_track(track, node, subdue_lossy, show_duration)
-                    first = false
+            if fill_track(track, node, subdue_lossy, show_duration)
+                first = false
 
     def private fill_track(track: Track, node: LibraryNode, subdue_lossy: bool, show_duration: bool): bool
         var title = track.title

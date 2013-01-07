@@ -23,55 +23,55 @@ namespace Khovsgol
             owned get
                 return get_string_member_or_null(_json, "path")
             set
-                set_string_member_not_null(_json, "path", value)
+                set_string_member_not_empty(_json, "path", value)
         
         prop library: string
             owned get
                 return get_string_member_or_null(_json, "library")
             set
-                set_string_member_not_null(_json, "library", value)
+                set_string_member_not_empty(_json, "library", value)
         
         prop title: string
             owned get
                 return get_string_member_or_null(_json, "title")
             set
-                set_string_member_not_null(_json, "title", value)
+                set_string_member_not_empty(_json, "title", value)
         
         prop title_sort: string
             owned get
                 return get_string_member_or_null(_json, "title_sort")
             set
-                set_string_member_not_null(_json, "title_sort", value)
+                set_string_member_not_empty(_json, "title_sort", value)
         
         prop artist: string
             owned get
                 return get_string_member_or_null(_json, "artist")
             set
-                set_string_member_not_null(_json, "artist", value)
+                set_string_member_not_empty(_json, "artist", value)
         
         prop artist_sort: string
             owned get
                 return get_string_member_or_null(_json, "artist_sort")
             set
-                set_string_member_not_null(_json, "artist_sort", value)
+                set_string_member_not_empty(_json, "artist_sort", value)
         
         prop album: string
             owned get
                 return get_string_member_or_null(_json, "album")
             set
-                set_string_member_not_null(_json, "album", value)
+                set_string_member_not_empty(_json, "album", value)
         
         prop album_sort: string
             owned get
                 return get_string_member_or_null(_json, "album_sort")
             set
-                set_string_member_not_null(_json, "album_sort", value)
+                set_string_member_not_empty(_json, "album_sort", value)
         
         prop album_path: string
             owned get
                 return get_string_member_or_null(_json, "album_path")
             set
-                set_string_member_not_null(_json, "album_path", value)
+                set_string_member_not_empty(_json, "album_path", value)
         
         prop album_type: AlbumType
             get
@@ -107,7 +107,7 @@ namespace Khovsgol
             owned get
                 return get_string_member_or_null(_json, "file_type")
             set
-                set_string_member_not_null(_json, "file_type", value)
+                set_string_member_not_empty(_json, "file_type", value)
         
         def clone(): Track
             var track = new Track()
@@ -152,7 +152,7 @@ namespace Khovsgol
             owned get
                 return get_string_member_or_null(_json, "path")
             set
-                set_string_member_not_null(_json, "path", value)
+                set_string_member_not_empty(_json, "path", value)
 
         prop position: int
             get
@@ -164,7 +164,7 @@ namespace Khovsgol
             owned get
                 return get_string_member_or_null(_json, "album")
             set
-                set_string_member_not_null(_json, "album", value)
+                set_string_member_not_empty(_json, "album", value)
 
         def to_json(): Json.Object
             return _json
@@ -198,37 +198,37 @@ namespace Khovsgol
             owned get
                 return get_string_member_or_null(_json, "path")
             set
-                set_string_member_not_null(_json, "path", value)
+                set_string_member_not_empty(_json, "path", value)
 
         prop library: string
             owned get
                 return get_string_member_or_null(_json, "library")
             set
-                set_string_member_not_null(_json, "library", value)
+                set_string_member_not_empty(_json, "library", value)
 
         prop title: string
             owned get
                 return get_string_member_or_null(_json, "title")
             set
-                set_string_member_not_null(_json, "title", value)
+                set_string_member_not_empty(_json, "title", value)
 
         prop title_sort: string
             owned get
                 return get_string_member_or_null(_json, "title_sort")
             set
-                set_string_member_not_null(_json, "title_sort", value)
+                set_string_member_not_empty(_json, "title_sort", value)
 
         prop artist: string
             owned get
                 return get_string_member_or_null(_json, "artist")
             set
-                set_string_member_not_null(_json, "artist", value)
+                set_string_member_not_empty(_json, "artist", value)
 
         prop artist_sort: string
             owned get
                 return get_string_member_or_null(_json, "artist_sort")
             set
-                set_string_member_not_null(_json, "artist_sort", value)
+                set_string_member_not_empty(_json, "artist_sort", value)
 
         prop date: int64
             get
@@ -246,7 +246,7 @@ namespace Khovsgol
             owned get
                 return get_string_member_or_null(_json, "file_type")
             set
-                set_string_member_not_null(_json, "file_type", value)
+                set_string_member_not_empty(_json, "file_type", value)
         
         def to_json(): Json.Object
             return _json
@@ -273,13 +273,13 @@ namespace Khovsgol
             owned get
                 return get_string_member_or_null(_json, "name")
             set
-                set_string_member_not_null(_json, "name", value)
+                set_string_member_not_empty(_json, "name", value)
         
         prop sort: string
             owned get
                 return get_string_member_or_null(_json, "sort")
             set
-                set_string_member_not_null(_json, "sort", value)
+                set_string_member_not_empty(_json, "sort", value)
         
         def to_json(): Json.Object
             return _json

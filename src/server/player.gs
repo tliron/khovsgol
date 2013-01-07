@@ -306,10 +306,10 @@ namespace Khovsgol.Server
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            set_string_member_not_null(json, "name", _name)
+            set_string_member_not_empty(json, "name", _name)
             set_double_member_not_min(json, "volume", volume)
-            set_string_member_not_null(json, "playMode", get_name_from_play_mode(play_mode))
-            set_string_member_not_null(json, "cursorMode", get_name_from_cursor_mode(cursor_mode))
+            set_string_member_not_empty(json, "playMode", get_name_from_play_mode(play_mode))
+            set_string_member_not_empty(json, "cursorMode", get_name_from_cursor_mode(cursor_mode))
             var plugs = new Json.Array()
             for var plug in _plugs
                 plugs.add_object_element(plug.to_json())

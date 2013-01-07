@@ -136,6 +136,12 @@ namespace JsonUtil
         else
             obj.remove_member(key)
 
+    def set_string_member_not_empty(obj: Json.Object, key: string, value: string?)
+        if (value is not null) and (value.length > 0)
+            obj.set_string_member(key, value)
+        else
+            obj.remove_member(key)
+
     def set_int64_member_not_min(obj: Json.Object, key: string, value: int64)
         if value != int64.MIN
             obj.set_int_member(key, value)

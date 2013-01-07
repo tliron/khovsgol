@@ -75,8 +75,8 @@ namespace Khovsgol.Receiver
         
         def to_json(): Json.Object
             var json = new Json.Object()
-            set_string_member_not_null(json, "spec", _spec)
-            //set_string_member_not_null(json, "state", state)
+            set_string_member_not_empty(json, "spec", _spec)
+            //set_string_member_not_empty(json, "state", state)
             return json
 
         def private on_error(source: Gst.Object, error: GLib.Error, text: string)
