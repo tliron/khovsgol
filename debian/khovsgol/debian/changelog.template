@@ -1,3 +1,17 @@
+khovsgol (0.6-0ubuntu11) %DISTRIBUTION%; urgency=low
+
+  * Fix dependecies for Ubuntu 12.04.
+  * Bux fixes.
+
+ -- Tal Liron <tal.liron@gmail.com>  Tue, 9 Jan 2013 16:18:38 -0600
+
+khovsgol (0.6-0ubuntu10) %DISTRIBUTION%; urgency=low
+
+  * Fix dependecies for Ubuntu 12.04.
+  * Bux fixes.
+
+ -- Tal Liron <tal.liron@gmail.com>  Tue, 9 Jan 2013 02:55:38 -0600
+
 khovsgol (0.6-0ubuntu9) %DISTRIBUTION%; urgency=low
 
   * Fix dependencies for Ubuntu 12.04.

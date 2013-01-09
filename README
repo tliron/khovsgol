@@ -1,5 +1,5 @@
 
-This README last updated on Dec 24, 2012.
+This README last updated on Jan 8, 2012.
 
 ========
 Khövsgöl
@@ -77,7 +77,7 @@ There is no "make install" target, but you can do a test install for your user
 with these special targets:
 
  "make install.user"
-   Installs a ".desktop" file and icons for the current user to run Khovsgol
+   Installs a ".desktop" file and icons for the current user to run Khövsgöl
    directly from the build's "bin" directory. DO NOT USE SUDO FOR THIS MAKE
    TARGET!
 
@@ -108,8 +108,8 @@ directory. To clean them out:
 
 To build using a pbuilder environment:
 
- "make deb.pbuilder", "make dsc.pbuilder"
-   Same as "deb" and "dsc", but for the pbuilder environment.
+ "make deb.pbuilder"
+   Same as "deb", but for the pbuilder environment.
 
 Note that when using pbuilder all build dependencies will be automatically
 installed.

@@ -16,13 +16,6 @@ else
 	cd $(DEBIAN); debuild -b
 endif
 
-dsc.pbuilder: .debian.prepare
-ifdef DEBSIGN_KEYID
-	cd $(DEBIAN); pdebuild -S --debsign-k $(DEBSIGN_KEYID)
-else
-	cd $(DEBIAN); pdebuild -S
-endif
-
 deb.pbuilder: .debian.prepare
 ifdef DEBSIGN_KEYID
 	cd $(DEBIAN); pdebuild -b --debsign-k $(DEBSIGN_KEYID)

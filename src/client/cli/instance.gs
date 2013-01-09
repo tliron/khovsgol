@@ -96,6 +96,7 @@ namespace Khovsgol.Client.CLI
                 var args = new Client.API.GetTracksArgs()
                 args.by_artist = _arguments.args[2]
                 args.sort.add("path")
+                args.libraries.add_all(_arguments.libraries)
                 for track in _api.get_tracks(args)
                     print track.path
 
@@ -106,6 +107,7 @@ namespace Khovsgol.Client.CLI
                 var args = new Client.API.GetTracksArgs()
                 args.in_album = _arguments.args[2]
                 args.sort.add("position")
+                args.libraries.add_all(_arguments.libraries)
                 for track in _api.get_tracks(args)
                     print track.path
 
@@ -113,7 +115,9 @@ namespace Khovsgol.Client.CLI
                 pass
 
             else if command == "albums"
-                for var album in _api.get_albums()
+                var args = new Client.API.GetAlbumsArgs()
+                args.libraries.add_all(_arguments.libraries)
+                for var album in _api.get_albums(args)
                     var path = album.path
                     if path is not null
                         stdout.printf("%s\n", path)
@@ -124,6 +128,7 @@ namespace Khovsgol.Client.CLI
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.by_artist = _arguments.args[2]
+                args.libraries.add_all(_arguments.libraries)
                 for var album in _api.get_albums(args)
                     var path = album.path
                     if path is not null
@@ -135,6 +140,7 @@ namespace Khovsgol.Client.CLI
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.with_artist = _arguments.args[2]
+                args.libraries.add_all(_arguments.libraries)
                 for var album in _api.get_albums(args)
                     var path = album.path
                     if path is not null
@@ -146,6 +152,7 @@ namespace Khovsgol.Client.CLI
                     Posix.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.at_date = int.parse(_arguments.args[2])
+                args.libraries.add_all(_arguments.libraries)
                 for var album in _api.get_albums(args)
                     var path = album.path
                     if path is not null
@@ -153,7 +160,9 @@ namespace Khovsgol.Client.CLI
 
             else if command == "compilations"
                 var args = new Client.API.GetAlbumsArgs()
-                args.album_type = 1
+                args.libraries.add_all(_arguments.libraries)
+                args.album_type = AlbumType.COMPILATION
+                args.libraries.add_all(_arguments.libraries)
                 for var album in _api.get_albums(args)
                     var path = album.path
                     if path is not null
@@ -163,24 +172,36 @@ namespace Khovsgol.Client.CLI
                 pass
 
             else if command == "artists"
-                for var artist in _api.get_artists()
+                var args = new Client.API.GetArtistsArgs()
+                args.album_artists = false
+                args.sort.add("artist_sort")
+                args.libraries.add_all(_arguments.libraries)
+                for var artist in _api.get_artists(args)
                     var name = artist.name
                     if name is not null
                         stdout.printf("%s\n", name)
 
             else if command == "albumartists"
-                for var artist in _api.get_artists(true)
+                var args = new Client.API.GetArtistsArgs()
+                args.album_artists = true
+                args.sort.add("artist_sort")
+                args.libraries.add_all(_arguments.libraries)
+                for var artist in _api.get_artists(args)
                     var name = artist.name
                     if name is not null
                         stdout.printf("%s\n", name)
 
             else if command == "dates"
-                for var date in _api.get_dates()
+                var args = new Client.API.GetDatesArgs()
+                args.by_album = true
+                args.libraries.add_all(_arguments.libraries)
+                for var date in _api.get_dates(args)
                     stdout.printf("%d\n", date)
 
             else if command == "scan"
-                if _arguments.library is not null
-                    _api.library_action(_arguments.library, "scan")
+                if not _arguments.libraries.is_empty
+                    for var library in _arguments.libraries
+                        _api.library_action(library, "scan")
                 else
                     for var library in _api.get_libraries()
                         var name = get_string_member_or_null(library, "name")
@@ -333,7 +354,7 @@ namespace Khovsgol.Client.CLI
         s.append("  unplug [spec]\n")
         s.append("\n")
         s.append("Library commands:\n")
-        s.append("  (Supported switches: --library=name, --sort=name,name,...)\n")
+        s.append("  (Supported switches: --libraries=name,name,... --sort=name,name,...)\n")
         s.append("\n")
         s.append("  tracks [like]\n")
         s.append("  tracksby [artist]\n")
