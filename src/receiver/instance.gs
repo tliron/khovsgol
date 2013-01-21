@@ -81,4 +81,4 @@ init
         new Khovsgol.Receiver.Instance(args).start()
     except e: GLib.Error
         stderr.printf("%s\n", e.message)
-        Posix.exit(1)
+        Process.exit(1)

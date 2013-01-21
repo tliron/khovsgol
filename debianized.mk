@@ -18,9 +18,9 @@ endif
 
 deb.pbuilder: .debian.prepare
 ifdef DEBSIGN_KEYID
-	cd $(DEBIAN); pdebuild -b --debsign-k $(DEBSIGN_KEYID)
+	cd $(DEBIAN); pdebuild --debsign-k $(DEBSIGN_KEYID) --buildresult $(shell pwd)/debian
 else
-	cd $(DEBIAN); pdebuild -b
+	cd $(DEBIAN); pdebuild --buildresult $(shell pwd)/debian
 endif
 
 debian.clean:

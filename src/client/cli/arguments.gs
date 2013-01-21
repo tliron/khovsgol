@@ -9,9 +9,10 @@ namespace Khovsgol.Client.CLI
     class Arguments: Object
         construct(args: array of string)
             libraries: string? = null
+            var version = false
         
             var options = new array of OptionEntry[7]
-            options[0] = {"version",   0, 0, OptionArg.NONE,   ref _version,  "Show version", null}
+            options[0] = {"version",   0, 0, OptionArg.NONE,   ref version,   "Show version", null}
             options[1] = {"host",      0, 0, OptionArg.STRING, ref _host,     "Server host (defaults to \"localhost\")", ""}
             options[2] = {"port",      0, 0, OptionArg.INT,    ref _port,     "Web server TCP port (defaults to 8185)", "number"}
             options[3] = {"player",    0, 0, OptionArg.STRING, ref _player,   "Select player (defaults to your username)", ""}
@@ -27,15 +28,15 @@ namespace Khovsgol.Client.CLI
             try
                 context.parse(ref args)
 
-                if _version
+                if version
                     print VERSION
-                    Posix.exit(0)
+                    Process.exit(0)
 
                 _args = args
                 if _args.length == 1
                     // No commands, so print out help and exit
                     stdout.puts(context.get_help(true, null))
-                    Posix.exit(0)
+                    Process.exit(0)
                 
                 if _player is null
                     _player = Environment.get_user_name()
@@ -47,10 +48,8 @@ namespace Khovsgol.Client.CLI
             except e: OptionError
                 stderr.printf("%s\n", e.message)
                 print "Use '%s --help' to see a full list of available command line options.\n", args[0]
-                Posix.exit(1)
+                Process.exit(1)
     
-        _version: bool
-
         prop readonly args: array of string
         prop readonly host: string = "localhost"
         prop readonly port: int = 8185

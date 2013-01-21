@@ -12,9 +12,11 @@ namespace Khovsgol.Client.GTK
                 _status_code = 1
             
             _file = File.new_for_path(args[0])
+
+            var version = false
         
             var options = new array of OptionEntry[3]
-            options[0] = {"version", 0, 0, OptionArg.NONE, ref _version, "Show version", null}
+            options[0] = {"version", 0, 0, OptionArg.NONE, ref version,  "Show version", null}
             options[1] = {"console", 0, 0, OptionArg.NONE, ref _console, "Log to console", null}
             options[2] = {null}
             
@@ -32,7 +34,7 @@ namespace Khovsgol.Client.GTK
 
                 context.parse(ref unowned_args)
                 
-                if _version
+                if version
                     command_line.print("%s\n", VERSION)
                     _quit = true
                     return
@@ -46,7 +48,5 @@ namespace Khovsgol.Client.GTK
         prop readonly file: File
         prop readonly quit: bool
         prop readonly status_code: int = 0
-    
-        _version: bool
 
         prop readonly console: bool

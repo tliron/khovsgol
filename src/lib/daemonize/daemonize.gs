@@ -43,15 +43,15 @@ namespace Daemonize
                 print "Daemon %s is running (PID %d)", name, pid
             else
                 print "Daemon %s is not running", name
-            Posix.exit(0)
+            Process.exit(0)
 
         if Daemon.reset_sigs(-1) < 0
             Daemon.log(Daemon.LogPriority.ERR, "Failed to reset all daemon signal handlers: %s", strerror(errno))
-            Posix.exit(1)
+            Process.exit(1)
             
         if Daemon.unblock_sigs(-1) < 0
             Daemon.log(Daemon.LogPriority.ERR, "Failed to unblock all daemon signals: %s", strerror(errno))
-            Posix.exit(1)
+            Process.exit(1)
             
         if stop
             var pid = Daemon.pid_file_is_running()
@@ -63,37 +63,37 @@ namespace Daemonize
                 var r = Daemon.pid_file_kill_wait(Daemon.Sig.TERM, 5)
                 if r < 0
                     Daemon.log(Daemon.LogPriority.ERR, "Failed to kill daemon: %s", strerror(errno))
-                    Posix.exit(1)
+                    Process.exit(1)
             
         if start
             // Make sure daemon in not already running
             var pid = Daemon.pid_file_is_running()
             if pid >= 0
                 Daemon.log(Daemon.LogPriority.ERR, "Daemon %s is already running (PID %u)", name, pid)
-                Posix.exit(1)
+                Process.exit(1)
                 
             print "Starting daemon %s (%s)", name, get_pid_file()
             
             // Create pipe to communicate with daemon
             if Daemon.retval_init() < 0
                 Daemon.log(Daemon.LogPriority.ERR, "Failed to create daemon pipe: %s", strerror(errno))
-                Posix.exit(1)
+                Process.exit(1)
             
             // Fork!
             pid = Daemon.fork()
             if pid < 0
                 Daemon.retval_done()
                 Daemon.log(Daemon.LogPriority.ERR, "Could not fork daemon")
-                Posix.exit(1)
+                Process.exit(1)
 
             else if pid != 0
                 // Here we are in the parent process of the fork
                 var r = Daemon.retval_wait(20)
                 if r < 0
                     Daemon.log(Daemon.LogPriority.ERR, "Could not receive return value from daemon process: %s", strerror(errno))
-                    Posix.exit(255)
+                    Process.exit(255)
                 else
-                    Posix.exit(r)
+                    Process.exit(r)
 
             else
                 // Here we are the daemon process of the fork
@@ -132,7 +132,7 @@ namespace Daemonize
                 Daemon.log(Daemon.LogPriority.INFO, "Daemon started")
                 
         else
-            Posix.exit(0)
+            Process.exit(0)
 
     /*
      * The default daemon pid_file location is /var/run/, but that would
@@ -155,7 +155,7 @@ namespace Daemonize
         Daemon.retval_send(255)
         Daemon.signal_done()
         Daemon.pid_file_remove()
-        Posix.exit(0)
+        Process.exit(0)
 
     /*
      * Our wrapping GLib polling callback, with added support for handling

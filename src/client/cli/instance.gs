@@ -42,14 +42,14 @@ namespace Khovsgol.Client.CLI
             else if command == "cursor"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the position (a number)\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var position = int.parse(_arguments.args[2])
                 print_player(_api.set_position_in_playlist(position))
 
             else if command == "trackposition"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the position (a decimal)\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var position = double.parse(_arguments.args[2])
                 _api.set_plug("pulse")
                 print_player(_api.set_position_in_track(position))
@@ -57,14 +57,14 @@ namespace Khovsgol.Client.CLI
             else if command == "trackratio"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the ratio (a decimal)\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var ratio = double.parse(_arguments.args[2])
                 print_player(_api.set_ratio_in_track(ratio))
 
             else if command == "cursormode"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the cursor mode\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var cursor_mode = _arguments.args[2]
                 print_player(_api.set_cursor_mode(cursor_mode))
 
@@ -77,13 +77,13 @@ namespace Khovsgol.Client.CLI
             else if command == "plug"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the plug spec\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 print_player(_api.set_plug(_arguments.args[2], null, true))
 
             else if command == "unplug"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the plug spec\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 _api.delete_plug(_arguments.args[2])
 
             else if command == "tracks"
@@ -92,7 +92,7 @@ namespace Khovsgol.Client.CLI
             else if command == "tracksby"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the artist name\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var args = new Client.API.GetTracksArgs()
                 args.by_artist = _arguments.args[2]
                 args.sort.add("path")
@@ -103,7 +103,7 @@ namespace Khovsgol.Client.CLI
             else if command == "tracksin"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the album name\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var args = new Client.API.GetTracksArgs()
                 args.in_album = _arguments.args[2]
                 args.sort.add("position")
@@ -125,7 +125,7 @@ namespace Khovsgol.Client.CLI
             else if command == "albumsby"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the artist name\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.by_artist = _arguments.args[2]
                 args.libraries.add_all(_arguments.libraries)
@@ -137,7 +137,7 @@ namespace Khovsgol.Client.CLI
             else if command == "albumswith"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the artist name\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.with_artist = _arguments.args[2]
                 args.libraries.add_all(_arguments.libraries)
@@ -149,7 +149,7 @@ namespace Khovsgol.Client.CLI
             else if command == "albumsat"
                 if _arguments.args.length < 3
                     stderr.printf("You must provide the date (a number)\n")
-                    Posix.exit(1)
+                    Process.exit(1)
                 var args = new Client.API.GetAlbumsArgs()
                 args.at_date = int.parse(_arguments.args[2])
                 args.libraries.add_all(_arguments.libraries)
@@ -241,7 +241,7 @@ namespace Khovsgol.Client.CLI
 
             else
                 stderr.printf("Unknown command: %s\n", command)
-                Posix.exit(1)
+                Process.exit(1)
                         
         _arguments: Arguments
         _api: Client.API

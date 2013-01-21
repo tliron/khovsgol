@@ -28,7 +28,7 @@ namespace Khovsgol.Receiver
                 
                 if _version
                     print VERSION
-                    Posix.exit(0)
+                    Process.exit(0)
 
                 if restart_daemon
                     _stop_daemon = true
@@ -37,7 +37,7 @@ namespace Khovsgol.Receiver
             except e: OptionError
                 stderr.printf("%s\n", e.message)
                 print "Use '%s --help' to see a full list of available command line options.\n", args[0]
-                Posix.exit(1)
+                Process.exit(1)
     
         _version: bool
         

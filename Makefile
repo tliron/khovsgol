@@ -8,7 +8,7 @@ all: khovsgold khovsgolr khovsgolc khovsgol
 
 all.ccode: khovsgold.ccode khovsgolr.ccode khovsgolc.ccode khovsgol.ccode
 
-clean: deb.clean
+clean: debian.clean
 	$(RM) -rf $(BIN)/*
 	$(RM) -rf c/*
 
