@@ -33,15 +33,28 @@ namespace Logging
     class StreamAppender: Appender
         prop stream: unowned FileStream = stdout
         prop renderer: Renderer? = new ColorFormatRenderer()
+        prop windows: bool
 
         def override handle(domain: string?, levels: LogLevelFlags, message: string)
             if renderer is not null
                 var rendered = renderer.render(domain, levels, message)
                 if rendered is not null
                     if _stream is not null
-                        _stream.puts(rendered)
-                        _stream.putc('\n')
-                        _stream.flush()
+                        _lock.@lock()
+                        try
+                            _stream.puts(rendered)
+                            if _windows
+                                _stream.puts(NEWLINE_WINDOWS)
+                            else
+                                _stream.putc(NEWLINE)
+                            _stream.flush()
+                        finally
+                            _lock.unlock()
+
+        const NEWLINE_WINDOWS: string = "\r\n"
+        const NEWLINE: char = '\n'
+
+        _lock: Mutex = Mutex()
     
     /*
      * Renders log messages into lines of text and appends them to a
@@ -50,20 +63,27 @@ namespace Logging
     class OutputStreamAppender: Appender
         prop stream: OutputStream
         prop renderer: Renderer? = new FormatRenderer()
+        prop windows: bool
 
         def override handle(domain: string?, levels: LogLevelFlags, message: string)
             if renderer is not null
                 var rendered = renderer.render(domain, levels, message)
                 if rendered is not null
-                    try
-                        if _stream is not null
+                    if _stream is not null
+                        _lock.@lock()
+                        try
                             _stream.write(rendered.data)
-                            _stream.write(NEWLINE)
+                            _stream.write(_windows ? NEWLINE_WINDOWS : NEWLINE)
                             _stream.flush()
-                    except e: Error
-                        stderr.printf("Error writing log message to stream: %s\n", e.message)
+                        except e: Error
+                            stderr.printf("Error writing log message to stream: %s, %s\n", e.message, rendered)
+                        finally
+                            _lock.unlock()
         
+        const NEWLINE_WINDOWS: array of uint8 = {'\r', '\n'}
         const NEWLINE: array of uint8 = {'\n'}
+        
+        _lock: Mutex = Mutex()
 
     /*
      * A file stream appender that handles automatic rolling of log

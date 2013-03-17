@@ -41,6 +41,7 @@ VALAC=valac \
 	--debug \
 	--target-glib=2.32 \
 	--Xcc=-w \
+	--Xcc=-lm \
 	$(foreach w,$(CPPFLAGS) $(CFLAGS) $(LDFLAGS),-X $(w))
 
 VALAC.C=valac \

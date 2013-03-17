@@ -33,6 +33,14 @@ namespace Khovsgol.Client.Features
 
                 try
                     _notifications = Bus.get_proxy_sync(BusType.SESSION, "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
+                    
+                    var capabilities = _notifications.get_capabilities()
+                    for var capability in capabilities
+                        if capability == "body-markup"
+                            _markup = true
+                            _logger.info("Supports markup")
+                            break
+                        
                     _instance.api.track_change.connect(on_track_changed)
                     _instance.api.error.connect(on_error)
                     set_state(FeatureState.STARTED)
@@ -50,6 +58,7 @@ namespace Khovsgol.Client.Features
         
         _state: int = FeatureState.STOPPED
         _notifications: Notifications?
+        _markup: bool
         
         def private set_state(state: FeatureState)
             AtomicInt.@set(ref _state, state)
@@ -67,22 +76,37 @@ namespace Khovsgol.Client.Features
                         var album = track.album
                         var position = track.position_in_album
                         
-                        title = Markup.escape_text(title)
+                        if _markup
+                            title = Markup.escape_text(title)
                         title = format_annotation(title)
                         if artist is not null
-                            artist = Markup.escape_text(artist)
+                            if _markup
+                                artist = Markup.escape_text(artist)
                         if album is not null
-                            album = Markup.escape_text(album)
+                            if _markup
+                                album = Markup.escape_text(album)
                             album = format_annotation(album)
                         markup: string
                         if (artist is not null) and (album is not null) and (position != int.MIN)
-                            markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>\r<span size=\"smaller\">%s in %s</span>".printf(title, artist, format_ordinal(position), album)
+                            if _markup
+                                markup = "<b>%s</b>\rBy <i>%s</i>\r%s in %s".printf(title, artist, format_ordinal(position), album)
+                            else
+                                markup = "%s\rBy %s\r%s in %s".printf(title, artist, format_ordinal(position), album)
                         else if (artist is not null) and (album is not null)
-                            markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>\r<span size=\"smaller\">In %s</span>".printf(title, artist, album)
+                            if _markup
+                                markup = "<b>%s</b>\rBy <i>%s</i>\rIn %s".printf(title, artist, album)
+                            else
+                                markup = "%s\rBy %s\rIn %s".printf(title, artist, album)
                         else if (artist is not null) and (album is null)
-                            markup = "%s\r<span size=\"smaller\">By <i>%s</i></span>".printf(title, artist)
+                            if _markup
+                                markup = "<b>%s</b>\rBy <i>%s</i>".printf(title, artist)
+                            else
+                                markup = "%s\rBy %s".printf(title, artist)
                         else if (artist is null) and (album is not null)
-                            markup = "%s\r<span size=\"smaller\">In %s</span>".printf(title, album)
+                            if _markup
+                                markup = "<b>%s</b>\rIn %s".printf(title, album)
+                            else
+                                markup = "%s\rIn %s".printf(title, album)
                         else
                             markup = title
                             

@@ -28,6 +28,7 @@ namespace Nap
             except e: GLib.Error
                 if context.error_handler is not null
                     context.error_handler(context.conversation, e)
+            context.unref()
 
         class private static Context: GLib.Object
             construct(handler: Handler, error_handler: ErrorHandler?, conversation: Conversation)
