@@ -28,7 +28,8 @@ namespace Khovsgol.Client.GTK
             try
                 // Parse wants to change the args
                 var args_copy = new array of string[length]
-                for var i = 0 to (length - 1)
+                var last = length - 1
+                for var i = 0 to last
                     args_copy[i] = args[i]
                 unowned_args: unowned array of string = args_copy
 

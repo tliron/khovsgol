@@ -22,12 +22,11 @@ namespace SqliteUtil
      */
     def join_same(sep: string, item: string, num: int): string
         var str = new StringBuilder()
-        if num > 0
-            num--
-            for var i = 0 to num
-                str.append(item)
-                if i < num
-                    str.append(sep)
+        num--
+        for var i = 0 to num
+            str.append(item)
+            if i < num
+                str.append(sep)
         return str.str
 
     /*
@@ -121,10 +120,9 @@ namespace SqliteUtil
                     _statement->bind_double(index++, (double) binding)
 
             var columns = _statement->column_count()
-            if columns > 0
-                var last = columns - 1
-                for var c = 0 to last
-                    _column_names[_statement->column_name(c)] = c
+            var last = columns - 1
+            for var c = 0 to last
+                _column_names[_statement->column_name(c)] = c
         
         final
             if _unlock_mutex is not null
