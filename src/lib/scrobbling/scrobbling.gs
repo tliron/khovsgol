@@ -11,6 +11,10 @@ namespace Scrobbling
     
     const LIBRE_FM_API: string = "http://turtle.libre.fm/2.0/"
     const LIBRE_FM_AUTH_API: string = "https://turtle.libre.fm/2.0/"
+    
+    exception Error
+        CLIENT
+        SERVER
 
     /*
      * Implementation of Last.fm REST APIs for authentication and scrobbling.

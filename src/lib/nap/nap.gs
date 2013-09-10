@@ -2,6 +2,9 @@
 
 namespace Nap
 
+    exception Error
+        CONNECTOR
+
     /*
      * HTTP status codes.
      */

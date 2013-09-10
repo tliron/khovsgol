@@ -5,6 +5,9 @@ uses
 
 namespace JsonUtil
 
+    exception Error
+        PARSING
+
     interface HasJsonObject: GLib.Object
         def abstract to_json(): Json.Object
 

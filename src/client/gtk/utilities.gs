@@ -1,5 +1,9 @@
 [indent=4]
 
+// Gtk.Stock was deprecated, use these instead:
+// http://standards.freedesktop.org/icon-naming-spec/icon-naming-spec-latest.html#names
+// https://docs.google.com/spreadsheet/pub?key=0AsPAM3pPwxagdGF4THNMMUpjUW5xMXZfdUNzMXhEa2c&output=html
+
 uses
     Gtk
     JsonUtil
@@ -40,20 +44,20 @@ namespace Khovsgol.Client.GTK
     
     class ControlButton: Button
         construct(id: string, alt_key: uint, tooltip: string, accel_group: AccelGroup)
-            image = new Image.from_stock(id, IconSize.BUTTON)
+            image = new Image.from_icon_name(id, IconSize.BUTTON)
             relief = ReliefStyle.NONE
             add_accelerator("clicked", accel_group, alt_key, Gdk.ModifierType.MOD1_MASK, AccelFlags.VISIBLE|AccelFlags.LOCKED)
             tooltip_text = tooltip
 
     class ControlToolButton: ToolButton
         construct(id: string, alt_key: uint, tooltip: string, accel_group: AccelGroup)
-            stock_id = id
+            icon_name = id
             add_accelerator("clicked", accel_group, alt_key, Gdk.ModifierType.MOD1_MASK, AccelFlags.VISIBLE|AccelFlags.LOCKED)
             tooltip_text = tooltip
 
     class ControlToggleToolButton: ToggleToolButton
         construct(id: string, alt_key: uint, tooltip: string, accel_group: AccelGroup)
-            stock_id = id
+            icon_name = id
             add_accelerator("clicked", accel_group, alt_key, Gdk.ModifierType.MOD1_MASK, AccelFlags.VISIBLE|AccelFlags.LOCKED)
             tooltip_text = tooltip
 

@@ -29,7 +29,7 @@ namespace Khovsgol.Client.GTK
             // Top
             
             _filter_box = new EntryBox("_Filter:")
-            var clear_filter_button = new ControlButton(Stock.CLEAR, Gdk.Key.T, "Reset library filter\n<Alt>T", _accel_group)
+            var clear_filter_button = new ControlButton("edit-clear", Gdk.Key.T, "Reset library filter\n<Alt>T", _accel_group)
             clear_filter_button.clicked.connect(on_clear_filter)
             _filter_box.pack_start(clear_filter_button, false)
             _filter_box.entry.activate.connect(on_filter)
@@ -95,7 +95,7 @@ namespace Khovsgol.Client.GTK
             _style_box.changed.connect(on_style)
 
             var actions_button = new Button()
-            actions_button.image = new Image.from_stock(Stock.EXECUTE, IconSize.BUTTON)
+            actions_button.image = new Image.from_icon_name("system-run", IconSize.BUTTON)
             actions_button.relief = ReliefStyle.NONE
             actions_button.tooltip_text = "Library actions"
             actions_button.button_press_event.connect(on_actions)

@@ -43,25 +43,25 @@ namespace Khovsgol.Client.GTK
             // understand at a glance!
             
             _connect_button = new Button.with_mnemonic("_Connect")
-            _connect_button.image = new Image.from_stock(Stock.NETWORK, IconSize.MENU)
+            _connect_button.image = new Image.from_icon_name("gtk-connect", IconSize.MENU)
             _connect_button.image.show()
             _connect_button.sensitive = false
             _connect_button.clicked.connect(on_connect)
 
             var connect_other_button = new Button.with_mnemonic("Connect _other")
-            connect_other_button.image = new Image.from_stock(Stock.NETWORK, IconSize.MENU)
+            connect_other_button.image = new Image.from_icon_name("gtk-connect", IconSize.MENU)
             connect_other_button.image.show()
             connect_other_button.clicked.connect(on_connect_other)
 
             _server = _instance.get_feature("server")
             if _server is not null
                 _start_button = new Button.with_mnemonic("_Start my server")
-                _start_button.image = new Image.from_stock(Stock.EXECUTE, IconSize.MENU)
+                _start_button.image = new Image.from_icon_name("gtk-execute", IconSize.MENU)
                 _start_button.image.show()
                 _start_button.clicked.connect(on_start)
 
                 _stop_button = new Button.with_mnemonic("S_top my server")
-                _stop_button.image = new Image.from_stock(Stock.STOP, IconSize.MENU)
+                _stop_button.image = new Image.from_icon_name("gtk-stop", IconSize.MENU)
                 _stop_button.image.show()
                 _stop_button.clicked.connect(on_stop)
 
@@ -81,11 +81,11 @@ namespace Khovsgol.Client.GTK
             
             // Icons
             
-            _server_icon = render_icon(Stock.NETWORK, IconSize.MENU, null)
-            _playing_icon = render_icon(Stock.MEDIA_PLAY, IconSize.MENU, null)
-            _paused_icon = render_icon(Stock.MEDIA_PAUSE, IconSize.MENU, null)
-            _stopped_icon = render_icon(Stock.MEDIA_STOP, IconSize.MENU, null)
-            _plug_icon = render_icon(Stock.CONNECT, IconSize.MENU, null)
+            _server_icon = render_icon("gtk-network", IconSize.MENU, null)
+            _playing_icon = render_icon("gtk-media-play", IconSize.MENU, null)
+            _paused_icon = render_icon("gtk-media-pause", IconSize.MENU, null)
+            _stopped_icon = render_icon("gtk-media-stop", IconSize.MENU, null)
+            _plug_icon = render_icon("gtk-connect", IconSize.MENU, null)
         
             // Assemble
             
@@ -394,8 +394,8 @@ namespace Khovsgol.Client.GTK
                 get_content_area().pack_start(alignment)
                 set_default_size(400, -1)
                 
-                add_button(Stock.CANCEL, ResponseType.CANCEL)
-                add_button(Stock.OK, ResponseType.OK)
+                add_button("gtk-cancel", ResponseType.CANCEL)
+                add_button("gtk-ok", ResponseType.OK)
                 set_default_response(ResponseType.OK)
                 
             prop readonly host: string

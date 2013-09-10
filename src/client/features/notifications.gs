@@ -78,14 +78,15 @@ namespace Khovsgol.Client.Features
                         
                         if _markup
                             title = Markup.escape_text(title)
-                        title = format_annotation(title)
+                        //title = format_annotation(title)
                         if artist is not null
                             if _markup
                                 artist = Markup.escape_text(artist)
                         if album is not null
                             if _markup
                                 album = Markup.escape_text(album)
-                            album = format_annotation(album)
+                            //album = format_annotation(album)
+                            pass
                         markup: string
                         if (artist is not null) and (album is not null) and (position != int.MIN)
                             if _markup
@@ -142,10 +143,9 @@ namespace Khovsgol.Client.Features
         init
             _logger = Logging.get_logger("khovsgol.notifications")
 
-    /*
     [DBus(name="org.freedesktop.Notifications")]
     interface private Notifications: Object
-        def abstract Notify(app_name: string, replaces_id: uint32, app_icon: string, summary: string, body: string, actions: array of string, hints: HashTable of string, Variant, expires_timeout: int32): uint32 raises IOError
-        event NotificationClosed(id: uint32, reason: uint32)
-        event ActionInvoked(id: uint32, action_key: string)
-    */
+        def abstract get_capabilities(): array of string raises IOError
+        def abstract notify(app_name: string, replaces_id: uint32, app_icon: string, summary: string, body: string, actions: array of string, hints: HashTable of (string, Variant), expires_timeout: int32): uint32 raises IOError
+        event notification_closed(id: uint32, reason: uint32)
+        event action_invoked(id: uint32, action_key: string)

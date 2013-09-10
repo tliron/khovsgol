@@ -252,7 +252,7 @@ namespace GstUtil
         def on_pad_added(element: dynamic Element, pad: Pad)
             var caps = pad.query_caps(null)
             if caps is not null
-                var structure = caps.get_structure(0)
+                structure: unowned Structure = caps.get_structure(0)
                 if structure is not null
                     var name = structure.get_name()
                     if name == _pad_type

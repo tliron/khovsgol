@@ -57,30 +57,30 @@ namespace Khovsgol.Client.GTK
             // understand at a glance!
             
             _add_library_button = new Button.with_mnemonic("_Add library")
-            _add_library_button.image = new Image.from_stock(Stock.CDROM, IconSize.MENU)
+            _add_library_button.image = new Image.from_icon_name("gtk-cdrom", IconSize.MENU)
             _add_library_button.image.show()
             _add_library_button.clicked.connect(on_add_library)
 
             _remove_library_button = new Button.with_mnemonic("_Remove library")
-            _remove_library_button.image = new Image.from_stock(Stock.REMOVE, IconSize.MENU)
+            _remove_library_button.image = new Image.from_icon_name("gtk-remove", IconSize.MENU)
             _remove_library_button.image.show()
             _remove_library_button.sensitive = false
             _remove_library_button.clicked.connect(on_remove_library)
 
             _scan_button = new Button.with_mnemonic("Re_scan")
-            _scan_button.image = new Image.from_stock(Stock.REFRESH, IconSize.MENU)
+            _scan_button.image = new Image.from_icon_name("gtk-refresh", IconSize.MENU)
             _scan_button.image.show()
             _scan_button.sensitive = false
             _scan_button.clicked.connect(on_scan)
 
             _add_directory_button = new Button.with_mnemonic("Add _directory")
-            _add_directory_button.image = new Image.from_stock(Stock.DIRECTORY, IconSize.MENU)
+            _add_directory_button.image = new Image.from_icon_name("gtk-directory", IconSize.MENU)
             _add_directory_button.image.show()
             _add_directory_button.sensitive = false
             _add_directory_button.clicked.connect(on_add_directory)
 
             _remove_directory_button = new Button.with_mnemonic("R_emove directory")
-            _remove_directory_button.image = new Image.from_stock(Stock.REMOVE, IconSize.MENU)
+            _remove_directory_button.image = new Image.from_icon_name("gtk-remove", IconSize.MENU)
             _remove_directory_button.image.show()
             _remove_directory_button.sensitive = false
             _remove_directory_button.clicked.connect(on_remove_directory)
@@ -99,8 +99,8 @@ namespace Khovsgol.Client.GTK
 
             // Icons
             
-            _library_icon = render_icon(Stock.CDROM, IconSize.MENU, null)
-            _directory_icon = render_icon(Stock.DIRECTORY, IconSize.MENU, null)
+            _library_icon = render_icon("gtk-cdrom", IconSize.MENU, null)
+            _directory_icon = render_icon("gtk-directory", IconSize.MENU, null)
         
             // Assemble
             
@@ -363,8 +363,8 @@ namespace Khovsgol.Client.GTK
                 get_content_area().pack_start(alignment)
                 set_default_size(400, -1)
 
-                add_button(Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL)
-                add_button(Gtk.Stock.OK, Gtk.ResponseType.OK)
+                add_button("gtk-cancel", Gtk.ResponseType.CANCEL)
+                add_button("gtk-ok", Gtk.ResponseType.OK)
                 set_default_response(Gtk.ResponseType.OK)
 
             prop readonly library_name: string
@@ -402,8 +402,8 @@ namespace Khovsgol.Client.GTK
                 get_content_area().pack_start(alignment)
                 set_default_size(600, -1)
 
-                add_button(Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL)
-                add_button(Gtk.Stock.OK, Gtk.ResponseType.OK)
+                add_button("gtk-cancel", Gtk.ResponseType.CANCEL)
+                add_button("gtk-ok", Gtk.ResponseType.OK)
                 set_default_response(Gtk.ResponseType.OK)
 
             prop readonly directory_path: string
@@ -422,7 +422,7 @@ namespace Khovsgol.Client.GTK
                 response(ResponseType.OK)
             
             def private on_browse()
-                var dialog = new FileChooserDialog("Select directory root", self, FileChooserAction.SELECT_FOLDER, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.OK)
+                var dialog = new FileChooserDialog("Select directory root", self, FileChooserAction.SELECT_FOLDER, "gtk-cancel", Gtk.ResponseType.CANCEL, "gtk-ok", Gtk.ResponseType.OK)
                 dialog.show_hidden = false
                 var response = dialog.run()
                 if response == ResponseType.OK

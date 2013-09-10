@@ -151,7 +151,7 @@ namespace Khovsgol.Client.GTK
             _style_box.changed.connect(on_style)
 
             var actions_button = new Button()
-            actions_button.image = new Image.from_stock(Stock.EXECUTE, IconSize.BUTTON)
+            actions_button.image = new Image.from_icon_name("system-run", IconSize.BUTTON)
             actions_button.relief = ReliefStyle.NONE
             actions_button.tooltip_text = "Playlist actions"
             actions_button.button_press_event.connect(on_actions)
@@ -567,7 +567,7 @@ namespace Khovsgol.Client.GTK
 
         def private import_playlist(playlist: PlaylistFile)
             var extension = playlist.extension
-            var dialog = new FileChooserDialog("Select .%s import file".printf(extension), _instance.window, FileChooserAction.OPEN, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.OK)
+            var dialog = new FileChooserDialog("Select .%s import file".printf(extension), _instance.window, FileChooserAction.OPEN, "gtk-cancel", Gtk.ResponseType.CANCEL, "gtk-ok", Gtk.ResponseType.OK)
             var filter = new FileFilter()
             filter.set_filter_name("%s files".printf(extension))
             filter.add_pattern("*%s".printf(extension))
@@ -591,7 +591,7 @@ namespace Khovsgol.Client.GTK
 
         def private export_playlist(playlist: PlaylistFile)
             var extension = playlist.extension
-            var dialog = new FileChooserDialog("Select .%s export file".printf(extension), _instance.window, FileChooserAction.SAVE, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.OK)
+            var dialog = new FileChooserDialog("Select .%s export file".printf(extension), _instance.window, FileChooserAction.SAVE, "gtk-cancel", Gtk.ResponseType.CANCEL, "gtk-ok", Gtk.ResponseType.OK)
             var filter = new FileFilter()
             filter.set_filter_name("%s files".printf(extension))
             filter.add_pattern("*%s".printf(extension))
@@ -680,8 +680,8 @@ namespace Khovsgol.Client.GTK
                 get_content_area().pack_start(alignment)
                 set_default_size(400, -1)
                 
-                add_button(Stock.CANCEL, ResponseType.CANCEL)
-                add_button(Stock.OK, ResponseType.OK)
+                add_button("gtk-cancel", ResponseType.CANCEL)
+                add_button("gtk-ok", ResponseType.OK)
                 set_default_response(ResponseType.OK)
                 
             prop readonly playlist_name: string

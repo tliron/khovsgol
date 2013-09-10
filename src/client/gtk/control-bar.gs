@@ -12,16 +12,16 @@ namespace Khovsgol.Client.GTK
 
             unrealize.connect(on_unrealized)
             
-            var quit = new ControlToolButton(Stock.QUIT, Gdk.Key.Q, "Quit\n<Alt>Q", _accel_group) 
+            var quit = new ControlToolButton("gtk-quit", Gdk.Key.Q, "Quit\n<Alt>Q", _accel_group) 
             quit.clicked.connect(on_quit)
 
-            var preferences = new ControlToolButton(Stock.PREFERENCES, Gdk.Key.P, "Preferences\n<Alt>P", _accel_group)
+            var preferences = new ControlToolButton("gtk-preferences", Gdk.Key.P, "Preferences\n<Alt>P", _accel_group)
             preferences.clicked.connect(on_preferences)
             
-            var manage_libraries = new ControlToolButton(Stock.CDROM, Gdk.Key.L, "Manage libraries\n<Alt>L", _accel_group)
+            var manage_libraries = new ControlToolButton("gtk-cdrom", Gdk.Key.L, "Manage libraries\n<Alt>L", _accel_group)
             manage_libraries.clicked.connect(on_manage_libraries)
 
-            var connect = new ControlToolButton(Stock.NETWORK, Gdk.Key.C, "Connector\n<Alt>C", _accel_group)
+            var connect = new ControlToolButton("gtk-connect", Gdk.Key.C, "Connector\n<Alt>C", _accel_group)
             connect.clicked.connect(on_connector)
             
             _info = new Label("<b>Connecting...</b>")
@@ -39,19 +39,19 @@ namespace Khovsgol.Client.GTK
             info_label_item.set_expand(true)
             info_label_item.add(info_label_alignment)
         
-            var previous = new ControlToolButton(Stock.MEDIA_PREVIOUS, Gdk.Key.@1, "Go to previous track\n<Alt>1", _accel_group)
+            var previous = new ControlToolButton("media-skip-backward", Gdk.Key.@1, "Go to previous track\n<Alt>1", _accel_group)
             previous.clicked.connect(on_previous)
 
-            var play = new ControlToolButton(Stock.MEDIA_PLAY, Gdk.Key.@2, "Play this track\n<Alt>2", _accel_group)
+            var play = new ControlToolButton("media-playback-start", Gdk.Key.@2, "Play this track\n<Alt>2", _accel_group)
             play.clicked.connect(on_play)
 
-            _toggle_pause = new ControlToggleToolButton(Stock.MEDIA_PAUSE, Gdk.Key.@3, "Pause or unpause playing\n<Alt>3", _accel_group)
+            _toggle_pause = new ControlToggleToolButton("media-playback-pause", Gdk.Key.@3, "Pause or unpause playing\n<Alt>3", _accel_group)
             _on_pause_toggled_id = _toggle_pause.clicked.connect(on_pause_toggled)
             
-            var stop = new ControlToolButton(Stock.MEDIA_STOP, Gdk.Key.@4, "Stop playing\n<Alt>4", _accel_group)
+            var stop = new ControlToolButton("media-playback-stop", Gdk.Key.@4, "Stop playing\n<Alt>4", _accel_group)
             stop.clicked.connect(on_stop)
 
-            var next = new ControlToolButton(Stock.MEDIA_NEXT, Gdk.Key.@5, "Go to next track\n<Alt>5", _accel_group)
+            var next = new ControlToolButton("media-skip-forward", Gdk.Key.@5, "Go to next track\n<Alt>5", _accel_group)
             next.clicked.connect(on_next)
 
             _volume_button = new VolumeButton()
@@ -75,7 +75,7 @@ namespace Khovsgol.Client.GTK
         
             _visualization = _instance.get_feature("visualization")
             if _visualization is not null
-                _toggle_visualization = new ControlToggleToolButton(Stock.SELECT_COLOR, Gdk.Key.@V, "Open or close visualization\n<Alt>V", _accel_group)
+                _toggle_visualization = new ControlToggleToolButton("gtk-select-color", Gdk.Key.@V, "Open or close visualization\n<Alt>V", _accel_group)
                 _on_toggle_visualization_id = _toggle_visualization.clicked.connect(on_visualization_toggled)
                 _visualization.state_change.connect(on_visualization_state_changed)
 
