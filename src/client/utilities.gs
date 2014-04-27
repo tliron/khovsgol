@@ -83,5 +83,20 @@ namespace Khovsgol.Client
             if text.get_next_char(ref second, null)
                 return first.toupper().to_string() + text.substring(second)
         return text
+    
+    def daemon(name: string, start: bool, instance: Instance, logger: Logging.Logger): bool
+        pid: Pid
+        try
+            if Process.spawn_async(instance.dir.get_path(), {name, start ? "--start" : "--stop"}, null, SpawnFlags.DO_NOT_REAP_CHILD, null, out pid)
+                ChildWatch.add(pid, on_died)
+                return true
+            else
+                return false
+        except e: SpawnError
+            logger.exception(e)
+            return false
+
+    def private on_died(pid: Pid, status: int)
+        Process.close_pid(pid) // Doesn't do anything on Unix
 
     _covers: private list of string

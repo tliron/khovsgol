@@ -37,17 +37,7 @@ namespace Khovsgol.Client.Features
             state_change(state)
 
         def private khovsgolr(start: bool): bool
-            pid: Pid
-            try
-                Process.spawn_async(instance.dir.get_path(), {"khovsgolr", start ? "--start" : "--stop"}, null, SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL, null, out pid)
-                ChildWatch.add(pid, on_died)
-                return true
-            except e: SpawnError
-                _logger.exception(e)
-                return false
-
-        def private on_died(pid: Pid, status: int)
-            Process.close_pid(pid) // Doesn't do anything on Unix
+            return daemon("khovsgolr", start, instance, _logger)
         
         _logger: static Logging.Logger
         

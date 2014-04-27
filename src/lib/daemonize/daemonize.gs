@@ -73,7 +73,7 @@ namespace Daemonize
                 Process.exit(1)
                 
             print "Starting daemon %s (%s)", name, get_pid_file()
-            
+
             // Create pipe to communicate with daemon
             if Daemon.retval_init() < 0
                 Daemon.log(Daemon.LogPriority.ERR, "Failed to create daemon pipe: %s", strerror(errno))
@@ -116,6 +116,10 @@ namespace Daemonize
 
                 _daemon_fd = {Daemon.signal_fd(), IOCondition.IN|IOCondition.HUP|IOCondition.ERR, 0}
                 
+                // Redirect stdout and stderr
+                stdout = FileStream.open("%s/.%s/%s.out".printf(Environment.get_home_dir(), dir, name), "w")
+                stderr = FileStream.open("%s/.%s/%s.err".printf(Environment.get_home_dir(), dir, name), "w")
+                
                 // Wrap GLib's MainLoop polling callback
                 if main_loop is not null
                     _main_loop = main_loop
@@ -130,7 +134,7 @@ namespace Daemonize
 
                 Daemon.retval_send(0)
                 Daemon.log(Daemon.LogPriority.INFO, "Daemon started")
-                
+
         else
             Process.exit(0)
 

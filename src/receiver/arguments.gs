@@ -5,9 +5,10 @@ namespace Khovsgol.Receiver
     class Arguments: Object
         construct(args: array of string)
             var restart_daemon = false
+            var version = false
 
             var options = new array of OptionEntry[10]
-            options[0] = {"version", 0, 0, OptionArg.NONE,   ref _version,       "Show version", null}
+            options[0] = {"version", 0, 0, OptionArg.NONE,   ref version,        "Show version", null}
             options[1] = {"port",    0, 0, OptionArg.INT,    ref _port,          "Web server TCP port (defaults to 8186)", "number"}
             options[2] = {"latency", 0, 0, OptionArg.INT,    ref _latency,       "Buffer latency in milliseconds (defaults to 200)", "number"}
             options[3] = {"sink",    0, 0, OptionArg.STRING, ref _sink,          "Audio sink (defaults to \"pulsesink\")", null}
@@ -26,7 +27,7 @@ namespace Khovsgol.Receiver
             try
                 context.parse(ref args)
                 
-                if _version
+                if version
                     print VERSION
                     Process.exit(0)
 
@@ -38,8 +39,6 @@ namespace Khovsgol.Receiver
                 stderr.printf("%s\n", e.message)
                 print "Use '%s --help' to see a full list of available command line options.\n", args[0]
                 Process.exit(1)
-    
-        _version: bool
         
         prop readonly port: int = int.MIN
         prop readonly latency: int = int.MIN

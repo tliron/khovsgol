@@ -37,9 +37,11 @@ namespace Khovsgol.Client.Features
 
         def private visualization(): bool
             try
-                Process.spawn_async(_instance.dir.get_path(), {"projectM-pulseaudio"}, null, SpawnFlags.SEARCH_PATH|SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL|SpawnFlags.DO_NOT_REAP_CHILD, null, out _pid)
-                ChildWatch.add(_pid, on_visualization_died)
-                return true
+                if Process.spawn_async(_instance.dir.get_path(), {"projectM-pulseaudio"}, null, SpawnFlags.SEARCH_PATH|SpawnFlags.STDOUT_TO_DEV_NULL|SpawnFlags.STDERR_TO_DEV_NULL|SpawnFlags.DO_NOT_REAP_CHILD, null, out _pid)
+                    ChildWatch.add(_pid, on_visualization_died)
+                    return true
+                else
+                    return false
             except e: SpawnError
                 _logger.exception(e)
                 return false

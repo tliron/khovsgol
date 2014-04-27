@@ -18,7 +18,7 @@ namespace Khovsgol.Server
     class Instance: Object implements Crucible
         construct(args: array of string) raises GLib.Error
             _arguments = new Arguments(args)
-
+            
             // Note: the Gst bus seems to work only with the default GLib.MainContext
             _main_loop = new MainLoop(null, false)
             

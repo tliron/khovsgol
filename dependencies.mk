@@ -1,7 +1,7 @@
 
-dependencies.raring: .dependencies.raring.repositories
+dependencies.saucy: .dependencies.saucy.repositories
 	sudo apt-get install \
-		valac-0.20 \
+		valac-0.24 \
 		libgee-dev \
 		libsoup2.4-dev \
 		libjson-glib-dev \
@@ -9,6 +9,7 @@ dependencies.raring: .dependencies.raring.repositories
 		libgtk-3-dev \
 		libdaemon-dev \
 		libgstreamer-plugins-base1.0-dev \
+		gstreamer1.0-pulseaudio \
 		libunity-dev \
 		libindicate-dev \
 		libtagc0-dev \
@@ -17,7 +18,7 @@ dependencies.raring: .dependencies.raring.repositories
 
 dependencies.precise: .dependencies.precise.repositories dependencies.raring
 
-.dependencies.raring.repositories:
+.dependencies.saucy.repositories:
 	sudo add-apt-repository ppa:vala-team
 	sudo apt-get update
 

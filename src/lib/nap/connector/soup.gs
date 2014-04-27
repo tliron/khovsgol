@@ -367,6 +367,10 @@ namespace Nap._Soup
         init
             _logger = Logging.get_logger("nap.server.soup")
 
+    class SessionWithAsyncContext: Soup.SessionSync
+        construct(context: MainContext)
+            Object(async_context: context)
+
     /*
      * An HTTP client using Soup.
      */
@@ -375,9 +379,10 @@ namespace Nap._Soup
             if context is not null
                 // Note: we are using a SessionSync even for asynchronous calls; those will happen in another thread. 
                 // See note at: http://developer.gnome.org/libsoup/stable/libsoup-client-howto.html
-                _soup_session = new Soup.SessionSync.with_options(Soup.SESSION_USER_AGENT, "Nap", Soup.SERVER_ASYNC_CONTEXT, context)
+                _soup_session = new SessionWithAsyncContext(context)
             else
-                _soup_session = new Soup.SessionSync.with_options(Soup.SESSION_USER_AGENT, "Nap")
+                _soup_session = new Soup.Session()
+            _soup_session.user_agent = "Nap"
         
         prop timeout: uint
             get
