@@ -122,7 +122,7 @@ khovsgolr.ccode:
 
 KHOVSGOLC_SOURCES=\
 	$(call find-sources,client/cli) \
-	$(SRC)/client/api.gs $(SRC)/client/utilities.gs \
+	$(SRC)/client/client.gs $(SRC)/client/api.gs $(SRC)/client/utilities.gs \
 	$(SRC)/version.gs $(SRC)/models.gs $(SRC)/iterators.gs \
 	$(call find-sources,lib/logging) \
 	$(call find-sources,lib/console) \
