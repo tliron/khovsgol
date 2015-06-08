@@ -92,7 +92,7 @@ namespace Khovsgol.Client.GTK
             orientation = Orientation.HORIZONTAL
             spacing = 5
             
-            _store = new ListStore(2, typeof(Variant), typeof(string))
+            _store = new Gtk.ListStore(2, typeof(Variant), typeof(string))
             _combo_box = new ComboBox.with_model(_store)
             if name is not null
                 _combo_box.name = name
@@ -109,7 +109,7 @@ namespace Khovsgol.Client.GTK
             pack_start(_combo_box)
         
         prop readonly combo_box: ComboBox
-        prop readonly store: ListStore
+        prop readonly store: Gtk.ListStore
         
         prop active: Variant?
             get
@@ -145,7 +145,7 @@ namespace Khovsgol.Client.GTK
      */
     class StyleComboBox: ComboBox
         construct()
-            model = _store = new ListStore(2, typeof(Style), typeof(string))
+            model = _store = new Gtk.ListStore(2, typeof(Style), typeof(string))
             var renderer = new CellRendererText()
             pack_start(renderer, true)
             add_attribute(renderer, "text", 1)
@@ -187,7 +187,7 @@ namespace Khovsgol.Client.GTK
             _store.append(out iter)
             _store.@set(iter, 0, style, 1, style.label, -1)
             
-        _store: ListStore
+        _store: Gtk.ListStore
 
     /*
      * A TreeView that does not reset the selection when right-clicked

@@ -147,7 +147,7 @@ namespace Scrobbling
                     var message = get_string_member_or_null(conversation.response_json_object, "message")
                     raise new Error.CLIENT("Error %d: %s", error, message is not null ? message : "[no message]")
             else
-                raise new Error.CLIENT("%d", conversation.status_code)
+                raise new Error.CLIENT("%u", conversation.status_code)
             
         def private static md5(text: string): string
             return Checksum.compute_for_data(ChecksumType.MD5, text.data)

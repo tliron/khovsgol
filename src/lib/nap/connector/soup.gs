@@ -123,6 +123,7 @@ namespace Nap._Soup
             if _logger.can(LogLevelFlags.LEVEL_INFO)
                 var entry = new NcsaCommonLogEntry()
                 entry.address = _soup_client.get_address().get_physical()
+                //entry.address = ((InetSocketAddress) _soup_client.get_remote_address()).address.to_string()
                 entry.user_identifier = _soup_client.get_auth_user()
                 entry.method = _soup_message.method
                 var query = _soup_message.get_uri().get_query()
@@ -306,6 +307,42 @@ namespace Nap._Soup
         init
             _logger = Logging.get_logger("nap.client")
 
+    class Server2: Object implements Nap.Server
+        construct(port: uint16, context: MainContext) raises Nap.Error
+            _port = port
+
+            _service = new SocketService()
+            try
+                _service.add_inet_port(port, null)
+            except e: GLib.Error
+                raise new Nap.Error.CONNECTOR("Could not create server at port %u, is the port already in use?", port)
+            _service.incoming.connect(on_incoming)
+
+        prop thread_pool: ThreadPool?
+        prop readonly port: uint
+
+        def get_handler(): unowned Handler?
+            return _handler
+            
+        def set_handler(handler: Handler?)
+            _handler = handler
+        
+        def get_error_handler(): unowned ErrorHandler?
+            return _error_handler
+            
+        def set_error_handler(handler: ErrorHandler?)
+            _error_handler = handler
+
+        def start()
+            _service.start()
+            
+        def private on_incoming(connection: SocketConnection, source: Object?): bool
+            return true
+            
+        _service: SocketService
+        _handler: unowned Handler?
+        _error_handler: unowned ErrorHandler? = default_error_handler
+
     /*
      * An HTTP server using Soup. Accepts conversations coming in
      * through a specified port.
@@ -315,9 +352,16 @@ namespace Nap._Soup
 
         construct(port: uint, context: MainContext) raises Nap.Error
             _port = port
+            
             _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
             if _soup_server is null
-                raise new Nap.Error.CONNECTOR("Could not create HTTP server at port %u, is the port already in use?", port)
+                raise new Nap.Error.CONNECTOR("Could not create server at port %u, is the port already in use?", port)
+            
+            /*_soup_server = new Soup.Server("")
+            try
+                _soup_server.listen_all(port, 0)
+            except e: GLib.Error
+                raise new Nap.Error.CONNECTOR("Could not create server at port %u, is the port already in use?", port)*/
             
             _soup_server.add_handler(null, _handle)
             

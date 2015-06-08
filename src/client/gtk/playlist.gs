@@ -105,7 +105,7 @@ namespace Khovsgol.Client.GTK
             column.set_cell_data_func(progress_renderer, on_progress_render)
 
             // node, position, search, title_markup, duration_markup, rtl
-            _store = new ListStore(6, typeof(Json.Node), typeof(int), typeof(string), typeof(string), typeof(string), typeof(bool))
+            _store = new Gtk.ListStore(6, typeof(Json.Node), typeof(int), typeof(string), typeof(string), typeof(string), typeof(bool))
 
             _tree_view = new ClickableDraggableTreeView()
             _tree_view.model = _store
@@ -617,7 +617,7 @@ namespace Khovsgol.Client.GTK
                     _logger.exception(e)
         
         _instance: Instance
-        _store: ListStore
+        _store: Gtk.ListStore
         _tree_view: ClickableDraggableTreeView
         _mode_box: SimpleComboBox
         _style_box: StyleComboBox

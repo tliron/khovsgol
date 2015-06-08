@@ -17,7 +17,7 @@ namespace Khovsgol.Client.GTK.Styles
      * accessing and modifying the node data.
      */
     class PlaylistNode
-        construct(instance: Instance, tree_view: TreeView, store: ListStore, tracks: IterableOfTrack, albums: IterableOfAlbum, iter: TreeIter? = null)
+        construct(instance: Instance, tree_view: TreeView, store: Gtk.ListStore, tracks: IterableOfTrack, albums: IterableOfAlbum, iter: TreeIter? = null)
             _instance = instance
             _tree_view = tree_view
             _store = store
@@ -84,7 +84,7 @@ namespace Khovsgol.Client.GTK.Styles
             append(null, Playlist.SEPARATOR_POSITION)
 
         _tree_view: TreeView
-        _store: ListStore
+        _store: Gtk.ListStore
         _iter: TreeIter?
         _albums: IterableOfAlbum
         _albums_dict: dict of string, Album

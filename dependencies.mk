@@ -1,7 +1,7 @@
 
-dependencies.saucy: .dependencies.saucy.repositories
+dependencies.trusty: .dependencies.saucy.repositories
 	sudo apt-get install \
-		valac-0.24 \
+		valac-0.28 \
 		libgee-dev \
 		libsoup2.4-dev \
 		libjson-glib-dev \
