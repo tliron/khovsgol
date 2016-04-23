@@ -7,7 +7,7 @@ find-sources=$(shell find "$(SRC)/$1" \( -name '*.gs' -o -name '*.vala' \))
 #
 # Vala packages and their Ubuntu dependencies:
 #
-# Gee:          apt-get install libgee-dev            valac --pkg=gee-1.0
+# Gee:          apt-get install libgee-0.8-dev        valac --pkg=gee-0.8
 # Soup:         apt-get install libsoup2.4-dev        valac --pkg=libsoup-2.4
 # Json:         apt-get install libjson-glib-dev      valac --pkg=json-glib-1.0
 # Sqlite:       apt-get install libsqlite3-dev        valac --pkg=sqlite3
@@ -73,7 +73,7 @@ KHOVSGOLD_SOURCES=\
 
 KHOVSGOLD_PACKAGES=\
 	--pkg=libsoup-2.4 \
-	--pkg=gee-1.0 \
+	--pkg=gee-0.8 \
 	--pkg=json-glib-1.0 \
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
 	--pkg=sqlite3 \
@@ -104,7 +104,7 @@ KHOVSGOLR_SOURCES=\
 
 KHOVSGOLR_PACKAGES=\
 	--pkg=libsoup-2.4 \
-	--pkg=gee-1.0 \
+	--pkg=gee-0.8 \
 	--pkg=json-glib-1.0 \
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
 	--pkg=libdaemon \
@@ -132,7 +132,7 @@ KHOVSGOLC_SOURCES=\
 
 KHOVSGOLC_PACKAGES=\
 	--pkg=libsoup-2.4 \
-	--pkg=gee-1.0 \
+	--pkg=gee-0.8 \
 	--pkg=json-glib-1.0 \
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
 	--pkg=avahi-gobject --pkg=lib/avahi/avahi-direct
@@ -161,12 +161,11 @@ KHOVSGOL_SOURCES=\
 	$(call find-sources,lib/dbus) \
 	$(call find-sources,lib/gtk) \
 	$(call find-sources,lib/avahi) \
-	$(call find-sources,lib/xml) \
 	$(call find-sources,lib/scrobbling)
 
 KHOVSGOL_PACKAGES=\
 	--pkg=libsoup-2.4 \
-	--pkg=gee-1.0 \
+	--pkg=gee-0.8 \
 	--pkg=json-glib-1.0 \
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
 	--pkg=sqlite3 \

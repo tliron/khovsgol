@@ -96,6 +96,10 @@ namespace Daemonize
                     Process.exit(r)
 
             else
+                // Redirect stdout and stderr
+                stdout = FileStream.open("%s/.%s/%s.out".printf(Environment.get_home_dir(), dir, name), "w")
+                stderr = FileStream.open("%s/.%s/%s.err".printf(Environment.get_home_dir(), dir, name), "w")
+                
                 // Here we are the daemon process of the fork
                 if Daemon.close_all(-1) < 0
                     Daemon.log(Daemon.LogPriority.ERR, "Failed to close all daemon file descriptors: %s", strerror(errno))
@@ -115,10 +119,6 @@ namespace Daemonize
                     exit()
 
                 _daemon_fd = {Daemon.signal_fd(), IOCondition.IN|IOCondition.HUP|IOCondition.ERR, 0}
-                
-                // Redirect stdout and stderr
-                stdout = FileStream.open("%s/.%s/%s.out".printf(Environment.get_home_dir(), dir, name), "w")
-                stderr = FileStream.open("%s/.%s/%s.err".printf(Environment.get_home_dir(), dir, name), "w")
                 
                 // Wrap GLib's MainLoop polling callback
                 if main_loop is not null
@@ -196,7 +196,8 @@ namespace Daemonize
                     exit()
                     
                  else if signal == Daemon.Sig.HUP
-                    Daemon.log(Daemon.LogPriority.INFO, "Daemon received HUP")
+                    // TODO: we keep getting these when clients connect! (CLI or GUI!)
+                    //Daemon.log(Daemon.LogPriority.INFO, "Daemon received HUP")
                     // Hang up!
                     // This means that we no longer have a terminal.
                     // (Some daemons respond to HUP by reloading their configuration files, a rather quirky interpretation!)

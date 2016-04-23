@@ -33,10 +33,13 @@ namespace Khovsgol.Server._Sqlite
             
         _iterator: SqlTrackIterator
 
-    class SqlTrackIterator: Object implements Gee.Iterator of Track
+    class SqlTrackIterator: Object implements Gee.Traversable of (Track), Gee.Iterator of (Track)
         construct(iterator: RowIterator, album_path: bool = false)
             _iterator = iterator
             _album_path = album_path
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
             
         def next(): bool
             return _iterator.next()
@@ -61,14 +64,20 @@ namespace Khovsgol.Server._Sqlite
                 track.album_path = row.get_text("album_path")
             return track
         
-        def first(): bool
-            return _iterator.first()
-
         def has_next(): bool
             return _iterator.has_next()
             
         def remove()
             _iterator.remove()
+
+        def @foreach(f: Gee.ForallFunc of Track): bool
+            if _iterator.has_current()
+                if not f(@get())
+                    return false
+            while next()
+                if not f(@get())
+                    return false
+            return true
             
         _iterator: RowIterator
         _album_path: bool
@@ -92,9 +101,12 @@ namespace Khovsgol.Server._Sqlite
             
         _iterator: SqlTrackPointerIterator
 
-    class SqlTrackPointerIterator: Object implements Gee.Iterator of TrackPointer
+    class SqlTrackPointerIterator: Object implements Gee.Traversable of (TrackPointer), Gee.Iterator of (TrackPointer)
         construct(iterator: RowIterator)
             _iterator = iterator
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
             
         def next(): bool
             return _iterator.next()
@@ -107,14 +119,20 @@ namespace Khovsgol.Server._Sqlite
             track_pointer.album = row.get_text("album")
             return track_pointer
         
-        def first(): bool
-            return _iterator.first()
-
         def has_next(): bool
             return _iterator.has_next()
             
         def remove()
             _iterator.remove()
+
+        def @foreach(f: Gee.ForallFunc of TrackPointer): bool
+            if _iterator.has_current()
+                if not f(@get())
+                    return false
+            while next()
+                if not f(@get())
+                    return false
+            return true
             
         _iterator: RowIterator
 
@@ -137,9 +155,12 @@ namespace Khovsgol.Server._Sqlite
             
         _iterator: SqlAlbumIterator
 
-    class SqlAlbumIterator: Object implements Gee.Iterator of Album
+    class SqlAlbumIterator: Object implements Gee.Traversable of (Album), Gee.Iterator of (Album)
         construct(iterator: RowIterator)
             _iterator = iterator
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
             
         def next(): bool
             return _iterator.next()
@@ -158,14 +179,20 @@ namespace Khovsgol.Server._Sqlite
             album.file_type = row.get_text("file_type")
             return album
         
-        def first(): bool
-            return _iterator.first()
-
         def has_next(): bool
             return _iterator.has_next()
             
         def remove()
             _iterator.remove()
+
+        def @foreach(f: Gee.ForallFunc of Album): bool
+            if _iterator.has_current()
+                if not f(@get())
+                    return false
+            while next()
+                if not f(@get())
+                    return false
+            return true
             
         _iterator: RowIterator
 
@@ -188,9 +215,12 @@ namespace Khovsgol.Server._Sqlite
             
         _iterator: SqlArtistIterator
 
-    class SqlArtistIterator: Object implements Gee.Iterator of Artist
+    class SqlArtistIterator: Object implements Gee.Traversable of (Artist), Gee.Iterator of (Artist)
         construct(iterator: RowIterator)
             _iterator = iterator
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
             
         def next(): bool
             return _iterator.next()
@@ -202,14 +232,20 @@ namespace Khovsgol.Server._Sqlite
             artist.sort = row.get_text("artist_sort")
             return artist
         
-        def first(): bool
-            return _iterator.first()
-
         def has_next(): bool
             return _iterator.has_next()
             
         def remove()
             _iterator.remove()
+
+        def @foreach(f: Gee.ForallFunc of Artist): bool
+            if _iterator.has_current()
+                if not f(@get())
+                    return false
+            while next()
+                if not f(@get())
+                    return false
+            return true
             
         _iterator: RowIterator
 
@@ -232,10 +268,13 @@ namespace Khovsgol.Server._Sqlite
             
         _iterator: SqlStringIterator
 
-    class private SqlStringIterator: Object implements Gee.Iterator of string?
+    class private SqlStringIterator: Object implements Gee.Traversable of (string?), Gee.Iterator of (string?)
         construct(iterator: RowIterator, name: string)
             _iterator = iterator
             _name = name
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
     
         def next(): bool
             return _iterator.next()
@@ -244,14 +283,20 @@ namespace Khovsgol.Server._Sqlite
             var row = _iterator.get()
             return row.get_text(_name)
 
-        def first(): bool
-            return _iterator.first()
-
         def has_next(): bool
             return _iterator.has_next()
             
         def remove()
             _iterator.remove()
+
+        def @foreach(f: Gee.ForallFunc of string?): bool
+            if _iterator.has_current()
+                if not f(@get())
+                    return false
+            while next()
+                if not f(@get())
+                    return false
+            return true
             
         _iterator: RowIterator
         _name: string
@@ -275,11 +320,14 @@ namespace Khovsgol.Server._Sqlite
             
         _iterator: SqlIntIterator
 
-    class private SqlIntIterator: Object implements Gee.Iterator of int
+    class private SqlIntIterator: Object implements Gee.Traversable of (int), Gee.Iterator of (int)
         construct(iterator: RowIterator, name: string)
             _iterator = iterator
             _name = name
     
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
+
         def next(): bool
             return _iterator.next()
 
@@ -287,14 +335,20 @@ namespace Khovsgol.Server._Sqlite
             var row = _iterator.get()
             return row.get_int(_name)
 
-        def first(): bool
-            return _iterator.first()
-
         def has_next(): bool
             return _iterator.has_next()
             
         def remove()
             _iterator.remove()
+
+        def @foreach(f: Gee.ForallFunc of int): bool
+            if _iterator.has_current()
+                if not f(@get())
+                    return false
+            while next()
+                if not f(@get())
+                    return false
+            return true
             
         _iterator: RowIterator
         _name: string

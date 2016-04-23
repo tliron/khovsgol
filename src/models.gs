@@ -132,10 +132,15 @@ namespace Khovsgol
         
         _json: Json.Object
         
-    class abstract IterableOfTrack: Object implements HasJsonArray, Gee.Iterable of Track
+    class abstract IterableOfTrack: Object implements HasJsonArray, Gee.Traversable of (Track), Gee.Iterable of (Track)
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of Track
         def abstract to_json(): Json.Array
+        def @foreach(f: Gee.ForallFunc of Track): bool
+            for var i in self
+                if not f(i)
+                    return false
+            return true
     
     //
     // TrackPointer
@@ -171,10 +176,15 @@ namespace Khovsgol
             
         _json: Json.Object
 
-    class abstract IterableOfTrackPointer: Object implements HasJsonArray, Gee.Iterable of TrackPointer
+    class abstract IterableOfTrackPointer: Object implements HasJsonArray, Gee.Traversable of (TrackPointer), Gee.Iterable of (TrackPointer)
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of TrackPointer
         def abstract to_json(): Json.Array
+        def @foreach(f: Gee.ForallFunc of TrackPointer): bool
+            for var i in self
+                if not f(i)
+                    return false
+            return true
             
     //
     // Album
@@ -253,10 +263,15 @@ namespace Khovsgol
         
         _json: Json.Object
 
-    class abstract IterableOfAlbum: Object implements HasJsonArray, Gee.Iterable of Album
+    class abstract IterableOfAlbum: Object implements HasJsonArray, Gee.Traversable of (Album), Gee.Iterable of (Album)
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of Album
         def abstract to_json(): Json.Array
+        def @foreach(f: Gee.ForallFunc of Album): bool
+            for var i in self
+                if not f(i)
+                    return false
+            return true
     
     //
     // Artist
@@ -286,26 +301,46 @@ namespace Khovsgol
         
         _json: Json.Object
 
-    class abstract IterableOfArtist: Object implements HasJsonArray, Gee.Iterable of Artist
+    class abstract IterableOfArtist: Object implements HasJsonArray, Gee.Traversable of (Artist), Gee.Iterable of (Artist)
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of Artist
         def abstract to_json(): Json.Array
+        def @foreach(f: Gee.ForallFunc of Artist): bool
+            for var i in self
+                if not f(i)
+                    return false
+            return true
    
     //
     // Primitives
     //
 
-    class abstract IterableOfString: Object implements JsonUtil.HasJsonArray, Gee.Iterable of string?
+    class abstract IterableOfString: Object implements JsonUtil.HasJsonArray, Gee.Traversable of (string?), Gee.Iterable of (string?)
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of string
         def abstract to_json(): Json.Array
+        def @foreach(f: Gee.ForallFunc of string): bool
+            for var i in self
+                if not f(i)
+                    return false
+            return true
 
-    class abstract IterableOfInt: Object implements JsonUtil.HasJsonArray, Gee.Iterable of int
+    class abstract IterableOfInt: Object implements JsonUtil.HasJsonArray, Gee.Traversable of (int), Gee.Iterable of (int)
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of int
         def abstract to_json(): Json.Array
+        def @foreach(f: Gee.ForallFunc of int): bool
+            for var i in self
+                if not f(i)
+                    return false
+            return true
 
-    class abstract IterableOfJsonObject: Object implements JsonUtil.HasJsonArray, Gee.Iterable of Json.Object?
+    class abstract IterableOfJsonObject: Object implements JsonUtil.HasJsonArray, Gee.Traversable of (Json.Object?), Gee.Iterable of (Json.Object?)
         prop abstract readonly element_type: Type
         def abstract iterator(): Gee.Iterator of Json.Object
         def abstract to_json(): Json.Array
+        def @foreach(f: Gee.ForallFunc of Json.Object): bool
+            for var i in self
+                if not f(i)
+                    return false
+            return true

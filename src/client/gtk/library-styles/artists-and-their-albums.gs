@@ -144,7 +144,7 @@ namespace Khovsgol.Client.GTK.Styles
                                         album.to_json().set_array_member("_tracks", tracks)
                                     albums_list.add(album)
                                 
-                        albums_list.sort((CompareFunc) compare_albums_by_date)
+                        albums_list.sort((CompareDataFunc) compare_albums_by_date)
                         for var album in albums_list
                             fill_album_by(album, node, subdue_lossy)
                     else
@@ -222,7 +222,7 @@ namespace Khovsgol.Client.GTK.Styles
                                         album.to_json().set_array_member("_tracks", tracks)
                                     albums_list.add(album)
                                 
-                        albums_list.sort((CompareFunc) compare_albums_by_date)
+                        albums_list.sort((CompareDataFunc) compare_albums_by_date)
                         for var album in albums_list
                             var tracks = get_array_member_or_null(album.to_json(), "_tracks")
                             gather_from_tracks(new JsonTracks(tracks), node, ref paths)

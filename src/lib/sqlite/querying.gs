@@ -101,7 +101,7 @@ namespace SqliteUtil
     /*
      * Row iterator for Sqlite.Statement.
      */
-    class RowIterator: Object implements Gee.Iterator of Row
+    class RowIterator: Object implements Gee.Traversable of (Row), Gee.Iterator of (Row)
         construct(statement: Statement*, delete_statement: bool, unlock_mutex: GLib.Mutex*, builder: QueryBuilder)
             _statement = statement
             _unlock_mutex = unlock_mutex
@@ -129,27 +129,38 @@ namespace SqliteUtil
                 _unlock_mutex->unlock()
             if _delete_statement
                 delete _statement
-            
+        
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
         prop readonly statement: Statement*
         prop readonly builder: QueryBuilder
         prop readonly column_names: dict of string, int = new dict of string, int
         
+        def has_current(): bool
+            return _result == ROW
+        
         def next(): bool
             _first = false
             _result = _statement->step()
-            return _result == ROW
+            return has_current()
         
         def new @get(): Row
             return new Row(self)
         
-        def first(): bool
-            return _first
-
         def has_next(): bool
             return true // TODO
         
         def remove()
             pass
+
+        def @foreach(f: Gee.ForallFunc of Row): bool
+            if _result == ROW
+                if not f(@get())
+                    return false
+            while next()
+                if not f(@get())
+                    return false
+            return true
             
         _unlock_mutex: GLib.Mutex*
         _delete_statement: bool

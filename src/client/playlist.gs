@@ -1,8 +1,5 @@
 [indent=4]
 
-uses
-    Sxml
-
 namespace Khovsgol.Client
 
     /*
@@ -57,6 +54,8 @@ namespace Khovsgol.Client
             stream.put_string("</playlist>\r\n")
             
         def override load() raises Error
+            pass
+            /*
             var reader = new XmlStreamReader(file.get_path())
             
             var in_playlist = false
@@ -89,6 +88,7 @@ namespace Khovsgol.Client
                     paths.add(path)
 
                 token = reader.read_token(out begin, out end)
+            */
 
     /*
      * PLS format.

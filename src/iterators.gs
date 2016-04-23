@@ -25,10 +25,13 @@ namespace Khovsgol
         
         _json: Json.Array?
 
-    class JsonTrackIterator: Object implements Gee.Iterator of Track
+    class JsonTrackIterator: Object implements Gee.Traversable of (Track), Gee.Iterator of (Track)
         construct(json: Json.Array? = null)
             _json = json
             _length = _json is not null ? _json.get_length() : 0
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
 
         def next(): bool
             return ++_index < _length
@@ -37,14 +40,18 @@ namespace Khovsgol
             var element = get_object_element_or_null(_json, _index)
             return new Track.from_json(element)
         
-        def first(): bool
-            return _index == 0
-        
         def has_next(): bool
             return _index < _length - 1
         
         def remove()
             pass
+
+        def @foreach(f: Gee.ForallFunc of Track): bool
+            _index--
+            while next()
+                if not f(@get())
+                    return false
+            return true
         
         _json: Json.Array?
         _index: int = -1
@@ -70,10 +77,13 @@ namespace Khovsgol
         
         _json: Json.Array?
 
-    class JsonTrackPointerIterator: Object implements Gee.Iterator of TrackPointer
+    class JsonTrackPointerIterator: Object implements Gee.Traversable of (TrackPointer), Gee.Iterator of (TrackPointer)
         construct(json: Json.Array? = null)
             _json = json
             _length = _json is not null ? _json.get_length() : 0
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
 
         def next(): bool
             return ++_index < _length
@@ -82,14 +92,18 @@ namespace Khovsgol
             var element = get_object_element_or_null(_json, _index)
             return new TrackPointer.from_json(element)
         
-        def first(): bool
-            return _index == 0
-        
         def has_next(): bool
             return _index < _length - 1
         
         def remove()
             pass
+
+        def @foreach(f: Gee.ForallFunc of TrackPointer): bool
+            _index--
+            while next()
+                if not f(@get())
+                    return false
+            return true
         
         _json: Json.Array?
         _index: int = -1
@@ -115,10 +129,13 @@ namespace Khovsgol
         
         _json: Json.Array?
 
-    class JsonAlbumIterator: Object implements Gee.Iterator of Album
+    class JsonAlbumIterator: Object implements Gee.Traversable of (Album), Gee.Iterator of (Album)
         construct(json: Json.Array? = null)
             _json = json
             _length = _json is not null ? _json.get_length() : 0
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
 
         def next(): bool
             return ++_index < _length
@@ -127,14 +144,18 @@ namespace Khovsgol
             var element = get_object_element_or_null(_json, _index)
             return new Album.from_json(element)
         
-        def first(): bool
-            return _index == 0
-        
         def has_next(): bool
             return _index < _length - 1
         
         def remove()
             pass
+
+        def @foreach(f: Gee.ForallFunc of Album): bool
+            _index--
+            while next()
+                if not f(@get())
+                    return false
+            return true
         
         _json: Json.Array?
         _index: int = -1
@@ -160,10 +181,13 @@ namespace Khovsgol
         
         _json: Json.Array?
 
-    class JsonArtistIterator: Object implements Gee.Iterator of Artist
+    class JsonArtistIterator: Object implements Gee.Traversable of (Artist), Gee.Iterator of (Artist)
         construct(json: Json.Array? = null)
             _json = json
             _length = _json is not null ? _json.get_length() : 0
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
 
         def next(): bool
             return ++_index < _length
@@ -172,14 +196,18 @@ namespace Khovsgol
             var element = get_object_element_or_null(_json, _index)
             return new Artist.from_json(element)
         
-        def first(): bool
-            return _index == 0
-        
         def has_next(): bool
             return _index < _length - 1
         
         def remove()
             pass
+
+        def @foreach(f: Gee.ForallFunc of Artist): bool
+            _index--
+            while next()
+                if not f(@get())
+                    return false
+            return true
         
         _json: Json.Array?
         _index: int = -1
@@ -205,10 +233,13 @@ namespace Khovsgol
         
         _json: Json.Array?
 
-    class JsonStringIterator: Object implements Gee.Iterator of string?
+    class JsonStringIterator: Object implements Gee.Traversable of (string?), Gee.Iterator of (string?)
         construct(json: Json.Array? = null)
             _json = json
             _length = _json is not null ? _json.get_length() : 0
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
 
         def next(): bool
             return ++_index < _length
@@ -216,14 +247,18 @@ namespace Khovsgol
         def new @get(): string?
             return get_string_element_or_null(_json, _index)
         
-        def first(): bool
-            return _index == 0
-        
         def has_next(): bool
             return _index < _length - 1
         
         def remove()
             pass
+
+        def @foreach(f: Gee.ForallFunc of string): bool
+            _index--
+            while next()
+                if not f(@get())
+                    return false
+            return true
         
         _json: Json.Array?
         _index: int = -1
@@ -245,10 +280,13 @@ namespace Khovsgol
         
         _json: Json.Array?
 
-    class JsonIntIterator: Object implements Gee.Iterator of int
+    class JsonIntIterator: Object implements Gee.Traversable of (int), Gee.Iterator of (int)
         construct(json: Json.Array? = null)
             _json = json
             _length = _json is not null ? _json.get_length() : 0
+
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
 
         def next(): bool
             return ++_index < _length
@@ -256,14 +294,18 @@ namespace Khovsgol
         def new @get(): int
             return get_int_element_or_min(_json, _index)
         
-        def first(): bool
-            return _index == 0
-        
         def has_next(): bool
             return _index < _length - 1
         
         def remove()
             pass
+
+        def @foreach(f: Gee.ForallFunc of int): bool
+            _index--
+            while next()
+                if not f(@get())
+                    return false
+            return true
         
         _json: Json.Array?
         _index: int = -1
@@ -285,25 +327,32 @@ namespace Khovsgol
         
         _json: Json.Array?
 
-    class JsonObjectIterator: Object implements Gee.Iterator of Json.Object?
+    class JsonObjectIterator: Object implements Gee.Traversable of (Json.Object?), Gee.Iterator of (Json.Object?)
         construct(json: Json.Array? = null)
             _json = json
             _length = _json is not null ? _json.get_length() : 0
 
+        prop readonly valid: bool = true
+        prop readonly read_only: bool = true
+        
         def next(): bool
             return ++_index < _length
         
         def new @get(): Json.Object?
             return get_object_element_or_null(_json, _index)
         
-        def first(): bool
-            return _index == 0
-        
         def has_next(): bool
             return _index < _length - 1
         
         def remove()
             pass
+
+        def @foreach(f: Gee.ForallFunc of Json.Object?): bool
+            _index--
+            while next()
+                if not f(@get())
+                    return false
+            return true
         
         _json: Json.Array?
         _index: int = -1
