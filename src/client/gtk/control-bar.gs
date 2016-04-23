@@ -62,6 +62,7 @@ namespace Khovsgol.Client.GTK
 
             _progress = new ProgressBar()
             _progress.show_text = true
+            _progress.set_size_request(300, -1)
             var progress_box = new EventBox()
             progress_box.override_background_color(StateFlags.NORMAL, Gdk.RGBA()) // Allows the item to have no background
             progress_box.add(_progress)

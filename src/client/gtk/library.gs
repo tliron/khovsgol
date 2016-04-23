@@ -35,7 +35,7 @@ namespace Khovsgol.Client.GTK
             _filter_box.entry.activate.connect(on_filter)
 
             var top_box = new Box(Orientation.HORIZONTAL, 5)
-            top_box.pack_start(_filter_box)
+            top_box.pack_start(_filter_box, true, true, 10)
 
             // Tree
             
