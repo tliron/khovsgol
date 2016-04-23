@@ -14,7 +14,7 @@ find-sources=$(shell find "$(SRC)/$1" \( -name '*.gs' -o -name '*.vala' \))
 # Posix:                                              valac --pkg=posix --Xcc=-D_GNU_SOURCE
 # Gtk:          apt-get install libgtk-3-dev          valac --pkg=gtk+-3.0
 # Daemon:       apt-get install libdaemon-dev         valac --pkg=libdaemon
-# Gst:          apt-get install libgstreamer1.0-dev   valac --pkg=gstreamer-1.0
+# Gst:          apt-get install libgstreamer1.0-dev   valac --pkg=gstreamer-1.0 --enable-experimental
 # Unity:        apt-get install libunity-dev          valac --pkg=unity
 # Indicate:     apt-get install libindicate-dev       valac --pkg=Indicate-0.7 --Xcc=-I/usr/include/libindicate-0.7 --Xcc=-lindicate
 # TagLib:       apt-get install libtagc0-dev          valac --pkg=taglib_c
@@ -78,7 +78,7 @@ KHOVSGOLD_PACKAGES=\
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
 	--pkg=sqlite3 \
 	--pkg=libdaemon \
-	--pkg=gstreamer-audio-1.0 \
+	--pkg=gstreamer-audio-1.0 --enable-experimental \
 	--pkg=taglib_c \
 	--pkg=avahi-gobject --pkg=lib/avahi/avahi-direct
 
@@ -108,7 +108,7 @@ KHOVSGOLR_PACKAGES=\
 	--pkg=json-glib-1.0 \
 	--pkg=posix --Xcc=-D_GNU_SOURCE \
 	--pkg=libdaemon \
-	--pkg=gstreamer-audio-1.0
+	--pkg=gstreamer-audio-1.0 --enable-experimental
 
 khovsgolr:
 	$(VALAC) --output=khovsgolr $(KHOVSGOLR_SOURCES) $(KHOVSGOLR_PACKAGES)
