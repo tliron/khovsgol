@@ -97,7 +97,7 @@ namespace Khovsgol.Server
             playlist.crucible = self
             return playlist
         
-        def start()
+        def start() raises Nap.Error
             _server.start()
             if _configuration.advertise
                 publish()

@@ -161,7 +161,7 @@ namespace Nap
         def abstract get_error_handler(): unowned ErrorHandler?
         def abstract set_error_handler(ErrorHandler: Handler?)
 
-        def abstract start()
+        def abstract start() raises Error
 
     /*
      * A RESTful client.

@@ -122,8 +122,8 @@ namespace Nap._Soup
         def private log()
             if _logger.can(LogLevelFlags.LEVEL_INFO)
                 var entry = new NcsaCommonLogEntry()
-                entry.address = _soup_client.get_address().get_physical()
-                //entry.address = ((InetSocketAddress) _soup_client.get_remote_address()).address.to_string()
+                //entry.address = _soup_client.get_address().get_physical()
+                entry.address = ((InetSocketAddress) _soup_client.get_remote_address()).address.to_string()
                 entry.user_identifier = _soup_client.get_auth_user()
                 entry.method = _soup_message.method
                 var query = _soup_message.get_uri().get_query()
@@ -353,16 +353,11 @@ namespace Nap._Soup
         construct(port: uint, context: MainContext) raises Nap.Error
             _port = port
             
-            _soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
+            /*_soup_server = new Soup.Server(Soup.SERVER_PORT, port, Soup.SERVER_ASYNC_CONTEXT, context)
             if _soup_server is null
-                raise new Nap.Error.CONNECTOR("Could not create server at port %u, is the port already in use?", port)
-            
-            /*_soup_server = new Soup.Server("")
-            try
-                _soup_server.listen_all(port, 0)
-            except e: GLib.Error
                 raise new Nap.Error.CONNECTOR("Could not create server at port %u, is the port already in use?", port)*/
             
+            _soup_server = new Soup.Server("")
             _soup_server.add_handler(null, _handle)
             
         prop thread_pool: ThreadPool?
@@ -380,12 +375,16 @@ namespace Nap._Soup
         def set_error_handler(handler: ErrorHandler?)
             _error_handler = handler
 
-        def start()
+        def start() raises Nap.Error
             if _thread_pool is null
                 _logger.messagef("Starting server at port %u (single-threaded)", _port)
             else
                 _logger.messagef("Starting server at port %u (%u threads)", _port, _thread_pool.max_threads)
-            _soup_server.run_async()
+            try
+                _soup_server.listen_all(_port, 0)
+            except e: GLib.Error
+                raise new Nap.Error.CONNECTOR("Could not create server at port %u, is the port already in use?", _port)
+            //_soup_server.run_async()
         
         def _handle(server: Soup.Server, message: Soup.Message, path: string, query: HashTable?, client: Soup.ClientContext)
             if _handler is not null

@@ -45,7 +45,7 @@ namespace Khovsgol.Receiver
                         _configuration.player_spec = _player.spec
                         _configuration.save()
             
-        def start()
+        def start() raises Nap.Error
             var player_spec = _configuration.player_spec
                 if player_spec is not null
                     _player = create_player(_configuration, player_spec)
