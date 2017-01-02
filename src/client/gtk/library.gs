@@ -7,7 +7,7 @@ uses
 namespace Khovsgol.Client.GTK
 
     class Library: Alignment
-        enum private Column
+        enum Column
             NODE = 0     // Json.Node
             SEARCH = 1   // string
             TITLE = 2    // string

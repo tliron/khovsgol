@@ -274,7 +274,7 @@ namespace Khovsgol.Client.CLI
                         var version = get_int64_member_or_min(playlist, "version")
                         if version != int64.MIN
                             indent(1)
-                            stdout.printf("Version: %lld\n", version)
+                            stdout.printf("Version: %ju\n", version)
                     
                     var cursor_mode = get_string_member_or_null(player, "cursorMode")
                     if cursor_mode is not null

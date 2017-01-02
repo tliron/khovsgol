@@ -7,7 +7,7 @@ uses
 namespace Khovsgol.Client.GTK
 
     class Playlist: Alignment
-        enum private Column
+        enum Column
             NODE = 0     // Json.Node
             POSITION = 1 // int
             SEARCH = 2   // string
