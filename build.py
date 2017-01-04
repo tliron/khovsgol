@@ -2,12 +2,12 @@
 
 from ronin.cli import cli
 from ronin.contexts import new_build_context
-from ronin.gcc import GccCompile, GccLink
+from ronin.gcc import GccLink
 from ronin.phases import Phase
 from ronin.pkg_config import Package
 from ronin.projects import Project
 from ronin.utils.paths import glob, input_path
-from ronin.vala import ValaBuild, ValaApi, ValaTranspile, ValaExtension, vala_configure_transpile_phase, vala_configure_compile_phase
+from ronin.vala import ValaBuild, ValaApi, ValaTranspile, ValaExtension, ValaGccCompile
 
 class Dependencies(object):
     def __init__(self):
@@ -38,7 +38,7 @@ def glob_src(pattern):
         glob(pattern + '/*.vala')
 
 def create_project(name, inputs, extensions, multi=True):
-    project = Project(name, file_name=name)
+    project = Project(name, path=name)
     
     if multi:
         # API
@@ -47,18 +47,16 @@ def create_project(name, inputs, extensions, multi=True):
         api.executor.enable_deprecated()
         
         # Transpile
-        transpile = Phase(ValaTranspile(),
+        transpile = Phase(ValaTranspile(apis=[api]),
                           inputs=inputs,
                           extensions=extensions)
-        vala_configure_transpile_phase(transpile, api)
         transpile.executor.enable_experimental()
         transpile.executor.enable_deprecated()
      
         # Compile
-        compile = Phase(GccCompile(),
+        compile = Phase(ValaGccCompile(),
                         inputs_from=[transpile],
                         extensions=extensions)
-        vala_configure_compile_phase(compile)
         compile.executor.disable_warning('deprecated-declarations')
     
         # Link
@@ -86,7 +84,6 @@ def create_project(name, inputs, extensions, multi=True):
     return project
 
 with new_build_context() as ctx:
-    project = Project('Khovsgol')
     dependencies = Dependencies()
 
     khovsgold_inputs = \
