@@ -7,30 +7,33 @@ from ronin.phases import Phase
 from ronin.pkg_config import Package
 from ronin.projects import Project
 from ronin.utils.paths import glob, input_path
-from ronin.vala import ValaBuild, ValaApi, ValaTranspile, ValaExtension, ValaGccCompile
+from ronin.vala import ValaBuild, ValaApi, ValaTranspile, ValaPackage, ValaGccCompile
 
 class Dependencies(object):
     def __init__(self):
-        self.gee = ValaExtension('gee-0.8')
-        self.libsoup = ValaExtension('libsoup-2.4')
-        self.json = ValaExtension('json-glib-1.0')
-        self.sqlite = ValaExtension('sqlite3')
-        self.posix = ValaExtension('posix', package=False,
-                                   c_compile_arguments=['-D_GNU_SOURCE'])
-        self.gtk = ValaExtension('gtk+-3.0')
-        self.libdaemon = ValaExtension('libdaemon')
-        self.gstreamer = ValaExtension('gstreamer-audio-1.0')
-        self.unity = ValaExtension('unity')
-        self.indicate = ValaExtension('Indicate-0.7', package=Package('indicate-0.7'),
-                                      c_compile_arguments=['-I/usr/include/libindicate-0.7'],
-                                      c_link_arguments=['-lindicate'])
-        self.taglib = ValaExtension('taglib_c')
-        self.appindicator = ValaExtension('appindicator-0.1')
+        self.gee = ValaPackage('gee-0.8')
+        self.libsoup = ValaPackage('libsoup-2.4')
+        self.json = ValaPackage('json-glib-1.0')
+        self.sqlite = ValaPackage('sqlite3')
+        self.posix = ValaPackage('posix',
+                                 package=False,
+                                 c_compile_arguments=['-D_GNU_SOURCE'])
+        self.gtk = ValaPackage('gtk+-3.0')
+        self.libdaemon = ValaPackage('libdaemon')
+        self.gstreamer = ValaPackage('gstreamer-audio-1.0')
+        self.unity = ValaPackage('unity')
+        self.indicate = ValaPackage('Indicate-0.7',
+                                    package=Package('indicate-0.7'),
+                                    c_compile_arguments=['-I/usr/include/libindicate-0.7'],
+                                    c_link_arguments=['-lindicate'])
+        self.taglib = ValaPackage('taglib_c')
+        self.appindicator = ValaPackage('appindicator-0.1')
         self.avahi = Package('avahi-client')
-        self.avahi_gobject = ValaExtension('avahi-gobject')
-        self.avahi_direct = ValaExtension('avahi-direct', package=False,
-                                          vapi_paths=[input_path('src/lib/avahi')])
-        self.m = ValaExtension(c_link_arguments=['-lm'])
+        self.avahi_gobject = ValaPackage('avahi-gobject')
+        self.avahi_direct = ValaPackage('avahi-direct',
+                                        package=False,
+                                        vapi_paths=[input_path('src/lib/avahi')])
+        self.m = ValaPackage(c_link_arguments=['-lm'])
 
 def glob_src(pattern):
     return \
@@ -38,7 +41,7 @@ def glob_src(pattern):
         glob(pattern + '/*.vala')
 
 def create_project(name, inputs, extensions):
-    project = Project(name, path=name)
+    project = Project(name, output_path_relative=name)
     
     with current_context() as ctx:
         single = ctx.get('vala.single') == 'true' 
