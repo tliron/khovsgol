@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from ronin.cli import cli
-from ronin.contexts import new_context
+from ronin.contexts import new_context, current_context
 from ronin.gcc import GccLink
 from ronin.phases import Phase
 from ronin.pkg_config import Package
@@ -37,49 +37,60 @@ def glob_src(pattern):
         glob(pattern + '/*.gs') + \
         glob(pattern + '/*.vala')
 
-def create_project(name, inputs, extensions, multi=True):
+def create_project(name, inputs, extensions):
     project = Project(name, path=name)
     
-    if multi:
+    with current_context() as ctx:
+        single = ctx.get('vala.single') == 'true' 
+    
+    if not single:
         # API
-        api = Phase(ValaApi(),
-                    inputs=inputs)
-        api.executor.enable_deprecated()
+        executor = ValaApi()
+        executor.enable_deprecated()
+        Phase(project=project,
+              name='api',
+              executor=executor,
+              inputs=inputs)
         
         # Transpile
-        transpile = Phase(ValaTranspile(apis=[api]),
-                          inputs=inputs,
-                          extensions=extensions)
-        transpile.executor.enable_experimental()
-        transpile.executor.enable_deprecated()
+        executor = ValaTranspile(apis=['api'])
+        executor.enable_experimental()
+        executor.enable_deprecated()
+        Phase(project=project,
+              name='transpile',
+              executor=executor,
+              inputs=inputs,
+              extensions=extensions)
      
         # Compile
-        compile = Phase(ValaGccCompile(),
-                        inputs_from=[transpile],
-                        extensions=extensions)
-        compile.executor.disable_warning('deprecated-declarations')
+        executor = ValaGccCompile()
+        executor.disable_warning('deprecated-declarations')
+        Phase(project=project,
+              name='compile',
+              executor=executor,
+              inputs_from=['transpile'],
+              extensions=extensions)
     
         # Link
-        link = Phase(GccLink(),
-                     inputs_from=[compile],
-                     extensions=extensions,
-                     output=name)
-    
-        project.phases['api'] = api
-        project.phases['transpile'] = transpile
-        project.phases['compile'] = compile
-        project.phases['link'] = link
+        Phase(project=project,
+              name='link',
+              executor=GccLink(),
+              inputs_from=['compile'],
+              extensions=extensions,
+              output=name)
     else:
         # Build
-        build = Phase(ValaBuild(),
-                      inputs=inputs,
-                      extensions=extensions,
-                      output=name)
-        build.executor.enable_threads()
-        build.executor.enable_experimental()
-        build.executor.enable_deprecated()
-        build.executor.target_glib('2.32')
-        project.phases['build'] = build
+        executor = ValaBuild()
+        executor.enable_threads()
+        executor.enable_experimental()
+        executor.enable_deprecated()
+        executor.target_glib('2.32')
+        Phase(project=project,
+              name='build',
+              executor=executor,
+              inputs=inputs,
+              extensions=extensions,
+              output=name)
     
     return project
 
